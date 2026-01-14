@@ -4,6 +4,7 @@
     :width="canvasWidth"
     :height="canvasHeight"
     class="pixel-canvas"
+    @click="onCanvasClick"
   ></canvas>
 </template>
 
@@ -13,12 +14,14 @@ export default {
   props: {
     width: { type: Number, default: 64 },
     height: { type: Number, default: 64 },
-    pixels: { type: Array, default: () => [] }
+    pixels: { type: Array, default: () => [] },
+    pixelSize: { type: Number, default: 10 }
   },
+  emits: ['pixel-click'],
   computed: {
-    // Ogni pixel logico corrisponde a 10px fisici
-    canvasWidth() { return this.width * 10; },
-    canvasHeight() { return this.height * 10; }
+    // Ogni pixel logico corrisponde a pixelSize px fisici
+    canvasWidth() { return this.width * this.pixelSize; },
+    canvasHeight() { return this.height * this.pixelSize; }
   },
   watch: {
     pixels: {
@@ -41,9 +44,25 @@ export default {
       this.pixels.forEach(p => {
         if (p.x >= 0 && p.x < this.width && p.y >= 0 && p.y < this.height) {
           ctx.fillStyle = p.color;
-          ctx.fillRect(p.x * 10, p.y * 10, 10, 10);
+          ctx.fillRect(p.x * this.pixelSize, p.y * this.pixelSize, this.pixelSize, this.pixelSize);
         }
       });
+    },
+    onCanvasClick(event) {
+      const { x, y } = this.getGridCoordinates(event);
+      
+      if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
+        this.$emit('pixel-click', { x, y });
+      }
+    },
+    getGridCoordinates(event) {
+      const canvas = this.$refs.pixelCanvas;
+      const rect = canvas.getBoundingClientRect();
+      
+      return {
+        x: Math.floor((event.clientX - rect.left) / this.pixelSize),
+        y: Math.floor((event.clientY - rect.top) / this.pixelSize)
+      };
     }
   }
 }

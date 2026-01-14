@@ -1,7 +1,16 @@
 <template>
   <div id="app">
     <h1>Pixel Canvas Demo</h1>
-    <PixelCanvas :width="20" :height="20" :pixels="dummyPixels" />
+    <div class="controls">
+      <label>Color: <input type="color" v-model="selectedColor" /></label>
+    </div>
+    <PixelCanvas 
+      :width="20" 
+      :height="20" 
+      :pixel-size="20"
+      :pixels="dummyPixels" 
+      @pixel-click="onPixelClick"
+    />
   </div>
 </template>
 
@@ -15,11 +24,22 @@ export default {
   },
   data() {
     return {
+      selectedColor: '#000000',
       dummyPixels: [
         { x: 19, y: 10, color: 'red' },
         { x: 3, y: 3, color: 'blue' },
         { x: 4, y: 4, color: 'green' }
       ]
+    }
+  },
+  methods: {
+    onPixelClick({ x, y }) {
+      const existingPixel = this.dummyPixels.find(p => p.x === x && p.y === y);
+      if (existingPixel) {
+        existingPixel.color = this.selectedColor;
+      } else {
+        this.dummyPixels.push({ x, y, color: this.selectedColor });
+      }
     }
   }
 }
@@ -34,5 +54,8 @@ body {
 }
 #app {
   padding: 20px;
+}
+.controls {
+  margin-bottom: 20px;
 }
 </style>
