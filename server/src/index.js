@@ -1,36 +1,27 @@
 import express from 'express';
-import mongoose from 'mongoose';
-import { seedUsers } from './db/seed.js';
+import cors from 'cors';
+import { connectDB } from './db/connect.js';
+import router from './routes/index.js';
 
 // Configuration
 const app = express();
 const PORT = process.env.PORT || 3000;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/pixie';
 
-// --- Database Connection & Seeding ---
-const connectDB = async () => {
-  try {
-    await mongoose.connect(MONGO_URI);
-    console.log('[INFO] MongoDB Connected successfully');
+// Middleware
+app.use(cors({
+  origin: 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type']
+}));
+app.use(express.json());
 
-    await seedUsers();
-
-  } catch (err) {
-    console.error('[ERROR] MongoDB Connection Error:', err.message);
-    console.log('[INFO] Retrying connection in 5 seconds...');
-    setTimeout(connectDB, 5000);
-  }
-};
-
-// Initialize DB connection
+// Initialization
 connectDB();
 
-// --- Basic Server Start ---
-// TEMPORARY: Keeps the process alive for Docker
-app.get('/', (req, res) => {
-  res.send('Pixie Server is running. Database seeded.');
-});
+// API Routes (All routes are prefixed with /api)
+app.use('/api', router);
 
+// Start Server
 app.listen(PORT, () => {
   console.log(`[INFO] Server listening on port ${PORT}`);
 });
