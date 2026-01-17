@@ -70,8 +70,8 @@ export default {
 
 <style scoped>
 .pixel-canvas {
-  border: 1px solid #ccc;
-  background: white;
+  border: 1px solid var(--color-border);
+  background: var(--color-canvas-bg);
   cursor: crosshair;
   image-rendering: pixelated; 
 }
