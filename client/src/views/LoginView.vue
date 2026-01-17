@@ -19,12 +19,28 @@
 
 <script setup>
 import { ref } from 'vue'
-import { LoginController } from '../controllers/LoginController'
+import Api from '../services/Api'
+import { router } from '../router'
+import { useUserStore } from '../stores/user'
 
 const username = ref('')
+const userStore = useUserStore()
 
-const handleLogin = () => {
-    LoginController.login(username.value)
+const handleLogin = async () => {
+  if (!username.value.trim()) return;
+  
+  try {
+    const response = await Api.post('/login', {
+      username: username.value
+    });
+    
+    // Server returns { username, id, token }
+    userStore.login(response.data.username);
+    router.push('/play');
+  } catch (error) {
+    console.error('Login failed:', error);
+    alert('Errore durante il login. Controlla che il server sia attivo.');
+  }
 }
 </script>
 

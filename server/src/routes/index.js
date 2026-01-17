@@ -1,9 +1,9 @@
 import express from 'express';
-import userRoutes from './user.routes.js';
+import apiRoutes from './api.js';
 
 const router = express.Router();
 
-// Mount resources
-router.use('/users', userRoutes);
+router.use('/', apiRoutes);
 
 export default router;
+
