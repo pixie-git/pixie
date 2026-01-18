@@ -19,7 +19,7 @@ export default {
   },
   emits: ['pixel-click'],
   computed: {
-    // Ogni pixel logico corrisponde a pixelSize px fisici
+    // Each logical pixel is pixelSize physical pixels
     canvasWidth() { return this.width * this.pixelSize; },
     canvasHeight() { return this.height * this.pixelSize; }
   },
