@@ -19,7 +19,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import Api from '../services/Api'
+import api from '../services/api'
 import { router } from '../router'
 import { useUserStore } from '../stores/user'
 
@@ -30,7 +30,7 @@ const handleLogin = async () => {
   if (!username.value.trim()) return;
   
   try {
-    const response = await Api.post('/login', {
+    const response = await api.post('/login', {
       username: username.value
     });
     

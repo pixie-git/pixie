@@ -1,14 +1,14 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, type Ref } from 'vue'
 
 export const useUserStore = defineStore('user', () => {
-    const username = ref('')
+    const username: Ref<string> = ref('')
 
-    function login(name) {
+    function login(name: string): void {
         username.value = name
     }
 
-    function logout() {
+    function logout(): void {
         username.value = ''
     }
 
