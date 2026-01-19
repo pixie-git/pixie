@@ -87,8 +87,10 @@ onMounted(initCanvas);
 
 <style scoped>
 .pixel-canvas {
-  border: 1px solid #ccc;
+  border: 1px solid var(--color-border);
+  background: var(--color-canvas-bg);
   cursor: crosshair;
   display: block;
+  image-rendering: pixelated;
 }
 </style>
