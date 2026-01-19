@@ -17,7 +17,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 import api from '../services/api'
 import { router } from '../router'
@@ -26,11 +26,17 @@ import { useUserStore } from '../stores/user'
 const username = ref('')
 const userStore = useUserStore()
 
+interface LoginResponse {
+  username: string
+  id: string
+  token: string
+}
+
 const handleLogin = async () => {
   if (!username.value.trim()) return;
   
   try {
-    const response = await api.post('/login', {
+    const response = await api.post<LoginResponse>('/login', {
       username: username.value
     });
     
