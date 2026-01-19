@@ -1,28 +1,25 @@
 <template>
   <div id="app">
-    <PlayView />
+    <router-view />
   </div>
 </template>
 
 <script>
-import PlayView from './views/PlayView.vue'
-
 export default {
-  name: 'App',
-  components: {
-    PlayView
-  }
+  name: 'App'
 }
 </script>
 
 <style>
 /* Reset basic styles */
+/* Reset basic styles */
 body {
   margin: 0;
   padding: 0;
-  font-family: sans-serif;
 }
 #app {
-  padding: 20px;
+  /* Removed padding to allow full screen login */
+  width: 100%;
+  height: 100vh;
 }
 </style>
