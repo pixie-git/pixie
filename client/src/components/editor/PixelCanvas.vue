@@ -1,16 +1,21 @@
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
 
-const props = defineProps({
-  width: { type: Number, required: true },
-  height: { type: Number, required: true },
-  pixels: { type: Array, required: true }, // Array of color strings
-  zoom: { type: Number, default: 20 }
+const props = withDefaults(defineProps<{
+  width: number
+  height: number
+  pixels: string[]
+  zoom?: number
+}>(), {
+  zoom: 20
 });
 
 // Emits 'pixel-click' event with the index of the clicked pixel
-const emit = defineEmits(['pixel-click']);
-const canvasRef = ref(null);
+const emit = defineEmits<{
+  (e: 'pixel-click', index: number): void
+}>();
+
+const canvasRef = ref<HTMLCanvasElement | null>(null);
 
 const cssWidth = computed(() => props.width * props.zoom);
 const cssHeight = computed(() => props.height * props.zoom);
@@ -20,6 +25,7 @@ const draw = () => {
   const canvas = canvasRef.value;
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
+  if (!ctx) return;
 
   // Clear previous content
   ctx.clearRect(0, 0, props.width * props.zoom, props.height * props.zoom);
@@ -52,15 +58,19 @@ const initCanvas = () => {
   canvas.style.height = `${cssHeight.value}px`;
 
   const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-  ctx.imageSmoothingEnabled = false; // Keep pixel art sharp
+  if (ctx) {
+      ctx.scale(dpr, dpr);
+      ctx.imageSmoothingEnabled = false; // Keep pixel art sharp
+  }
 
   draw();
 };
 
 // Handle clicks on the canvas to detect which pixel was clicked
-const handleClick = (e) => {
+const handleClick = (e: MouseEvent) => {
   const canvas = canvasRef.value;
+  if (!canvas) return;
+  
   const rect = canvas.getBoundingClientRect();
   
   const x = e.clientX - rect.left;
