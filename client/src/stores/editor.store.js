@@ -1,31 +1,32 @@
-// src/stores/editor.store.js
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
 export const useEditorStore = defineStore('editor', () => {
-  // Configurazione Griglia
+
+  // Hardcoded dimensions for now
   const width = 20;
   const height = 20;
 
-  // STATE: Array piatto di stringhe (400 celle)
-  // Inizializziamo tutto bianco
+
+  // Reactive array of colors (flattened grid)
   const pixels = ref(new Array(width * height).fill('#FFFFFF'));
 
-  // STATE: Colore selezionato
-  const selectedColor = ref('#000000');
 
-  // INIT: Aggiungiamo i "dummyPixels" di Zava per parità visiva
-  // (Conversione: index = y * width + x)
-  pixels.value[10 * width + 19] = 'red';   // { x: 19, y: 10 }
-  pixels.value[3 * width + 3] = 'blue';  // { x: 3, y: 3 }
-  pixels.value[4 * width + 4] = 'green'; // { x: 4, y: 4 }
+  // Current selected color for painting
+  const selectedColor = ref('#000000'); // Default to black
 
-  // ACTIONS
+  // Initialize some pixels for demonstration
+  pixels.value[10 * width + 19] = 'red';
+  pixels.value[3 * width + 3] = 'blue';
+  pixels.value[4 * width + 4] = 'green';
+
+
+  // Action to paint a specific pixel with the currently selected color
   function paintPixel(index) {
-    // Qui in futuro ci sarà la chiamata Socket
     pixels.value[index] = selectedColor.value;
   }
 
+  // Action to update the selected color
   function setSelectedColor(color) {
     selectedColor.value = color;
   }

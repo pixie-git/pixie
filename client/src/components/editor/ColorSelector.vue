@@ -1,6 +1,6 @@
 <script setup>
 defineProps({
-  modelValue: { type: String, required: true }
+  modelValue: { type: String, required: true } // V-model binding for color
 });
 
 defineEmits(['update:modelValue']);

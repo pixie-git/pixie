@@ -3,10 +3,9 @@ import { useEditorStore } from '../stores/editor.store';
 import PixelCanvas from '../components/editor/PixelCanvas.vue';
 import ColorSelector from '../components/editor/ColorSelector.vue';
 
-// Inizializzazione Store
 const store = useEditorStore();
 
-// Handler Eventi
+// Handle pixel click event from the canvas
 const onPixelClick = (index) => {
   store.paintPixel(index);
 };
@@ -16,8 +15,10 @@ const onPixelClick = (index) => {
   <div class="play-view">
     <h1>Pixel Canvas Demo</h1>
     
+    <!-- Color Picker Component -->
     <ColorSelector v-model="store.selectedColor" />
 
+    <!-- Main Canvas for Drawing -->
     <PixelCanvas 
       :width="store.width" 
       :height="store.height" 
