@@ -1,9 +1,11 @@
-<script setup>
-defineProps({
-  modelValue: { type: String, required: true } // V-model binding for color
-});
+<script setup lang="ts">
+defineProps<{
+  modelValue: string
+}>();
 
-defineEmits(['update:modelValue']);
+defineEmits<{
+  (e: 'update:modelValue', value: string): void
+}>();
 </script>
 
 <template>
@@ -13,7 +15,7 @@ defineEmits(['update:modelValue']);
       <input 
         type="color" 
         :value="modelValue" 
-        @input="$emit('update:modelValue', $event.target.value)"
+        @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
       />
     </label>
   </div>

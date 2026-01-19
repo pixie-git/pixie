@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { useEditorStore } from '../stores/editor.store';
 import PixelCanvas from '../components/editor/PixelCanvas.vue';
 import ColorSelector from '../components/editor/ColorSelector.vue';
@@ -6,7 +6,7 @@ import ColorSelector from '../components/editor/ColorSelector.vue';
 const store = useEditorStore();
 
 // Handle pixel click event from the canvas
-const onPixelClick = (index) => {
+const onPixelClick = (index: number) => {
   store.paintPixel(index);
 };
 </script>
