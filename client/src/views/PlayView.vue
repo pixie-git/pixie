@@ -1,52 +1,35 @@
+<script setup>
+import { useEditorStore } from '../stores/editor.store';
+import PixelCanvas from '../components/editor/PixelCanvas.vue';
+import ColorSelector from '../components/editor/ColorSelector.vue';
+
+// Inizializzazione Store
+const store = useEditorStore();
+
+// Handler Eventi
+const onPixelClick = (index) => {
+  store.paintPixel(index);
+};
+</script>
+
 <template>
   <div class="play-view">
     <h1>Pixel Canvas Demo</h1>
-    <div class="controls">
-      <label>Color: <input type="color" v-model="selectedColor" /></label>
-    </div>
+    
+    <ColorSelector v-model="store.selectedColor" />
+
     <PixelCanvas 
-      :width="20" 
-      :height="20" 
-      :pixel-size="20"
-      :pixels="dummyPixels" 
+      :width="store.width" 
+      :height="store.height" 
+      :zoom="20"
+      :pixels="store.pixels" 
       @pixel-click="onPixelClick"
     />
   </div>
 </template>
 
-<script>
-import PixelCanvas from '../components/PixelCanvas.vue'
-
-export default {
-  name: 'PlayView',
-  components: {
-    PixelCanvas
-  },
-  data() {
-    return {
-      selectedColor: '#000000',
-      dummyPixels: [
-        { x: 19, y: 10, color: 'red' },
-        { x: 3, y: 3, color: 'blue' },
-        { x: 4, y: 4, color: 'green' }
-      ]
-    }
-  },
-  methods: {
-    onPixelClick({ x, y }) {
-      const existingPixel = this.dummyPixels.find(p => p.x === x && p.y === y);
-      if (existingPixel) {
-        existingPixel.color = this.selectedColor;
-      } else {
-        this.dummyPixels.push({ x, y, color: this.selectedColor });
-      }
-    }
-  }
-}
-</script>
-
 <style scoped>
-.controls {
-  margin-bottom: 20px;
+.play-view {
+  padding: 20px;
 }
 </style>
