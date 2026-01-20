@@ -9,10 +9,10 @@ import ColorSelector from '@/components/editor/ColorSelector.vue';
 const store = useEditorStore();
 const { width, height, pixels, palette, selectedColorIndex } = storeToRefs(store);
 
-// Ref per chiamare updatePixel
+// Ref to call updatePixel
 const canvasRef = ref<InstanceType<typeof PixelCanvas> | null>(null);
 
-// Logica di aggiornamento (Click -> Store -> Ridisegna 1 pixel)
+// Update logic (Click -> Store -> Redraw 1 pixel)
 const onPixelClick = ({ x, y }: { x: number, y: number }) => {
   store.setPixel(x, y);
   canvasRef.value?.updatePixel(x, y, selectedColorIndex.value);
@@ -41,7 +41,7 @@ const onPixelClick = ({ x, y }: { x: number, y: number }) => {
 
 <style scoped>
 main {
-  /* Layout a colonna semplicissimo */
+  /* Simple column layout */
   display: flex;
   flex-direction: column;
   align-items: center;

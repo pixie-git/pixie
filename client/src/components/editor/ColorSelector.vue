@@ -3,7 +3,7 @@ import { useEditorStore } from '@/stores/editor.store';
 import { storeToRefs } from 'pinia';
 
 const store = useEditorStore();
-// storeToRefs mantiene la reattività di palette e selectedColorIndex
+
 const { palette, selectedColorIndex } = storeToRefs(store);
 
 const selectColor = (index: number) => {
