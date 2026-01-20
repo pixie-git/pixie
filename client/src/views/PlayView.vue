@@ -1,36 +1,51 @@
 <script setup lang="ts">
-import { useEditorStore } from '../stores/editor.store';
-import PixelCanvas from '../components/editor/PixelCanvas.vue';
-import ColorSelector from '../components/editor/ColorSelector.vue';
+import { ref } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useEditorStore } from '@/stores/editor.store';
+import PixelCanvas from '@/components/editor/PixelCanvas.vue';
+import ColorSelector from '@/components/editor/ColorSelector.vue';
 
+// Setup Store
 const store = useEditorStore();
+const { width, height, pixels, palette, selectedColorIndex } = storeToRefs(store);
 
-// Handle pixel click event from the canvas
-const onPixelClick = (index: number) => {
-  store.paintPixel(index);
+// Ref to call updatePixel
+const canvasRef = ref<InstanceType<typeof PixelCanvas> | null>(null);
+
+// Update logic (Click -> Store -> Redraw 1 pixel)
+const onPixelClick = ({ x, y }: { x: number, y: number }) => {
+  store.setPixel(x, y);
+  canvasRef.value?.updatePixel(x, y, selectedColorIndex.value);
 };
 </script>
 
 <template>
-  <div class="play-view">
-    <h1>Pixel Canvas Demo</h1>
-    
-    <!-- Color Picker Component -->
-    <ColorSelector v-model="store.selectedColor" />
+  <main>
+    <ColorSelector />
 
-    <!-- Main Canvas for Drawing -->
-    <PixelCanvas 
-      :width="store.width" 
-      :height="store.height" 
-      :zoom="20"
-      :pixels="store.pixels" 
+    <PixelCanvas
+      ref="canvasRef"
+      :width="width"
+      :height="height"
+      :pixels="pixels"
+      :palette="palette"
+      :zoom="10"
       @pixel-click="onPixelClick"
     />
-  </div>
+    
+    <p style="font-family: monospace; color: gray;">
+      Size: {{ width }}x{{ height }} | Selected Color: {{ selectedColorIndex }}
+    </p>
+  </main>
 </template>
 
 <style scoped>
-.play-view {
+main {
+  /* Simple column layout */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
   padding: 20px;
 }
 </style>

@@ -1,42 +1,85 @@
 import { defineStore } from 'pinia';
-import { ref, type Ref } from 'vue';
+import { ref, shallowRef } from 'vue';
+import { defaultPalette } from '../config/defaultPalette';
 
 export const useEditorStore = defineStore('editor', () => {
 
-  // Hardcoded dimensions for now
-  const width: number = 20;
-  const height: number = 20;
+  // --- STATE ---
+
+  // Fixed dimensions for MVP
+  const width = ref<number>(64);
+  const height = ref<number>(64);
+
+  // Using shallowRef for performance optimization. 
+  // Vue won't create a Proxy for every byte, saving CPU/RAM.
+  const pixels = shallowRef<Uint8Array>(new Uint8Array(width.value * height.value));
+
+  // Defensive copy of the palette
+  const palette = ref<string[]>([...defaultPalette]);
+
+  const selectedColorIndex = ref<number>(1);
 
 
-  // Reactive array of colors (flattened grid)
-  const pixels: Ref<string[]> = ref(new Array(width * height).fill('#FFFFFF'));
+  // --- GETTERS ---
+
+  const getColorHex = (index: number): string => {
+    return palette.value[index] || '#000000';
+  };
+
+  const getPixelIndex = (x: number, y: number): number => {
+    if (x < 0 || x >= width.value || y < 0 || y >= height.value) {
+      return -1;
+    }
+    return y * width.value + x;
+  };
+
+  const getIndexColor = (index: number): string => {
+    if (index === -1) return '#000000';
+    return getColorHex(pixels.value[index]);
+  };
+
+  const getPixelColor = (x: number, y: number): string => {
+    const index = getPixelIndex(x, y);
+    return getIndexColor(index);
+  };
 
 
-  // Current selected color for painting
-  const selectedColor: Ref<string> = ref('#000000'); // Default to black
+  // --- ACTIONS ---
 
-  // Initialize some pixels for demonstration
-  pixels.value[10 * width + 19] = 'red';
-  pixels.value[3 * width + 3] = 'blue';
-  pixels.value[4 * width + 4] = 'green';
+  const setSelectedColor = (color: number): void => {
+    if (color >= 0 && color < palette.value.length) {
+      selectedColorIndex.value = color;
+    }
+  };
 
+  const setPixel = (x: number, y: number): void => {
+    const index = getPixelIndex(x, y);
 
-  // Action to paint a specific pixel with the currently selected color
-  function paintPixel(index: number): void {
-    pixels.value[index] = selectedColor.value;
-  }
+    // Skip if out of bounds or if pixel color is unchanged to avoid redundant writes
+    if (index !== -1 && pixels.value[index] !== selectedColorIndex.value) {
+      pixels.value[index] = selectedColorIndex.value;
 
-  // Action to update the selected color
-  function setSelectedColor(color: string): void {
-    selectedColor.value = color;
-  }
+      // Note: With shallowRef, this change is not automatically tracked by Vue.
+      // The component handles redraws manually or via specific events.
+    }
+  };
+
+  const clearCanvas = (): void => {
+    pixels.value.fill(0);
+  };
 
   return {
     width,
     height,
     pixels,
-    selectedColor,
-    paintPixel,
-    setSelectedColor
+    palette,
+    selectedColorIndex,
+    getColorHex,
+    getPixelIndex,
+    getIndexColor,
+    getPixelColor,
+    setSelectedColor,
+    setPixel,
+    clearCanvas
   };
 });
