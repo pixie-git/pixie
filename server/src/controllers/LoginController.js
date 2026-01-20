@@ -14,8 +14,11 @@ export class LoginController {
 
             // Find or create user
             let user = await User.findOne({ username });
+            let isNewUser = false;
+
             if (!user) {
                 user = await User.create({ username });
+                isNewUser = true;
             }
 
             // Generate JWT token
@@ -28,7 +31,8 @@ export class LoginController {
             return res.status(200).json({
                 username: user.username,
                 id: user._id,
-                token: token
+                token: token,
+                isNewUser: isNewUser
             });
         } catch (error) {
             console.error('Login error:', error);
