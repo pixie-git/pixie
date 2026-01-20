@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref, shallowRef, type Ref } from 'vue';
+import { ref, shallowRef } from 'vue';
 import { defaultPalette } from '../config/defaultPalette';
 
 export const useEditorStore = defineStore('editor', () => {
