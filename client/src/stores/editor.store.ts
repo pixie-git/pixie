@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
-import { ref, shallowRef } from 'vue';
+import { ref, shallowRef, triggerRef } from 'vue';
 import { defaultPalette } from '../config/defaultPalette';
+import { socketService } from '@/services/socket.service';
 
 export const useEditorStore = defineStore('editor', () => {
 
@@ -9,6 +10,7 @@ export const useEditorStore = defineStore('editor', () => {
   // Fixed dimensions for MVP
   const width = ref<number>(64);
   const height = ref<number>(64);
+  const isConnected = ref(false);
 
   // Using shallowRef for performance optimization. 
   // Vue won't create a Proxy for every byte, saving CPU/RAM.
@@ -57,7 +59,16 @@ export const useEditorStore = defineStore('editor', () => {
 
     // Skip if out of bounds or if pixel color is unchanged to avoid redundant writes
     if (index !== -1 && pixels.value[index] !== selectedColorIndex.value) {
+      // Optimistic Update
       pixels.value[index] = selectedColorIndex.value;
+
+      // Notify Server
+      socketService.emitDraw({
+        lobbyId: 'default',
+        x,
+        y,
+        color: selectedColorIndex.value
+      });
 
       // Note: With shallowRef, this change is not automatically tracked by Vue.
       // The component handles redraws manually or via specific events.
@@ -67,6 +78,27 @@ export const useEditorStore = defineStore('editor', () => {
   const clearCanvas = (): void => {
     pixels.value.fill(0);
   };
+
+  function init() {
+    socketService.connect();
+    socketService.emitJoinLobby('default');
+    isConnected.value = true;
+
+    // Logic to bind Model events to ViewModel state
+    socketService.onInit((buffer) => {
+      pixels.value = new Uint8Array(buffer);
+      triggerRef(pixels);
+    });
+
+    socketService.onUpdate((data) => {
+      const { x, y, color } = data;
+      const index = getPixelIndex(x, y);
+      if (index !== -1) {
+        pixels.value[index] = color;
+        triggerRef(pixels);
+      }
+    });
+  }
 
   return {
     width,
@@ -80,6 +112,8 @@ export const useEditorStore = defineStore('editor', () => {
     getPixelColor,
     setSelectedColor,
     setPixel,
-    clearCanvas
+    clearCanvas,
+    isConnected,
+    init
   };
 });
