@@ -1,24 +1,33 @@
 {
-  "name": "pixie-server",
-  "version": "1.0.0",
-  "description": "Pixie Backend Coordinator",
-  "main": "src/index.js",
-  "type": "module",
-  "scripts": {
-    "dev": "nodemon src/index.js",
-    "start": "node src/index.js"
-  },
-  "dependencies": {
-    "cors": "^2.8.5",
-    "express": "^4.21.2",
-    "jsonwebtoken": "^9.0.3",
-    "mongoose": "^8.9.5",
-    "socket.io": "^4.8.1"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.9"
-  },
-  "engines": {
-    "node": ">=24.0.0"
-  }
+	"name": "pixie-server",
+	"version": "1.0.0",
+	"description": "Pixie Backend Coordinator",
+	"main": "dist/index.js",
+	"type": "module",
+	"scripts": {
+		"dev": "tsx watch src/index.ts",
+		"build": "tsc",
+		"start": "node dist/index.js",
+		"type-check": "tsc --noEmit"
+	},
+	"dependencies": {
+		"cors": "^2.8.5",
+		"express": "^4.21.2",
+		"jsonwebtoken": "^9.0.3",
+		"mongoose": "^8.9.5",
+		"socket.io": "^4.8.1"
+	},
+	"devDependencies": {
+		"nodemon": "^3.1.9",
+		"typescript": "^5.3.3",
+		"ts-node": "^10.9.2",
+		"@types/node": "^20.10.6",
+		"@types/express": "^4.17.21",
+		"tsx": "^4.7.0",
+		"@types/jsonwebtoken": "^9.0.7",
+		"@types/cors": "^2.8.17"
+	},
+	"engines": {
+		"node": ">=24.0.0"
+	}
 }

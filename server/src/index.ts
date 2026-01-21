@@ -1,10 +1,9 @@
 import cors from "cors"
-import express from "express"
-import { connectDB } from "./db/connect.js"
-import router from "./routes/index.js"
+import express, { Express } from "express"
+import { connectDB } from "./db/connect"
+import router from "./routes/index"
 
-// Configuration
-const app = express()
+const app: Express = express()
 const PORT = process.env.PORT || 3000
 
 // Middleware
@@ -20,7 +19,7 @@ app.use(express.json())
 // Initialization
 connectDB()
 
-// API Routes (All routes are prefixed with /api)
+// API Routes
 app.use("/api", router)
 
 // Start Server
