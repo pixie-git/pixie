@@ -17,7 +17,7 @@ services:
     container_name: pixie-mongo-express
     restart: always
     ports:
-      - "8081:8081"
+      - "8082:8081"
     environment:
       - ME_CONFIG_MONGODB_SERVER=mongo
       - ME_CONFIG_MONGODB_PORT=27017

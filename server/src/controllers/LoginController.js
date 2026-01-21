@@ -1,3 +1,8 @@
+import jwt from 'jsonwebtoken';
+import { User } from '../models/User.js';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+
 export class LoginController {
     static async login(req, res) {
         try {
@@ -7,15 +12,27 @@ export class LoginController {
                 return res.status(400).json({ error: 'Username is required' });
             }
 
-            // Mock logic: simply echo back the user
-            // In a real app with DB: 
-            // let user = await User.findOne({ username });
-            // if (!user) user = await User.create({ username });
+            // Find or create user
+            let user = await User.findOne({ username });
+            let isNewUser = false;
+
+            if (!user) {
+                user = await User.create({ username });
+                isNewUser = true;
+            }
+
+            // Generate JWT token
+            const token = jwt.sign(
+                { id: user._id, username: user.username },
+                JWT_SECRET,
+                { expiresIn: '7d' }
+            );
 
             return res.status(200).json({
-                username: username,
-                id: Date.now(),
-                token: 'mock-server-jwt-token'
+                username: user.username,
+                id: user._id,
+                token: token,
+                isNewUser: isNewUser
             });
         } catch (error) {
             console.error('Login error:', error);
