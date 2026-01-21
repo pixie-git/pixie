@@ -5,8 +5,8 @@
   "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "dev": "nodemon src/index.js",
-    "start": "node src/index.js"
+    "dev": "nodemon src/index.ts",
+    "start": "ts-node src/index.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
