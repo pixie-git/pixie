@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken"
 import { IUser, User } from "../models/User"
+import { CONFIG } from "../config"
 
 interface LoginResponse {
 	username: string
@@ -19,7 +20,7 @@ export class UserService {
 	 * Handle user login/registration and token generation
 	 */
 	static async login(username: string): Promise<LoginResponse> {
-		const JWT_SECRET = process.env.JWT_SECRET || "dev-key"
+		const JWT_SECRET = CONFIG.JWT.SECRET
 
 		let user = await User.findOne({ username })
 		let isNewUser = false
@@ -29,7 +30,7 @@ export class UserService {
 			isNewUser = true
 		}
 
-		const token = jwt.sign({ id: user._id, username: user.username }, JWT_SECRET, { expiresIn: "7d" })
+		const token = jwt.sign({ id: user._id, username: user.username }, JWT_SECRET, { expiresIn: CONFIG.JWT.EXPIRES_IN as any })
 
 		return {
 			username: user.username,

@@ -1,7 +1,8 @@
 import mongoose from "mongoose"
 import { seedUsers } from "./seed"
 
-const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/pixie"
+import { CONFIG } from "../config"
+const MONGO_URI = CONFIG.MONGO_URI
 
 export const connectDB = async (): Promise<void> => {
 	try {

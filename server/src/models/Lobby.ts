@@ -1,5 +1,6 @@
 import { Schema, model, Document, Types, Model } from 'mongoose';
 import { Canvas } from './Canvas';
+import { CONFIG } from '../config';
 
 export interface ILobby extends Document {
   name: string;
@@ -33,14 +34,14 @@ lobbySchema.statics.createWithCanvas = async function (name: string, ownerId?: s
   const lobbyId = new Types.ObjectId();
   const canvasId = new Types.ObjectId();
 
-  // 64x64 pixels initialized to 0 (Transparent/White depending on palette)
-  const emptyBuffer = Buffer.alloc(64 * 64, 0);
+  // Initialized to 0 (Transparent/White depending on palette)
+  const emptyBuffer = Buffer.alloc(CONFIG.CANVAS.WIDTH * CONFIG.CANVAS.HEIGHT, 0);
 
   const canvas = new Canvas({
     _id: canvasId,
     lobby: lobbyId,
-    width: 64,
-    height: 64,
+    width: CONFIG.CANVAS.WIDTH,
+    height: CONFIG.CANVAS.HEIGHT,
     data: emptyBuffer
   });
 

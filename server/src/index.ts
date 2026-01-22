@@ -7,7 +7,7 @@ import router from "./routes/index";
 import { setupSocket } from "./sockets/index"; // Import the Socket Manager
 import { CONFIG } from "./config";
 
-const PORT = process.env.PORT || 3000;
+const PORT = CONFIG.PORT;
 
 // Configuration
 const app = express();
@@ -18,7 +18,7 @@ const httpServer = createServer(app);
 // Middleware
 app.use(
   cors({
-    origin: "*",
+    origin: CONFIG.CLIENT_ORIGIN,
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
@@ -34,7 +34,7 @@ app.use("/api", router);
 // --- SOCKET.IO SETUP (Real-time) ---
 const io = new Server(httpServer, {
   cors: {
-    origin: "*", // Allow all origins for development
+    origin: CONFIG.CLIENT_ORIGIN, // Allow all origins for development
     methods: ["GET", "POST"]
   }
 });

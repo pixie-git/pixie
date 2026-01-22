@@ -1,4 +1,5 @@
 import { Schema, model, Document, Types } from 'mongoose';
+import { CONFIG } from '../config';
 
 export interface ICanvas extends Document {
   lobby: Types.ObjectId; // Back-link to Lobby (useful for maintenance)
@@ -10,8 +11,8 @@ export interface ICanvas extends Document {
 
 const canvasSchema = new Schema<ICanvas>({
   lobby: { type: Schema.Types.ObjectId, ref: 'Lobby', required: true },
-  width: { type: Number, default: 64 },
-  height: { type: Number, default: 64 },
+  width: { type: Number, default: CONFIG.CANVAS.WIDTH },
+  height: { type: Number, default: CONFIG.CANVAS.HEIGHT },
   data: { type: Buffer, required: true },
   lastModified: { type: Date, default: Date.now }
 });
