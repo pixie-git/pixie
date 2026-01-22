@@ -16,6 +16,10 @@ export const useEditorStore = defineStore('editor', () => {
   // Vue won't create a Proxy for every byte, saving CPU/RAM.
   const pixels = shallowRef<Uint8Array>(new Uint8Array(width.value * height.value));
 
+  // Event emitter for individual pixel updates (remote changes)
+  // Components can watch this to efficiently redraw single pixels
+  const pixelUpdateEvent = ref<{ x: number; y: number; colorIndex: number } | null>(null);
+
   // Defensive copy of the palette
   const palette = ref<string[]>([...defaultPalette]);
 
@@ -95,7 +99,8 @@ export const useEditorStore = defineStore('editor', () => {
       const index = getPixelIndex(x, y);
       if (index !== -1) {
         pixels.value[index] = color;
-        pixels.value = new Uint8Array(pixels.value);
+        // Emit event for efficient single-pixel canvas update
+        pixelUpdateEvent.value = { x, y, colorIndex: color };
       }
     });
   }
@@ -106,6 +111,7 @@ export const useEditorStore = defineStore('editor', () => {
     pixels,
     palette,
     selectedColorIndex,
+    pixelUpdateEvent,
     getColorHex,
     getPixelIndex,
     getIndexColor,

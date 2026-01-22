@@ -8,7 +8,7 @@ import ColorSelector from '@/components/editor/ColorSelector.vue'; // Assicurati
 // Setup Store
 const store = useEditorStore();
 // NEW: Estraiamo isConnected per la UI
-const { width, height, pixels, palette, selectedColorIndex, isConnected } = storeToRefs(store);
+const { width, height, pixels, palette, selectedColorIndex, isConnected, pixelUpdateEvent } = storeToRefs(store);
 
 // Ref to call updatePixel
 const canvasRef = ref<InstanceType<typeof PixelCanvas> | null>(null);
@@ -47,6 +47,7 @@ const onPixelClick = ({ x, y }: { x: number, y: number }) => {
       :height="height"
       :pixels="pixels"
       :palette="palette"
+      :pixel-update-event="pixelUpdateEvent"
       :zoom="10"
       @pixel-click="onPixelClick"
     />
