@@ -1,11 +1,13 @@
 import cors from "cors";
 import express from "express";
-import { createServer } from "http"; // REQUIRED: Native HTTP server wrapper
-import { Server } from "socket.io";  // REQUIRED: Socket.io Server
-import { connectDB } from "./db/connect.js";
-import router from "./routes/index.js";
-import { setupSocket } from "./sockets/index.ts"; // Import the Socket Manager
-import { CONFIG } from "./config.ts";       // Use centralized config
+import { createServer } from "http";
+import { Server } from "socket.io";
+import { connectDB } from "./db/connect";
+import router from "./routes/index";
+import { setupSocket } from "./sockets/index"; // Import the Socket Manager
+import { CONFIG } from "./config";
+
+const PORT = process.env.PORT || 3000;
 
 // Configuration
 const app = express();
@@ -37,18 +39,12 @@ const io = new Server(httpServer, {
   }
 });
 
-// Initialize Socket Logic (The Layered Architecture Entry Point)
+// Initialize Socket Logic
 setupSocket(io);
 
 // Start Server
 // IMPORTANT: We listen on 'httpServer', NOT 'app'
-httpServer.listen(CONFIG.PORT, () => {
-  console.log(`
-  [INFO] 🚀 Server running on http://localhost:${CONFIG.PORT}
-  -----------------------------------------------
-  REST API:   Enabled (/api)
-  Socket.io:  Enabled
-  Database:   Connecting...
-  -----------------------------------------------
-  `);
+httpServer.listen(PORT, () => {
+  console.log(`[INFO] Server listening on port ${PORT}`);
+  console.log(`[INFO] Socket.io enabled`);
 });
