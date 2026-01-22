@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
-import { ref, shallowRef } from 'vue';
+import { ref, shallowRef, triggerRef } from 'vue';
 import { defaultPalette } from '../config/defaultPalette';
+import { socketService } from '@/services/socket.service';
 
 export const useEditorStore = defineStore('editor', () => {
 
@@ -9,10 +10,15 @@ export const useEditorStore = defineStore('editor', () => {
   // Fixed dimensions for MVP
   const width = ref<number>(64);
   const height = ref<number>(64);
+  const isConnected = ref(false);
 
   // Using shallowRef for performance optimization. 
   // Vue won't create a Proxy for every byte, saving CPU/RAM.
   const pixels = shallowRef<Uint8Array>(new Uint8Array(width.value * height.value));
+
+  // Event emitter for individual pixel updates (remote changes)
+  // Components can watch this to efficiently redraw single pixels
+  const pixelUpdateEvent = ref<{ x: number; y: number; colorIndex: number } | null>(null);
 
   // Defensive copy of the palette
   const palette = ref<string[]>([...defaultPalette]);
@@ -57,7 +63,16 @@ export const useEditorStore = defineStore('editor', () => {
 
     // Skip if out of bounds or if pixel color is unchanged to avoid redundant writes
     if (index !== -1 && pixels.value[index] !== selectedColorIndex.value) {
+      // Optimistic Update
       pixels.value[index] = selectedColorIndex.value;
+
+      // Notify Server
+      socketService.emitDraw({
+        lobbyId: 'default',
+        x,
+        y,
+        color: selectedColorIndex.value
+      });
 
       // Note: With shallowRef, this change is not automatically tracked by Vue.
       // The component handles redraws manually or via specific events.
@@ -68,18 +83,43 @@ export const useEditorStore = defineStore('editor', () => {
     pixels.value.fill(0);
   };
 
+  function init() {
+    socketService.connect();
+    socketService.emitJoinLobby('default');
+    isConnected.value = true;
+
+    // Logic to bind Model events to ViewModel state
+    socketService.onInit((buffer) => {
+      pixels.value = new Uint8Array(buffer);
+      triggerRef(pixels);
+    });
+
+    socketService.onUpdate((data) => {
+      const { x, y, color } = data;
+      const index = getPixelIndex(x, y);
+      if (index !== -1) {
+        pixels.value[index] = color;
+        // Emit event for efficient single-pixel canvas update
+        pixelUpdateEvent.value = { x, y, colorIndex: color };
+      }
+    });
+  }
+
   return {
     width,
     height,
     pixels,
     palette,
     selectedColorIndex,
+    pixelUpdateEvent,
     getColorHex,
     getPixelIndex,
     getIndexColor,
     getPixelColor,
     setSelectedColor,
     setPixel,
-    clearCanvas
+    clearCanvas,
+    isConnected,
+    init
   };
 });

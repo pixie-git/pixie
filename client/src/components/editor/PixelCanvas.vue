@@ -6,6 +6,7 @@ const props = withDefaults(defineProps<{
   height: number;
   pixels: Uint8Array;
   palette: string[];
+  pixelUpdateEvent: { x: number; y: number; colorIndex: number } | null;
   zoom?: number;
 }>(), {
   zoom: 10
@@ -82,7 +83,12 @@ onMounted(() => {
 
 watch(() => [props.zoom, props.width, props.height], drawAll);
 
-watch(() => props.pixels, drawAll);
+// Efficiently handle remote pixel updates - only redraw the changed pixel
+watch(() => props.pixelUpdateEvent, (event) => {
+  if (event) {
+    updatePixel(event.x, event.y, event.colorIndex);
+  }
+});
 
 defineExpose({
   updatePixel,
