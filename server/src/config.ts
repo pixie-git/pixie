@@ -4,9 +4,12 @@ export const CONFIG = {
 
   // Game Logic settings
   CANVAS: {
-    WIDTH: 64,
-    HEIGHT: 64,
+    WIDTH: parseInt(process.env.CANVAS_WIDTH || '64', 10),
+    HEIGHT: parseInt(process.env.CANVAS_HEIGHT || '64', 10),
   },
+
+  // Validation
+  MAX_COLOR_ID: 15,
 
   // Socket Events (Contract between Client and Server)
   EVENTS: {

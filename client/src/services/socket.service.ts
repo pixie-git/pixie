@@ -13,11 +13,11 @@ class SocketService {
     this.socket?.on('INIT_STATE', cb);
   }
 
-  onUpdate(cb: (data: any) => void) {
+  onUpdate(cb: (data: { x: number; y: number; color: number }) => void) {
     this.socket?.on('PIXEL_UPDATE', cb);
   }
 
-  emitDraw(payload: any) {
+  emitDraw(payload: { lobbyId: string; x: number; y: number; color: number }) {
     this.socket?.emit('DRAW', payload);
   }
 

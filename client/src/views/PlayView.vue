@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'; // NEW: Importa onMounted, watch
+import { ref, onMounted } from 'vue'; // NEW: Importa onMounted
 import { storeToRefs } from 'pinia';
 import { useEditorStore } from '@/stores/editor.store';
 import PixelCanvas from '@/components/editor/PixelCanvas.vue';

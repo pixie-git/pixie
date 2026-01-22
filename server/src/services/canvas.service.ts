@@ -1,5 +1,5 @@
-import { lobbyStore } from '../store/lobby.store.ts';
-import { CONFIG } from '../config.ts';
+import { lobbyStore } from '../store/lobby.store';
+import { CONFIG } from '../config';
 
 export class CanvasService {
 
@@ -10,6 +10,11 @@ export class CanvasService {
   static drawPixel(lobbyId: string, x: number, y: number, color: number) {
     if (x < 0 || x >= CONFIG.CANVAS.WIDTH || y < 0 || y >= CONFIG.CANVAS.HEIGHT) {
       console.warn(`[CanvasService] Out of bounds draw attempt: ${x}, ${y}`);
+      return null;
+    }
+
+    if (color < 0 || color > CONFIG.MAX_COLOR_ID) {
+      console.warn(`[CanvasService] Invalid color index: ${color}`);
       return null;
     }
 
