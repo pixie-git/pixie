@@ -2,10 +2,10 @@ import cors from "cors";
 import express from "express";
 import { createServer } from "http"; // REQUIRED: Native HTTP server wrapper
 import { Server } from "socket.io";  // REQUIRED: Socket.io Server
-import { connectDB } from "./db/connect";
-import router from "./routes/index";
-import { setupSocket } from "./sockets"; // Import the Socket Manager
-import { CONFIG } from "./config";       // Use centralized config
+import { connectDB } from "./db/connect.js";
+import router from "./routes/index.js";
+import { setupSocket } from "./sockets/index.ts"; // Import the Socket Manager
+import { CONFIG } from "./config.ts";       // Use centralized config
 
 // Configuration
 const app = express();

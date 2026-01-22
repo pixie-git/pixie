@@ -1,6 +1,6 @@
 import { Server, Socket } from 'socket.io';
-import { CanvasService } from '../services/canvas.service';
-import { CONFIG } from '../config';
+import { CanvasService } from '../services/canvas.service.ts';
+import { CONFIG } from '../config.ts';
 
 export const setupSocket = (io: Server) => {
   io.on('connection', (socket: Socket) => {

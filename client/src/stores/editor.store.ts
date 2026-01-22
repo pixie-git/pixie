@@ -95,7 +95,7 @@ export const useEditorStore = defineStore('editor', () => {
       const index = getPixelIndex(x, y);
       if (index !== -1) {
         pixels.value[index] = color;
-        triggerRef(pixels);
+        pixels.value = new Uint8Array(pixels.value);
       }
     });
   }
