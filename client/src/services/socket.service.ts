@@ -1,4 +1,3 @@
-// src/services/socket.service.ts
 import { io, type Socket } from 'socket.io-client';
 
 class SocketService {
@@ -17,8 +16,16 @@ class SocketService {
     this.socket?.on('PIXEL_UPDATE', cb);
   }
 
+  onUpdateBatch(cb: (data: { pixels: { x: number; y: number; color: number }[] }) => void) {
+    this.socket?.on('PIXEL_UPDATE_BATCH', cb);
+  }
+
   emitDraw(payload: { lobbyName: string; x: number; y: number; color: number }) {
     this.socket?.emit('DRAW', payload);
+  }
+
+  emitDrawBatch(payload: { lobbyName: string; pixels: { x: number; y: number; color: number }[] }) {
+    this.socket?.emit('DRAW_BATCH', payload);
   }
 
   emitJoinLobby(lobbyName: string) {
