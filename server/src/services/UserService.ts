@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken"
-import { IUser, User } from "../models/User"
+import { User } from "../models/User.js"
 
 interface LoginResponse {
 	username: string

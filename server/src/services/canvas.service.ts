@@ -1,5 +1,5 @@
-import { lobbyStore } from '../store/lobby.store';
-import { CONFIG } from '../config';
+import { lobbyStore } from '../store/lobby.store.js';
+import { CONFIG } from '../config.js';
 
 export class CanvasService {
 

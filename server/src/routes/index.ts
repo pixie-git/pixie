@@ -1,5 +1,5 @@
 import express, { Router } from "express"
-import apiRoutes from "./api"
+import apiRoutes from "./api.js"
 
 const router: Router = express.Router()
 
