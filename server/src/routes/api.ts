@@ -1,6 +1,7 @@
 import express, { Router } from "express"
-import { LoginController } from "../controllers/LoginController"
-import { UserController } from "../controllers/UserController"
+import { LoginController } from "../controllers/LoginController.js"
+import { UserController } from "../controllers/UserController.js"
+import { authenticateToken } from "../middlewares/authMiddleware.js"
 
 const router: Router = express.Router()
 
@@ -8,6 +9,8 @@ const router: Router = express.Router()
 router.post("/login", LoginController.login)
 
 // Users
-router.get("/users", UserController.getAll)
+router.get("/users", authenticateToken, UserController.getAll)
+
+// Test Error
 
 export default router

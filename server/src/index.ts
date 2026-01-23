@@ -2,10 +2,10 @@ import cors from "cors";
 import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
-import { connectDB } from "./db/connect";
-import router from "./routes/index";
-import { setupSocket } from "./sockets/index"; // Import the Socket Manager
-import { CONFIG } from "./config";
+import { connectDB } from "./db/connect.js";
+import router from "./routes/index.js";
+import { setupSocket } from "./sockets/index.js"; // Import the Socket Manager
+import { CONFIG } from "./config.js";
 
 const PORT = process.env.PORT || 3000;
 
@@ -28,8 +28,13 @@ app.use(express.json());
 // Initialization
 connectDB();
 
+import { errorHandler } from "./middlewares/errorMiddleware.js";
+
 // API Routes (REST)
 app.use("/api", router);
+
+// Global Error Handler
+app.use(errorHandler);
 
 // --- SOCKET.IO SETUP (Real-time) ---
 const io = new Server(httpServer, {
