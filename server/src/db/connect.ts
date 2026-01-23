@@ -1,5 +1,5 @@
 import mongoose from "mongoose"
-import { seedUsers } from "./seed"
+import { seedUsers, seedLobbies } from "./seed"
 
 import { CONFIG } from "../config"
 const MONGO_URI = CONFIG.MONGO_URI
@@ -17,6 +17,7 @@ export const connectDB = async (): Promise<void> => {
 		console.log("[INFO] MongoDB is ready")
 
 		await seedUsers()
+		await seedLobbies()
 	} catch (err) {
 		const error = err as Error
 		console.error("[ERROR] MongoDB Connection Error:", error.message)
