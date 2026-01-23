@@ -8,34 +8,39 @@ export const setupSocket = (io: Server) => {
 
     // --- EVENT: JOIN_LOBBY ---
     // User requests to enter a specific room
-    socket.on(CONFIG.EVENTS.CLIENT.JOIN_LOBBY, (lobbyId: string) => {
-      console.log(`[Socket] ${socket.id} joining lobby: ${lobbyId}`);
+    socket.on(CONFIG.EVENTS.CLIENT.JOIN_LOBBY, async (lobbyName: string) => {
+      console.log(`[Socket] ${socket.id} joining lobby: ${lobbyName}`);
 
       // 1. Join the Socket.io room channel
-      socket.join(lobbyId);
+      socket.join(lobbyName);
 
-      // 2. Get current state from Service
-      const state = CanvasService.getLobbyState(lobbyId);
+      try {
+        // 2. Get current state from Service
+        const state = await CanvasService.getState(lobbyName);
 
-      // 3. Send state back to the user
-      socket.emit(CONFIG.EVENTS.SERVER.INIT_STATE, state);
+        // 3. Send state back to the user
+        socket.emit(CONFIG.EVENTS.SERVER.INIT_STATE, state);
+      } catch (error) {
+        console.error(`[Socket] Error joining lobby ${lobbyName}:`, error);
+        socket.emit(CONFIG.EVENTS.SERVER.ERROR, { message: "Failed to join lobby" });
+      }
     });
 
     // --- EVENT: DRAW ---
     // User wants to color a pixel
     socket.on(CONFIG.EVENTS.CLIENT.DRAW, (payload: any) => {
       // Payload validation could happen here or in a DTO
-      const { lobbyId, x, y, color } = payload;
+      const { lobbyName, x, y, color } = payload;
 
-      if (!lobbyId) return;
+      if (!lobbyName) return;
 
       // 1. Process Logic via Service
-      const result = CanvasService.drawPixel(lobbyId, x, y, color);
+      const success = CanvasService.draw(lobbyName, x, y, color);
 
       // 2. Broadcast if successful
-      if (result) {
+      if (success) {
         // Send to everyone in the room EXCEPT the sender
-        socket.to(lobbyId).emit(CONFIG.EVENTS.SERVER.PIXEL_UPDATE, result);
+        socket.to(lobbyName).emit(CONFIG.EVENTS.SERVER.PIXEL_UPDATE, { x, y, color });
       }
     });
 

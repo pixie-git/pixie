@@ -1,7 +1,8 @@
 import mongoose from "mongoose"
-import { seedUsers } from "./seed.js"
+import { seedUsers, seedLobbies } from "./seed.js"
 
-const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/pixie"
+import { CONFIG } from "../config.js"
+const MONGO_URI = CONFIG.MONGO_URI
 
 export const connectDB = async (): Promise<void> => {
 	try {
@@ -16,6 +17,7 @@ export const connectDB = async (): Promise<void> => {
 		console.log("[INFO] MongoDB is ready")
 
 		await seedUsers()
+		await seedLobbies()
 	} catch (err) {
 		const error = err as Error
 		console.error("[ERROR] MongoDB Connection Error:", error.message)

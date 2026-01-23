@@ -1,6 +1,12 @@
 export const CONFIG = {
   // Server settings
   PORT: process.env.PORT || 3000,
+  MONGO_URI: process.env.MONGO_URI || "mongodb://localhost:27017/pixie",
+  CLIENT_ORIGIN: process.env.CLIENT_ORIGIN || "http://localhost:5173",
+  JWT: {
+    SECRET: process.env.JWT_SECRET || "dev-key",
+    EXPIRES_IN: "7d",
+  },
 
   // Game Logic settings
   CANVAS: {

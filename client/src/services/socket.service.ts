@@ -17,12 +17,12 @@ class SocketService {
     this.socket?.on('PIXEL_UPDATE', cb);
   }
 
-  emitDraw(payload: { lobbyId: string; x: number; y: number; color: number }) {
+  emitDraw(payload: { lobbyName: string; x: number; y: number; color: number }) {
     this.socket?.emit('DRAW', payload);
   }
 
-  emitJoinLobby(lobbyId: string) {
-    this.socket?.emit('JOIN_LOBBY', lobbyId);
+  emitJoinLobby(lobbyName: string) {
+    this.socket?.emit('JOIN_LOBBY', lobbyName);
   }
 }
 

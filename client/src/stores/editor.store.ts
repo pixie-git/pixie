@@ -68,7 +68,7 @@ export const useEditorStore = defineStore('editor', () => {
 
       // Notify Server
       socketService.emitDraw({
-        lobbyId: 'default',
+        lobbyName: 'Default Lobby',
         x,
         y,
         color: selectedColorIndex.value
@@ -85,7 +85,7 @@ export const useEditorStore = defineStore('editor', () => {
 
   function init() {
     socketService.connect();
-    socketService.emitJoinLobby('default');
+    socketService.emitJoinLobby('Default Lobby');
     isConnected.value = true;
 
     // Logic to bind Model events to ViewModel state
