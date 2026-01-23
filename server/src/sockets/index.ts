@@ -56,6 +56,10 @@ export const setupSocket = (io: Server) => {
 
       // 1. Process Logic via Service for each pixel
       for (const p of pixels) {
+        // Validation: ensure p is an object and has required properties
+        if (!p || typeof p !== 'object' || typeof p.x !== 'number' || typeof p.y !== 'number' || typeof p.color !== 'number') {
+          continue;
+        }
         const { x, y, color } = p;
         const success = CanvasService.draw(lobbyName, x, y, color);
         if (success) {
