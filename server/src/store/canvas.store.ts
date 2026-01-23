@@ -3,24 +3,24 @@ import { CONFIG } from '../config';
 export class CanvasStore {
   private buffers: Map<string, Uint8Array> = new Map();
 
-  public isLobbyInMemory(lobbyId: string): boolean {
-    return this.buffers.has(lobbyId);
+  public isLobbyInMemory(lobbyName: string): boolean {
+    return this.buffers.has(lobbyName);
   }
 
-  public getLobbyPixelData(lobbyId: string): Uint8Array | undefined {
-    return this.buffers.get(lobbyId);
+  public getLobbyPixelData(lobbyName: string): Uint8Array | undefined {
+    return this.buffers.get(lobbyName);
   }
 
   // Load data from DB buffer to RAM Uint8Array
-  public loadLobbyToMemory(lobbyId: string, data: Buffer | Uint8Array): Uint8Array {
-    console.log(`[CanvasStore] Loading lobby: ${lobbyId}`);
+  public loadLobbyToMemory(lobbyName: string, data: Buffer | Uint8Array): Uint8Array {
+    console.log(`[CanvasStore] Loading lobby: ${lobbyName}`);
     const memoryBuffer = new Uint8Array(data);
-    this.buffers.set(lobbyId, memoryBuffer);
+    this.buffers.set(lobbyName, memoryBuffer);
     return memoryBuffer;
   }
 
-  public modifyPixelColor(lobbyId: string, index: number, color: number): boolean {
-    const buffer = this.buffers.get(lobbyId);
+  public modifyPixelColor(lobbyName: string, index: number, color: number): boolean {
+    const buffer = this.buffers.get(lobbyName);
     if (!buffer) return false;
 
     // Boundary check
