@@ -26,7 +26,7 @@ export const useEditorStore = defineStore('editor', () => {
 
   const selectedColorIndex = ref<number>(1);
 
-  // --- DRAQING STATE ---
+  // --- DRAWING STATE ---
   const isDrawing = ref(false);
   const lastX = ref<number | null>(null);
   const lastY = ref<number | null>(null);
