@@ -1,6 +1,6 @@
 import { Schema, model, Document, Types, Model } from 'mongoose';
-import { Canvas } from './Canvas';
-import { CONFIG } from '../config';
+import { Canvas } from './Canvas.js';
+import { CONFIG } from '../config.js';
 
 export interface ILobby extends Document {
   name: string;

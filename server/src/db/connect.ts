@@ -1,7 +1,7 @@
 import mongoose from "mongoose"
-import { seedUsers, seedLobbies } from "./seed"
+import { seedUsers, seedLobbies } from "./seed.js"
 
-import { CONFIG } from "../config"
+import { CONFIG } from "../config.js"
 const MONGO_URI = CONFIG.MONGO_URI
 
 export const connectDB = async (): Promise<void> => {

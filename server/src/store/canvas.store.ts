@@ -1,4 +1,4 @@
-import { CONFIG } from '../config';
+import { CONFIG } from '../config.js';
 
 export class CanvasStore {
   private buffers: Map<string, Uint8Array> = new Map();

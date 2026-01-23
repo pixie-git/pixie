@@ -1,4 +1,4 @@
-import { Lobby } from '../models/Lobby';
+import { Lobby } from '../models/Lobby.js';
 
 export class LobbyService {
 

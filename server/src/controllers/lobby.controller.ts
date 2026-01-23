@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { LobbyService } from '../services/lobby.service';
+import { LobbyService } from '../services/lobby.service.js';
 
 export class LobbyController {
 

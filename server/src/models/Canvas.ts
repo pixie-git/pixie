@@ -1,5 +1,5 @@
 import { Schema, model, Document, Types } from 'mongoose';
-import { CONFIG } from '../config';
+import { CONFIG } from '../config.js';
 
 export interface ICanvas extends Document {
   lobby: Types.ObjectId; // Back-link to Lobby (useful for maintenance)
