@@ -33,6 +33,12 @@ import { errorHandler } from "./middlewares/errorMiddleware.js";
 // API Routes (REST)
 app.use("/api", router);
 
+// Swagger UI
+import swaggerUi from "swagger-ui-express";
+import YAML from "yamljs";
+const swaggerDocument = YAML.load("./pixie-api.yaml");
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
 // Global Error Handler
 app.use(errorHandler);
 
