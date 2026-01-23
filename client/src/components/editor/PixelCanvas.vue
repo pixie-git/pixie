@@ -81,7 +81,7 @@ onMounted(() => {
   drawAll();
 });
 
-watch(() => [props.zoom, props.width, props.height], drawAll);
+watch(() => [props.zoom, props.width, props.height, props.pixels], drawAll);
 
 // Efficiently handle remote pixel updates - only redraw the changed pixel
 watch(() => props.pixelUpdateEvent, (event) => {
