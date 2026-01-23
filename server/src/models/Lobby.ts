@@ -26,6 +26,7 @@ const lobbySchema = new Schema<ILobby>({
   },
   owner: { type: Schema.Types.ObjectId, ref: 'User' },
   canvas: { type: Schema.Types.ObjectId, ref: 'Canvas', required: true },
+  allowedUsers: [{ type: Schema.Types.ObjectId, ref: 'User' }],
   bannedUsers: [{ type: Schema.Types.ObjectId, ref: 'User' }]
 }, { timestamps: true });
 
