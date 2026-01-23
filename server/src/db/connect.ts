@@ -1,5 +1,5 @@
 import mongoose from "mongoose"
-import { seedUsers } from "./seed"
+import { seedUsers } from "./seed.js"
 
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/pixie"
 
