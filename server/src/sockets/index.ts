@@ -44,6 +44,32 @@ export const setupSocket = (io: Server) => {
       }
     });
 
+    // --- EVENT: DRAW_BATCH ---
+    // User wants to color multiple pixels (stroke)
+    socket.on(CONFIG.EVENTS.CLIENT.DRAW_BATCH, (payload: any) => {
+      const { lobbyName, pixels } = payload;
+      // pixels: { x, y, color }[]
+
+      if (!lobbyName || !Array.isArray(pixels)) return;
+
+      const successfulUpdates: any[] = [];
+
+      // 1. Process Logic via Service for each pixel
+      for (const p of pixels) {
+        const { x, y, color } = p;
+        const success = CanvasService.draw(lobbyName, x, y, color);
+        if (success) {
+          successfulUpdates.push({ x, y, color });
+        }
+      }
+
+      // 2. Broadcast batch if any successful
+      if (successfulUpdates.length > 0) {
+        // Send to everyone in the room EXCEPT the sender
+        socket.to(lobbyName).emit(CONFIG.EVENTS.SERVER.PIXEL_UPDATE_BATCH, { pixels: successfulUpdates });
+      }
+    });
+
     // --- DISCONNECT ---
     socket.on('disconnect', () => {
       // Cleanup logic if needed (e.g., updating user count)

@@ -22,10 +22,12 @@ export const CONFIG = {
     CLIENT: {
       JOIN_LOBBY: 'JOIN_LOBBY',
       DRAW: 'DRAW',
+      DRAW_BATCH: 'DRAW_BATCH',
     },
     SERVER: {
       INIT_STATE: 'INIT_STATE',
       PIXEL_UPDATE: 'PIXEL_UPDATE',
+      PIXEL_UPDATE_BATCH: 'PIXEL_UPDATE_BATCH',
       ERROR: 'ERROR'
     }
   }

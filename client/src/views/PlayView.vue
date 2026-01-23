@@ -18,17 +18,8 @@ onMounted(() => {
   store.init();
 });
 
-/*
-watch(pixels, () => {
-  canvasRef.value?.drawAll();
-});*/
 
-// Update logic (Click -> Store -> Redraw 1 pixel)
-const onPixelClick = ({ x, y }: { x: number, y: number }) => {
-  store.setPixel(x, y);
-  // Aggiornamento visivo immediato (Ottimistico)
-  canvasRef.value?.updatePixel(x, y, selectedColorIndex.value);
-};
+
 </script>
 
 <template>
@@ -49,7 +40,9 @@ const onPixelClick = ({ x, y }: { x: number, y: number }) => {
       :palette="palette"
       :pixel-update-event="pixelUpdateEvent"
       :zoom="10"
-      @pixel-click="onPixelClick"
+      @stroke-start="({x, y}) => store.startStroke(x, y)"
+      @stroke-move="({x, y}) => store.continueStroke(x, y)"
+      @stroke-end="store.endStroke()"
     />
     
     <p style="font-family: monospace; color: gray;">

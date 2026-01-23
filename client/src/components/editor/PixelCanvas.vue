@@ -6,15 +6,17 @@ const props = withDefaults(defineProps<{
   height: number;
   pixels: Uint8Array;
   palette: string[];
-  pixelUpdateEvent: { x: number; y: number; colorIndex: number } | null;
+  pixelUpdateEvent: { x: number; y: number; colorIndex: number } | { x: number; y: number; colorIndex: number }[] | null;
   zoom?: number;
 }>(), {
   zoom: 10
 });
 
-// Emits 'pixel-click' event with the index of the clicked pixel
+// Emits stroke events
 const emit = defineEmits<{
-  (e: 'pixel-click', payload: { x: number, y: number }): void
+  (e: 'stroke-start', payload: { x: number, y: number }): void;
+  (e: 'stroke-move', payload: { x: number, y: number }): void;
+  (e: 'stroke-end'): void;
 }>();
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
@@ -61,9 +63,9 @@ const drawAll = () => {
   }
 };
 
-const handleClick = (e: MouseEvent) => {
+const getCoords = (e: MouseEvent) => {
   const canvas = canvasRef.value;
-  if (!canvas) return;
+  if (!canvas) return null;
 
   const rect = canvas.getBoundingClientRect();
   const clickX = e.clientX - rect.left;
@@ -73,8 +75,30 @@ const handleClick = (e: MouseEvent) => {
   const y = Math.floor(clickY / props.zoom);
 
   if (x >= 0 && x < props.width && y >= 0 && y < props.height) {
-    emit('pixel-click', { x, y });
+    return { x, y };
   }
+  return null;
+};
+
+const handleMouseDown = (e: MouseEvent) => {
+  const coords = getCoords(e);
+  if (coords) {
+    emit('stroke-start', coords);
+  }
+};
+
+const handleMouseMove = (e: MouseEvent) => {
+  // Check if primary button is pressed
+  if (e.buttons !== 1) return;
+  
+  const coords = getCoords(e);
+  if (coords) {
+    emit('stroke-move', coords);
+  }
+};
+
+const handleMouseUp = () => {
+  emit('stroke-end');
 };
 
 onMounted(() => {
@@ -85,7 +109,11 @@ watch(() => [props.zoom, props.width, props.height, props.pixels], drawAll);
 
 // Efficiently handle remote pixel updates - only redraw the changed pixel
 watch(() => props.pixelUpdateEvent, (event) => {
-  if (event) {
+  if (!event) return;
+
+  if (Array.isArray(event)) {
+    event.forEach(p => updatePixel(p.x, p.y, p.colorIndex));
+  } else {
     updatePixel(event.x, event.y, event.colorIndex);
   }
 });
@@ -100,7 +128,10 @@ defineExpose({
 <template>
   <canvas 
     ref="canvasRef" 
-    @mousedown="handleClick"
+    @mousedown="handleMouseDown"
+    @mousemove="handleMouseMove"
+    @mouseup="handleMouseUp"
+    @mouseleave="handleMouseUp"
     class="pixel-canvas"
   ></canvas>
   </template>

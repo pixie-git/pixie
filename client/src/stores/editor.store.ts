@@ -18,12 +18,19 @@ export const useEditorStore = defineStore('editor', () => {
 
   // Event emitter for individual pixel updates (remote changes)
   // Components can watch this to efficiently redraw single pixels
-  const pixelUpdateEvent = ref<{ x: number; y: number; colorIndex: number } | null>(null);
+  // Can be a single update or an array of updates
+  const pixelUpdateEvent = ref<{ x: number; y: number; colorIndex: number } | { x: number; y: number; colorIndex: number }[] | null>(null);
 
   // Defensive copy of the palette
   const palette = ref<string[]>([...defaultPalette]);
 
   const selectedColorIndex = ref<number>(1);
+
+  // --- DRAQING STATE ---
+  const isDrawing = ref(false);
+  const lastX = ref<number | null>(null);
+  const lastY = ref<number | null>(null);
+  const pixelsBuffer = ref<{ x: number, y: number, color: number }[]>([]);
 
 
   // --- GETTERS ---
@@ -58,25 +65,98 @@ export const useEditorStore = defineStore('editor', () => {
     }
   };
 
-  const setPixel = (x: number, y: number): void => {
+  // Helper for optimistic update
+  // Returns true if pixel was actually changed
+  const updatePixelData = (x: number, y: number, color: number): boolean => {
     const index = getPixelIndex(x, y);
-
-    // Skip if out of bounds or if pixel color is unchanged to avoid redundant writes
-    if (index !== -1 && pixels.value[index] !== selectedColorIndex.value) {
-      // Optimistic Update
-      pixels.value[index] = selectedColorIndex.value;
-
-      // Notify Server
-      socketService.emitDraw({
-        lobbyName: 'Default Lobby',
-        x,
-        y,
-        color: selectedColorIndex.value
-      });
-
-      // Note: With shallowRef, this change is not automatically tracked by Vue.
-      // The component handles redraws manually or via specific events.
+    if (index !== -1 && pixels.value[index] !== color) {
+      pixels.value[index] = color;
+      return true;
     }
+    return false;
+  };
+
+  const startStroke = (x: number, y: number) => {
+    isDrawing.value = true;
+    pixelsBuffer.value = []; // Reset buffer
+    lastX.value = x;
+    lastY.value = y;
+
+    // Draw the initial point
+    if (updatePixelData(x, y, selectedColorIndex.value)) {
+      const update = { x, y, colorIndex: selectedColorIndex.value };
+      pixelUpdateEvent.value = update;
+      pixelsBuffer.value.push({ x, y, color: selectedColorIndex.value });
+    }
+  };
+
+  const continueStroke = (x: number, y: number) => {
+    if (!isDrawing.value || lastX.value === null || lastY.value === null) return;
+
+    // Bresenham's Line Algorithm for interpolation
+    let x0 = lastX.value;
+    let y0 = lastY.value;
+    const x1 = x;
+    const y1 = y;
+
+    const dx = Math.abs(x1 - x0);
+    const dy = Math.abs(y1 - y0);
+    const sx = (x0 < x1) ? 1 : -1;
+    const sy = (y0 < y1) ? 1 : -1;
+    let err = dx - dy;
+
+    const localUpdates: { x: number; y: number; color: number }[] = [];
+
+    while (true) {
+      if (updatePixelData(x0, y0, selectedColorIndex.value)) {
+        localUpdates.push({ x: x0, y: y0, color: selectedColorIndex.value });
+      }
+
+      if (x0 === x1 && y0 === y1) break;
+      const e2 = 2 * err;
+      if (e2 > -dy) {
+        err -= dy;
+        x0 += sx;
+      }
+      if (e2 < dx) {
+        err += dx;
+        y0 += sy;
+      }
+    }
+
+    if (localUpdates.length > 0) {
+      // Batch update to UI
+      pixelUpdateEvent.value = localUpdates.map(u => ({ x: u.x, y: u.y, colorIndex: u.color }));
+      // Add to network buffer
+      pixelsBuffer.value.push(...localUpdates);
+    }
+
+    lastX.value = x;
+    lastY.value = y;
+  };
+
+  const endStroke = () => {
+    if (!isDrawing.value) return;
+
+    isDrawing.value = false;
+    lastX.value = null;
+    lastY.value = null;
+
+    // Send the buffer to the server
+    if (pixelsBuffer.value.length > 0) {
+      socketService.emitDrawBatch({
+        lobbyName: 'Default Lobby',
+        pixels: pixelsBuffer.value
+      });
+      pixelsBuffer.value = [];
+    }
+  };
+
+  // Deprecated: kept for single click compatibility if needed, 
+  // but startStroke/endStroke handles single points too.
+  const setPixel = (x: number, y: number): void => {
+    startStroke(x, y);
+    endStroke();
   };
 
   const clearCanvas = (): void => {
@@ -103,6 +183,23 @@ export const useEditorStore = defineStore('editor', () => {
         pixelUpdateEvent.value = { x, y, colorIndex: color };
       }
     });
+
+    socketService.onUpdateBatch((data) => {
+      const { pixels: batchPixels } = data;
+      const updates: { x: number, y: number, colorIndex: number }[] = [];
+
+      batchPixels.forEach(({ x, y, color }) => {
+        const index = getPixelIndex(x, y);
+        if (index !== -1) {
+          pixels.value[index] = color;
+          updates.push({ x, y, colorIndex: color });
+        }
+      });
+
+      if (updates.length > 0) {
+        pixelUpdateEvent.value = updates;
+      }
+    });
   }
 
   return {
@@ -118,6 +215,9 @@ export const useEditorStore = defineStore('editor', () => {
     getPixelColor,
     setSelectedColor,
     setPixel,
+    startStroke,
+    continueStroke,
+    endStroke,
     clearCanvas,
     isConnected,
     init
