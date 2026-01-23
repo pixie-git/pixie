@@ -8,6 +8,9 @@ export class CanvasService {
   // Request Coalescing: Track pending loads to prevent duplicate DB fetches
   private static pendingLoads: Map<string, Promise<Uint8Array>> = new Map();
 
+  // Write-Behind: Track active save timers for each lobby
+  private static saveTimers: Map<string, NodeJS.Timeout> = new Map();
+
   // Retrieves pixel state from memory, loading from DB if necessary
   static async getState(lobbyName: string): Promise<Uint8Array> {
     // 1. Fast Path: Already in memory
@@ -47,11 +50,34 @@ export class CanvasService {
     }
 
     const index = y * CONFIG.CANVAS.WIDTH + x;
-    return canvasStore.modifyPixelColor(lobbyName, index, color);
+    const changed = canvasStore.modifyPixelColor(lobbyName, index, color);
+
+    if (changed) {
+      this.scheduleSave(lobbyName);
+    }
+
+    return changed;
+  }
+
+  // Schedules a DB save if one isn't already pending
+  private static scheduleSave(lobbyName: string) {
+    if (this.saveTimers.has(lobbyName)) {
+      return; // Timer already running, pending save will catch this change
+    }
+
+    // Start a new 2-second timer
+    const timer = setTimeout(() => {
+      this.saveToDB(lobbyName);
+    }, 2000);
+
+    this.saveTimers.set(lobbyName, timer);
   }
 
   // Persists the current in-memory state to the database
   static async saveToDB(lobbyName: string) {
+    // Remove timer from map first, so new changes can schedule a new save
+    this.saveTimers.delete(lobbyName);
+
     const memoryBuffer = canvasStore.getLobbyPixelData(lobbyName);
     if (!memoryBuffer) return;
 
