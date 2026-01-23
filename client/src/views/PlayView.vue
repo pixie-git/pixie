@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'; // NEW: Importa onMounted
+import { onMounted } from 'vue'; // NEW: Importa onMounted
 import { storeToRefs } from 'pinia';
 import { useEditorStore } from '@/stores/editor.store';
 import PixelCanvas from '@/components/editor/PixelCanvas.vue';
@@ -9,9 +9,6 @@ import ColorSelector from '@/components/editor/ColorSelector.vue'; // Assicurati
 const store = useEditorStore();
 // NEW: Estraiamo isConnected per la UI
 const { width, height, pixels, palette, selectedColorIndex, isConnected, pixelUpdateEvent } = storeToRefs(store);
-
-// Ref to call updatePixel
-const canvasRef = ref<InstanceType<typeof PixelCanvas> | null>(null);
 
 // NEW: Quando la vista è montata, avviamo il motore Socket
 onMounted(() => {
@@ -33,7 +30,6 @@ onMounted(() => {
     <ColorSelector />
 
     <PixelCanvas
-      ref="canvasRef"
       :width="width"
       :height="height"
       :pixels="pixels"
