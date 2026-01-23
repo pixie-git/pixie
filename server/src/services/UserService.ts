@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken"
-import { IUser, User } from "../models/User"
-import { CONFIG } from "../config"
+import { User } from "../models/User.js"
+import { CONFIG } from "../config.js"
 
 interface LoginResponse {
 	username: string

@@ -1,7 +1,7 @@
-import { canvasStore } from '../store/canvas.store';
-import { Lobby } from '../models/Lobby';
-import { Canvas } from '../models/Canvas';
-import { CONFIG } from '../config';
+import { canvasStore } from '../store/canvas.store.js';
+import { Lobby } from '../models/Lobby.js';
+import { Canvas } from '../models/Canvas.js';
+import { CONFIG } from '../config.js';
 
 export class CanvasService {
 

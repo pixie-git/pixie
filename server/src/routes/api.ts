@@ -1,7 +1,8 @@
 import express, { Router } from "express"
-import { LoginController } from "../controllers/LoginController"
-import { UserController } from "../controllers/UserController"
-import { LobbyController } from "../controllers/lobby.controller"
+import { LoginController } from "../controllers/LoginController.js"
+import { UserController } from "../controllers/UserController.js"
+import { authenticateToken } from "../middlewares/authMiddleware.js"
+import { LobbyController } from "../controllers/lobby.controller.js"
 
 const router: Router = express.Router()
 
@@ -9,7 +10,9 @@ const router: Router = express.Router()
 router.post("/login", LoginController.login)
 
 // Users
-router.get("/users", UserController.getAll)
+router.get("/users", authenticateToken, UserController.getAll)
+
+// Test Error
 
 // Lobbies
 router.post("/lobbies", LobbyController.create)
