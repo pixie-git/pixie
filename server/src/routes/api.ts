@@ -15,8 +15,8 @@ router.get("/users", authenticateToken, UserController.getAll)
 // Test Error
 
 // Lobbies
-router.post("/lobbies", LobbyController.create)
-router.get("/lobbies", LobbyController.getAll)
-router.get("/lobbies/:id", LobbyController.getById)
+router.post("/lobbies", authenticateToken, LobbyController.create)
+router.get("/lobbies", authenticateToken, LobbyController.getAll)
+router.get("/lobbies/:id", authenticateToken, LobbyController.getById)
 
 export default router
