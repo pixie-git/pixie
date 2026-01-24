@@ -58,11 +58,11 @@ const handleLogin = async () => {
 			messageType.value = "success"
 			setTimeout(() => {
 				userStore.login(response.data.username, response.data.token)
-				router.push("/play")
+			router.push("/lobbies")
 			}, 2000)
 		} else {
 			userStore.login(response.data.username, response.data.token)
-			router.push("/play")
+			router.push("/lobbies")
 		}
 	} catch (error) {
 		console.error("Login failed:", error)

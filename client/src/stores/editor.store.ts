@@ -135,6 +135,9 @@ export const useEditorStore = defineStore('editor', () => {
     lastY.value = y;
   };
 
+  // State for current lobby
+  const currentLobbyName = ref<string>('');
+
   const endStroke = () => {
     if (!isDrawing.value) return;
 
@@ -143,9 +146,9 @@ export const useEditorStore = defineStore('editor', () => {
     lastY.value = null;
 
     // Send the buffer to the server
-    if (pixelsBuffer.value.length > 0) {
+    if (pixelsBuffer.value.length > 0 && currentLobbyName.value) {
       socketService.emitDrawBatch({
-        lobbyName: 'Default Lobby',
+        lobbyName: currentLobbyName.value,
         pixels: pixelsBuffer.value
       });
       pixelsBuffer.value = [];
@@ -163,9 +166,12 @@ export const useEditorStore = defineStore('editor', () => {
     pixels.value.fill(0);
   };
 
-  function init() {
+  function init(lobbyName: string) {
+    if (!lobbyName) return;
+    currentLobbyName.value = lobbyName;
+
     socketService.connect();
-    socketService.emitJoinLobby('Default Lobby');
+    socketService.emitJoinLobby(lobbyName);
     isConnected.value = true;
 
     // Logic to bind Model events to ViewModel state

@@ -13,4 +13,10 @@ api.interceptors.request.use((config) => {
 	return config
 })
 
-export default api
+
+import { ILobby } from "../types";
+
+export const getLobbies = () => api.get<ILobby[]>("/lobbies");
+export const createLobby = (name: string) => api.post<ILobby>("/lobbies", { name });
+
+export default api;

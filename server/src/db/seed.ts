@@ -27,40 +27,57 @@ export const seedUsers = async (): Promise<void> => {
 export const seedLobbies = async (): Promise<void> => {
 	try {
 		console.log("Checking lobby seeds...")
-		const lobbyName = "Default Lobby"
-		let lobby: ILobby | null = await Lobby.findOne({ name: lobbyName })
 
-		if (!lobby) {
-			console.log(`Creating '${lobbyName}'...`)
-			lobby = await Lobby.createWithCanvas(lobbyName)
-		} else {
-			console.log(`'${lobbyName}' already exists`)
+		const lobbiesToCreate = [
+			"Default Lobby",
+			"Neon City",
+			"Forest Realm",
+			"Desert Oasis",
+			"Cyberpunk Alley",
+			"Medieval Castle",
+			"Underwater World",
+			"Space Station",
+			"Candy Land",
+			"Haunted House"
+		];
+
+		for (let i = 1; i <= 10; i++) {
+			lobbiesToCreate.push(`Lobby #${i}`);
 		}
 
-		if (lobby) {
-			// Get the canvas to check/draw pixels
-			const canvas = await Canvas.findById(lobby.canvas)
-			if (canvas) {
-				const hasContent = canvas.data.some((pixel) => pixel !== 0)
+		for (const lobbyName of lobbiesToCreate) {
+			let lobby: ILobby | null = await Lobby.findOne({ name: lobbyName })
 
-				if (!hasContent) {
-					console.log(`Canvas for '${lobbyName}' is empty. Seeding pattern...`)
-					// Draw a red diagonal line
-					const width = CONFIG.CANVAS.WIDTH
-					const height = CONFIG.CANVAS.HEIGHT
-					const color = 4 // Red
+			if (!lobby) {
+				console.log(`Creating '${lobbyName}'...`)
+				lobby = await Lobby.createWithCanvas(lobbyName)
 
-					for (let i = 0; i < Math.min(width, height); i++) {
-						const index = i * width + i
-						canvas.data[index] = color
+				// Draw something unique on this new canvas so we can see they are different
+				const canvas = await Canvas.findById(lobby.canvas);
+				if (canvas) {
+					// Draw a random colored dot in a random position
+					const width = CONFIG.CANVAS.WIDTH;
+					const height = CONFIG.CANVAS.HEIGHT;
+					const randomColor = Math.floor(Math.random() * 10) + 1;
+					const randomX = Math.floor(Math.random() * width);
+					const randomY = Math.floor(Math.random() * height);
+
+					const index = randomY * width + randomX;
+					canvas.data[index] = randomColor;
+
+					// Draw a small diagonal based on index to differentiate further
+					for (let k = 0; k < 10; k++) {
+						if (index + k * width + k < canvas.data.length)
+							canvas.data[index + k * width + k] = randomColor;
 					}
 
-					canvas.markModified("data")
-					await canvas.save()
-					console.log(`Seeded '${lobbyName}' with a diagonal pattern`)
+					canvas.markModified("data");
+					await canvas.save();
 				}
 			}
 		}
+		console.log("Lobbies seeded successfully");
+
 	} catch (error) {
 		console.error("Lobby seed failed:", error)
 	}
