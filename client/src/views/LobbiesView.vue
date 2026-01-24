@@ -72,8 +72,8 @@ const filteredLobbies = computed(() => {
   return result;
 });
 
-const handleJoin = (lobbyName: string) => {
-    router.push({ path: '/play', query: { lobby: lobbyName } });
+const handleJoin = (lobbyId: string) => {
+    router.push(`/play/${lobbyId}`);
 };
 </script>
 

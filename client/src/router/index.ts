@@ -8,7 +8,7 @@ import { useUserStore } from '../stores/user'
 const routes: RouteRecordRaw[] = [
     { path: '/', component: LoginView },
     { path: '/lobbies', component: LobbiesView, meta: { requiresAuth: true } },
-    { path: '/play', component: PlayView, meta: { requiresAuth: true } },
+    { path: '/play/:id', component: PlayView, meta: { requiresAuth: true } },
     { path: '/:pathMatch(.*)*', component: NotFound }
 ]
 

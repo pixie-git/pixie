@@ -21,7 +21,7 @@
         </div>
       </div>
 
-      <button @click="$emit('join', lobby.name)" class="join-btn">
+      <button @click="$emit('join', lobby._id)" class="join-btn">
         Join Canvas
       </button>
     </div>

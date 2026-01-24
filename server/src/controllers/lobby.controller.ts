@@ -37,4 +37,21 @@ export class LobbyController {
       return res.status(500).json({ error: 'Internal Server Error' });
     }
   }
+
+  // GET /api/lobbies/:id
+  static async getById(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const lobby = await LobbyService.getById(id);
+
+      if (!lobby) {
+        return res.status(404).json({ error: 'Lobby not found' });
+      }
+
+      return res.json(lobby);
+    } catch (error) {
+      console.error('[LobbyController] GetById Error:', error);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
 }
