@@ -4,7 +4,10 @@ class SocketService {
   private socket: Socket | null = null;
 
   connect() {
-    this.socket = io('http://localhost:3000');
+    const token = localStorage.getItem('authToken');
+    this.socket = io('http://localhost:3000', {
+      auth: { token }
+    });
   }
 
   // Pure Model Logic: Mapping events to callbacks

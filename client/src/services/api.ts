@@ -13,6 +13,20 @@ api.interceptors.request.use((config) => {
 	return config
 })
 
+// Global Error Handling
+api.interceptors.response.use(
+	(response) => response,
+	(error) => {
+		if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+			// Token invalid or expired
+			localStorage.removeItem("authToken");
+			// Force redirect to login (avoiding router circular dependency)
+			window.location.href = "/";
+		}
+		return Promise.reject(error);
+	}
+)
+
 
 import { ILobby } from "../types";
 
