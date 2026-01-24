@@ -17,5 +17,6 @@ router.get("/users", authenticateToken, UserController.getAll)
 // Lobbies
 router.post("/lobbies", LobbyController.create)
 router.get("/lobbies", LobbyController.getAll)
+router.get("/lobbies/:id", LobbyController.getById)
 
 export default router

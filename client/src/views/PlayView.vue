@@ -12,10 +12,27 @@ const { width, height, pixels, palette, selectedColorIndex, isConnected, pixelUp
 
 // NEW: Quando la vista è montata, avviamo il motore Socket
 import { useRoute } from 'vue-router';
+import { getLobbyById } from '../services/api';
+
 const route = useRoute();
 
-onMounted(() => {
-  const lobbyName = route.query.lobby as string || 'Default Lobby';
+onMounted(async () => {
+  const lobbyId = route.params.id as string;
+  let lobbyName = 'Default Lobby';
+
+  if (lobbyId) {
+    if (/^[0-9a-fA-F]{24}$/.test(lobbyId)) {
+      try {
+        const res = await getLobbyById(lobbyId);
+        lobbyName = res.data.name;
+      } catch (e) {
+        console.error("Failed to load lobby by ID", e);
+      }
+    } else {
+      lobbyName = lobbyId;
+    }
+  }
+
   store.init(lobbyName);
 });
 

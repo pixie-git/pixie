@@ -18,4 +18,8 @@ export class LobbyService {
   static async getByName(name: string) {
     return await Lobby.findOne({ name }).populate('owner', 'username');
   }
+
+  static async getById(id: string) {
+    return await Lobby.findById(id).populate('owner', 'username');
+  }
 }

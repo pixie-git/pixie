@@ -17,6 +17,7 @@ api.interceptors.request.use((config) => {
 import { ILobby } from "../types";
 
 export const getLobbies = () => api.get<ILobby[]>("/lobbies");
+export const getLobbyById = (id: string) => api.get<ILobby>(`/lobbies/${id}`);
 export const createLobby = (name: string) => api.post<ILobby>("/lobbies", { name });
 
 export default api;
