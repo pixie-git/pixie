@@ -11,8 +11,12 @@ const store = useEditorStore();
 const { width, height, pixels, palette, selectedColorIndex, isConnected, pixelUpdateEvent } = storeToRefs(store);
 
 // NEW: Quando la vista è montata, avviamo il motore Socket
+import { useRoute } from 'vue-router';
+const route = useRoute();
+
 onMounted(() => {
-  store.init();
+  const lobbyName = route.query.lobby as string || 'Default Lobby';
+  store.init(lobbyName);
 });
 
 
