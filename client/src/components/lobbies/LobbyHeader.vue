@@ -1,7 +1,7 @@
 <template>
   <header class="header">
     <div class="logo-section">
-      <img src="@/assets/PixieLogo.jpeg" alt="Pixie" class="mini-logo" />
+      <img src="@/assets/PixieLogo.png" alt="Pixie" class="mini-logo" />
     </div>
     <h1>Join a Canvas</h1>
     

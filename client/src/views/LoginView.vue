@@ -1,7 +1,7 @@
 <template>
 	<div class="login-container">
 		<div class="login-card">
-			<img src="@/assets/PixieLogo.jpeg" alt="Pixie Logo" class="logo" />
+			<img src="@/assets/PixieLogo.png" alt="Pixie Logo" class="logo" />
 			<h1>Benvenuto in Pixie</h1>
 
 			<Transition name="message">
