@@ -24,12 +24,12 @@
 <style scoped>
 .header {
   height: 70px;
-  background: white;
+  background: var(--color-surface);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 2rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 4px var(--color-shadow);
 }
 
 .mini-logo {
@@ -54,6 +54,7 @@
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
+  color: var(--color-icon);
 }
 
 /* Mobile Adjustments */

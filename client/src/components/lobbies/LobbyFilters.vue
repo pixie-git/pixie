@@ -58,7 +58,7 @@ defineEmits<{
 .search-box {
   display: flex;
   align-items: center;
-  background: white;
+  background: var(--color-input-bg);
   border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 0 10px;
@@ -70,11 +70,13 @@ defineEmits<{
   padding: 10px;
   width: 100%;
   outline: none;
+  background: transparent;
+  color: var(--color-text);
 }
 
 .filters {
   display: flex;
-  background: #e0e0e0;
+  background: var(--color-navbar-bg);
   padding: 4px;
   border-radius: 8px;
   gap: 4px;
@@ -87,11 +89,12 @@ defineEmits<{
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
+  color: var(--color-text);
 }
 
 .filter-btn.active {
-  background: white;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  background: var(--color-surface);
+  box-shadow: 0 1px 2px var(--color-shadow);
 }
 
 .spacer {
@@ -106,7 +109,7 @@ defineEmits<{
   border-radius: 8px;
   cursor: pointer;
   font-weight: 500;
-  background-color: #2196F3;
+  background-color: var(--color-btn-primary);
 }
 
 @media (max-width: 768px) {

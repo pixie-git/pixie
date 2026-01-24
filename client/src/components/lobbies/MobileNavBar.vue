@@ -42,8 +42,8 @@
     left: 0;
     width: 100%;
     height: 70px;
-    background: #E0E0E0; /* Gray Background */
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    background: var(--color-navbar-bg); 
+    box-shadow: 0 -2px 10px var(--color-shadow);
     padding: 0 1rem;
     box-sizing: border-box;
     z-index: 100;
@@ -70,12 +70,13 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    color: var(--color-text);
+    cursor: pointer;
+    color: var(--color-icon);
   }
   
   /* FAB Button */
   .fab-btn {
-    background-color: #2196F3;
+    background-color: var(--color-btn-primary);
     color: white;
     width: 56px;
     height: 56px;

@@ -29,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ILobby } from '../types';
+import type { ILobby } from '../../types';
 
 defineProps<{
   lobby: ILobby;
@@ -50,7 +50,7 @@ const formatDate = (dateString: string) => {
   background: var(--color-surface);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px var(--color-shadow);
   transition: transform 0.2s, box-shadow 0.2s;
   display: flex;
   flex-direction: column;
@@ -58,12 +58,12 @@ const formatDate = (dateString: string) => {
 
 .lobby-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 15px var(--color-shadow-hover);
 }
 
 .card-header {
   height: 120px;
-  background: #f0f0f0;
+  background: var(--color-card-header-bg);
   position: relative;
   border-bottom: 1px solid var(--color-border);
 }
@@ -96,7 +96,7 @@ h3 {
 .owner {
   margin: 0;
   font-size: 0.85rem;
-  color: #666;
+  color: var(--color-text-muted);
 }
 
 .stats {
@@ -104,7 +104,7 @@ h3 {
   gap: 1rem;
   margin: 0.5rem 0;
   font-size: 0.8rem;
-  color: #666;
+  color: var(--color-text-muted);
 }
 
 .stat-item {
@@ -116,17 +116,16 @@ h3 {
 .join-btn {
   width: 100%;
   padding: 8px;
-  background-color: var(--color-primary); /* Use centralized variable */
+  background-color: var(--color-btn-primary); /* Use centralized variable */
   color: white;
   border: none;
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
   transition: background-color 0.2s;
-  background-color: #2196F3; /* Fallback/Explicit blue as per mockup */
 }
 
 .join-btn:hover {
-  background-color: #1976D2;
+  background-color: var(--color-btn-primary-hover);
 }
 </style>
