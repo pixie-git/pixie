@@ -1,0 +1,91 @@
+openapi: 3.1.0
+info:
+  title: Pixie API
+  version: 1.0.0
+  description: API for Pixie application, providing user authentication and management.
+servers:
+  - url: http://localhost:3000/api
+    description: Local server
+paths:
+  /login:
+    post:
+      summary: User login
+      description: Authenticates a user or registers a new one if not found.
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: "playerOne"
+              required:
+                - username
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Bad Request (Missing username)
+  /users:
+    get:
+      summary: Get all users
+      description: Retrieve a list of all users. Requires authentication.
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserSummary'
+        '401':
+          description: Unauthorized (Missing token)
+        '403':
+          description: Forbidden (Invalid token)
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    UserSummary:
+      type: object
+      properties:
+        username:
+          type: string
+          example: "playerOne"
+        isAdmin:
+          type: boolean
+          example: false
+        _id:
+          type: string
+          example: "60d0fe4f5311236168a109ca"
+    LoginResponse:
+      type: object
+      properties:
+        username:
+          type: string
+          example: "playerOne"
+        id:
+          type: string
+          example: "60d0fe4f5311236168a109ca"
+        token:
+          type: string
+          description: JWT token for authentication
+        isNewUser:
+          type: boolean
+          description: True if a new account was created

@@ -1,36 +1,69 @@
 <script setup lang="ts">
-import { useEditorStore } from '../stores/editor.store';
-import PixelCanvas from '../components/editor/PixelCanvas.vue';
-import ColorSelector from '../components/editor/ColorSelector.vue';
+import { onMounted } from 'vue'; // NEW: Importa onMounted
+import { storeToRefs } from 'pinia';
+import { useEditorStore } from '@/stores/editor.store';
+import PixelCanvas from '@/components/editor/PixelCanvas.vue';
+import ColorSelector from '@/components/editor/ColorSelector.vue'; // Assicurati che il nome corrisponda al tuo file system
 
+// Setup Store
 const store = useEditorStore();
+// NEW: Estraiamo isConnected per la UI
+const { width, height, pixels, palette, selectedColorIndex, isConnected, pixelUpdateEvent } = storeToRefs(store);
 
-// Handle pixel click event from the canvas
-const onPixelClick = (index: number) => {
-  store.paintPixel(index);
-};
+// NEW: Quando la vista è montata, avviamo il motore Socket
+onMounted(() => {
+  store.init();
+});
+
+
+
 </script>
 
 <template>
-  <div class="play-view">
-    <h1>Pixel Canvas Demo</h1>
-    
-    <!-- Color Picker Component -->
-    <ColorSelector v-model="store.selectedColor" />
+  <main>
+    <div class="status-bar">
+      <span :class="{ online: isConnected }">
+        {{ isConnected ? '🟢 ONLINE' : '🔴 CONNECTING...' }}
+      </span>
+    </div>
 
-    <!-- Main Canvas for Drawing -->
-    <PixelCanvas 
-      :width="store.width" 
-      :height="store.height" 
-      :zoom="20"
-      :pixels="store.pixels" 
-      @pixel-click="onPixelClick"
+    <ColorSelector />
+
+    <PixelCanvas
+      :width="width"
+      :height="height"
+      :pixels="pixels"
+      :palette="palette"
+      :pixel-update-event="pixelUpdateEvent"
+      :zoom="10"
+      @stroke-start="({x, y}) => store.startStroke(x, y)"
+      @stroke-move="({x, y}) => store.continueStroke(x, y)"
+      @stroke-end="store.endStroke()"
     />
-  </div>
+    
+    <p style="font-family: monospace; color: gray;">
+      Size: {{ width }}x{{ height }} | Selected Color: {{ selectedColorIndex }}
+    </p>
+  </main>
 </template>
 
 <style scoped>
-.play-view {
+main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
   padding: 20px;
+}
+
+/* NEW: Stili per la status bar */
+.status-bar {
+  font-family: monospace;
+  font-weight: bold;
+  color: #ff4444; /* Rosso di default */
+}
+
+.status-bar span.online {
+  color: #44ff44; /* Verde quando online */
 }
 </style>
