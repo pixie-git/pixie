@@ -66,7 +66,7 @@ const filteredLobbies = computed(() => {
   }
 
   if (filter.value === 'mine') {
-    result = result.filter(l => l.owner.username === userStore.username);
+    result = result.filter(l => l.owner?.username === userStore.username);
   }
 
   return result;
