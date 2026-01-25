@@ -7,7 +7,7 @@
     
     <!-- Center: FAB (Create) -->
     <div class="nav-item fab-container">
-      <button class="fab-btn" title="Create (Coming Soon)">
+      <button class="fab-btn" @click="$router.push('/create-lobby')">
         +
       </button>
     </div>

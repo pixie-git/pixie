@@ -175,8 +175,11 @@ export const useEditorStore = defineStore('editor', () => {
     isConnected.value = true;
 
     // Logic to bind Model events to ViewModel state
-    socketService.onInit((buffer) => {
-      pixels.value = new Uint8Array(buffer);
+    socketService.onInit((state) => {
+      const { width: w, height: h, data } = state as any; // Cast until typed
+      width.value = w;
+      height.value = h;
+      pixels.value = new Uint8Array(data);
       triggerRef(pixels);
     });
 
