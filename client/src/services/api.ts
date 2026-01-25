@@ -37,7 +37,7 @@ export const createLobby = (data: {
 	ownerId?: string;
 	description?: string;
 	maxCollaborators?: number;
-	palette?: string;
+	palette?: string[];
 	width?: number;
 	height?: number;
 }) => api.post<ILobby>("/lobbies", data);

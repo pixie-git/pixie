@@ -189,7 +189,8 @@ export const useEditorStore = defineStore('editor', () => {
       const { width: w, height: h, palette: p, data } = state as any;
       width.value = w;
       height.value = h;
-      palette.value = getPalette(p);
+      // Palette comes from server as string[] now (from Canvas model)
+      palette.value = p || getPalette('default');
       pixels.value = new Uint8Array(data);
       triggerRef(pixels);
     });
