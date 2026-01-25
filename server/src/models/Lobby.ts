@@ -6,7 +6,6 @@ export interface ILobby extends Document {
   name: string;
   description?: string;
   maxCollaborators: number;
-  palette: string;
   owner?: Types.ObjectId; // Links to your User schema
   canvas: Types.ObjectId; // Links to Canvas schema
   allowedUsers: Types.ObjectId[];
@@ -20,7 +19,7 @@ interface LobbyModel extends Model<ILobby> {
   createWithCanvas(name: string, ownerId?: string, options?: {
     description?: string;
     maxCollaborators?: number;
-    palette?: string;
+    palette?: string[];
     width?: number;
     height?: number;
   }): Promise<ILobby>;
@@ -35,7 +34,6 @@ const lobbySchema = new Schema<ILobby>({
   },
   description: { type: String, maxlength: 500 },
   maxCollaborators: { type: Number, default: 10, min: 1, max: 50 },
-  palette: { type: String, default: 'default' },
   owner: { type: Schema.Types.ObjectId, ref: 'User' },
   canvas: { type: Schema.Types.ObjectId, ref: 'Canvas', required: true },
   allowedUsers: [{ type: Schema.Types.ObjectId, ref: 'User' }],
@@ -47,7 +45,7 @@ lobbySchema.statics.createWithCanvas = async function (name: string, ownerId?: s
   const {
     description,
     maxCollaborators = 10,
-    palette = 'default',
+    palette = ['#FFFFFF', '#000000'], // Default fallback if not provided
     width = CONFIG.CANVAS.WIDTH,
     height = CONFIG.CANVAS.HEIGHT
   } = options;
@@ -63,6 +61,7 @@ lobbySchema.statics.createWithCanvas = async function (name: string, ownerId?: s
     lobby: lobbyId,
     width: width,
     height: height,
+    palette: palette,
     data: emptyBuffer
   });
 
@@ -71,7 +70,6 @@ lobbySchema.statics.createWithCanvas = async function (name: string, ownerId?: s
     name,
     description,
     maxCollaborators,
-    palette,
     owner: ownerId ? new Types.ObjectId(ownerId) : undefined,
     canvas: canvasId
   });
