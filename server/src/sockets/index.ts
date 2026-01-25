@@ -1,6 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import { CanvasService } from '../services/canvas.service.js';
 import { CONFIG } from '../config.js';
+import { DrawPayload, DrawBatchPayload, AuthenticatedSocket } from './types.js';
 import jwt from 'jsonwebtoken';
 
 export const setupSocket = (io: Server) => {
@@ -16,8 +17,8 @@ export const setupSocket = (io: Server) => {
       if (err) {
         return next(new Error("Authentication error: Invalid token"));
       }
-      // Attach user info to socket (we can assume socket type is extended or just cast as any for now)
-      (socket as any).user = decoded;
+      // Attach user info to socket
+      (socket as AuthenticatedSocket).user = decoded;
       next();
     });
   });
@@ -47,7 +48,7 @@ export const setupSocket = (io: Server) => {
 
     // --- EVENT: DRAW ---
     // User wants to color a pixel
-    socket.on(CONFIG.EVENTS.CLIENT.DRAW, (payload: any) => {
+    socket.on(CONFIG.EVENTS.CLIENT.DRAW, (payload: DrawPayload) => {
       // Payload validation could happen here or in a DTO
       const { lobbyName, x, y, color } = payload;
 
@@ -65,7 +66,7 @@ export const setupSocket = (io: Server) => {
 
     // --- EVENT: DRAW_BATCH ---
     // User wants to color multiple pixels (stroke)
-    socket.on(CONFIG.EVENTS.CLIENT.DRAW_BATCH, (payload: any) => {
+    socket.on(CONFIG.EVENTS.CLIENT.DRAW_BATCH, (payload: DrawBatchPayload) => {
       const { lobbyName, pixels } = payload;
       // pixels: { x, y, color }[]
 
