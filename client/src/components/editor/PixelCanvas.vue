@@ -126,18 +126,49 @@ defineExpose({
 </script>
 
 <template>
-  <canvas 
-    ref="canvasRef" 
-    @mousedown="handleMouseDown"
-    @mousemove="handleMouseMove"
-    @mouseup="handleMouseUp"
-    @mouseleave="handleMouseUp"
-    class="pixel-canvas"
-  ></canvas>
-  </template>
+  <div class="canvas-wrapper" :style="{ '--zoom': props.zoom + 'px' }">
+    <div class="grid"></div>
+    <canvas 
+      ref="canvasRef" 
+      @mousedown="handleMouseDown"
+      @mousemove="handleMouseMove"
+      @mouseup="handleMouseUp"
+      @mouseleave="handleMouseUp"
+      class="pixel-canvas"
+    ></canvas>
+  </div>
+</template>
 
 <style scoped>
+.canvas-wrapper {
+  position: relative;
+  display: inline-block; /* Fits the content */
+}
+
+/* 
+  Grid Overlay 
+  Uses CSS gradients to create a grid pattern efficiently.
+  Pointer events are disabled so drawing on the canvas underneath works.
+*/
+.grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background-size: var(--zoom) var(--zoom);
+  /* Use difference blend mode so lines act as inversion filters */
+  mix-blend-mode: difference;
+  image-rendering: pixelated; /* Fix for variable line thickness */
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.25) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.25) 1px, transparent 1px);
+  z-index: 10; /* Ensure it's above the canvas */
+}
+
 .pixel-canvas {
+  display: block; /* Removes default inline spacing */
   image-rendering: pixelated;
   border: 1px solid #444;
   box-shadow: 0 4px 6px rgba(0,0,0,0.3);
