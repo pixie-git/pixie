@@ -6,13 +6,13 @@ import { CONFIG } from '../config.js';
 export class CanvasService {
 
   // Request Coalescing: Track pending loads to prevent duplicate DB fetches
-  private static pendingLoads: Map<string, Promise<{ width: number; height: number; palette: string; data: Uint8Array }>> = new Map();
+  private static pendingLoads: Map<string, Promise<{ width: number; height: number; palette: string[]; data: Uint8Array }>> = new Map();
 
   // Write-Behind: Track active save timers for each lobby
   private static saveTimers: Map<string, NodeJS.Timeout> = new Map();
 
   // Retrieves pixel state from memory, loading from DB if necessary
-  static async getState(lobbyName: string): Promise<{ width: number; height: number; palette: string; data: Uint8Array }> {
+  static async getState(lobbyName: string): Promise<{ width: number; height: number; palette: string[]; data: Uint8Array }> {
     // 1. Fast Path: Already in memory
     if (canvasStore.isLobbyInMemory(lobbyName)) {
       const meta = canvasStore.getLobbyMetaData(lobbyName)!;
@@ -34,7 +34,7 @@ export class CanvasService {
         if (!canvas) throw new Error(`Canvas data missing for lobby '${lobbyName}'`);
 
         // Load with dimensions and palette
-        const palette = lobby.palette || 'default';
+        const palette = canvas.palette; // Palette is now an array on Canvas
         const data = canvasStore.loadLobbyToMemory(lobbyName, canvas.width, canvas.height, palette, canvas.data);
         return { width: canvas.width, height: canvas.height, palette, data };
       } finally {
