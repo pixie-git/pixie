@@ -11,6 +11,10 @@ class SocketService {
   }
 
   // Pure Model Logic: Mapping events to callbacks
+  onConnect(cb: () => void) {
+    this.socket?.on('connect', cb);
+  }
+
   onInit(cb: (buffer: ArrayBuffer) => void) {
     this.socket?.on('INIT_STATE', cb);
   }
