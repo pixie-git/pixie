@@ -181,6 +181,13 @@ const handleSubmit = async () => {
   align-items: center;
   gap: 1rem;
   margin-bottom: 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: var(--color-background);
+  padding-top: 1rem; /* Add padding to prevent cut-off at top */
+  padding-bottom: 1rem;
+  margin-top: -1rem; /* Negative margin to counteract padding and sit flush */
 }
 
 .header h1 {
