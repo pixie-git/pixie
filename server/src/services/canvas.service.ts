@@ -6,17 +6,17 @@ import { CONFIG } from '../config.js';
 export class CanvasService {
 
   // Request Coalescing: Track pending loads to prevent duplicate DB fetches
-  private static pendingLoads: Map<string, Promise<{ width: number; height: number; data: Uint8Array }>> = new Map();
+  private static pendingLoads: Map<string, Promise<{ width: number; height: number; palette: string; data: Uint8Array }>> = new Map();
 
   // Write-Behind: Track active save timers for each lobby
   private static saveTimers: Map<string, NodeJS.Timeout> = new Map();
 
   // Retrieves pixel state from memory, loading from DB if necessary
-  static async getState(lobbyName: string): Promise<{ width: number; height: number; data: Uint8Array }> {
+  static async getState(lobbyName: string): Promise<{ width: number; height: number; palette: string; data: Uint8Array }> {
     // 1. Fast Path: Already in memory
     if (canvasStore.isLobbyInMemory(lobbyName)) {
       const meta = canvasStore.getLobbyMetaData(lobbyName)!;
-      return { width: meta.width, height: meta.height, data: meta.data };
+      return { width: meta.width, height: meta.height, palette: meta.palette, data: meta.data };
     }
 
     // 2. Coalescing Path: Already loading, wait for existing promise
@@ -33,9 +33,10 @@ export class CanvasService {
         const canvas = await Canvas.findById(lobby.canvas);
         if (!canvas) throw new Error(`Canvas data missing for lobby '${lobbyName}'`);
 
-        // Load with dimensions
-        const data = canvasStore.loadLobbyToMemory(lobbyName, canvas.width, canvas.height, canvas.data);
-        return { width: canvas.width, height: canvas.height, data };
+        // Load with dimensions and palette
+        const palette = lobby.palette || 'default';
+        const data = canvasStore.loadLobbyToMemory(lobbyName, canvas.width, canvas.height, palette, canvas.data);
+        return { width: canvas.width, height: canvas.height, palette, data };
       } finally {
         // Cleanup promise when done (success or failure)
         this.pendingLoads.delete(lobbyName);

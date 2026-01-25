@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, shallowRef, triggerRef } from 'vue';
-import { defaultPalette } from '../config/defaultPalette';
+import { getPalette } from '../config/palettes';
 import { socketService } from '@/services/socket.service';
 
 export const useEditorStore = defineStore('editor', () => {
@@ -22,7 +22,7 @@ export const useEditorStore = defineStore('editor', () => {
   const pixelUpdateEvent = ref<{ x: number; y: number; colorIndex: number } | { x: number; y: number; colorIndex: number }[] | null>(null);
 
   // Defensive copy of the palette
-  const palette = ref<string[]>([...defaultPalette]);
+  const palette = ref<string[]>(getPalette('default'));
 
   const selectedColorIndex = ref<number>(1);
 
@@ -176,9 +176,10 @@ export const useEditorStore = defineStore('editor', () => {
 
     // Logic to bind Model events to ViewModel state
     socketService.onInit((state) => {
-      const { width: w, height: h, data } = state as any; // Cast until typed
+      const { width: w, height: h, palette: p, data } = state as any;
       width.value = w;
       height.value = h;
+      palette.value = getPalette(p);
       pixels.value = new Uint8Array(data);
       triggerRef(pixels);
     });

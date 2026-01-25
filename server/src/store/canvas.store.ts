@@ -1,7 +1,7 @@
 import { CONFIG } from '../config.js';
 
 export class CanvasStore {
-  private lobbies: Map<string, { width: number; height: number; data: Uint8Array }> = new Map();
+  private lobbies: Map<string, { width: number; height: number; palette: string; data: Uint8Array }> = new Map();
 
   public isLobbyInMemory(lobbyName: string): boolean {
     return this.lobbies.has(lobbyName);
@@ -16,10 +16,10 @@ export class CanvasStore {
   }
 
   // Load data from DB buffer to RAM Uint8Array
-  public loadLobbyToMemory(lobbyName: string, width: number, height: number, data: Buffer | Uint8Array): Uint8Array {
-    console.log(`[CanvasStore] Loading lobby: ${lobbyName} (${width}x${height})`);
+  public loadLobbyToMemory(lobbyName: string, width: number, height: number, palette: string, data: Buffer | Uint8Array): Uint8Array {
+    console.log(`[CanvasStore] Loading lobby: ${lobbyName} (${width}x${height}, palette: ${palette})`);
     const memoryBuffer = new Uint8Array(data);
-    this.lobbies.set(lobbyName, { width, height, data: memoryBuffer });
+    this.lobbies.set(lobbyName, { width, height, palette, data: memoryBuffer });
     return memoryBuffer;
   }
 
