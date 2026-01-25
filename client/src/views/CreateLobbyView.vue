@@ -146,6 +146,7 @@ const validateHexArray = (input: string): string[] | null => {
   const validColors = colors.filter(c => hexRegex.test(c));
   
   if (validColors.length === 0) return null;
+  if (validColors.length > 256) return null; // Max 256 colors
   return validColors;
 };
 
