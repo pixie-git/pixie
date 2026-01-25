@@ -2,9 +2,9 @@ import { Lobby } from '../models/Lobby.js';
 
 export class LobbyService {
 
-  static async create(name: string, ownerId?: string) {
+  static async create(name: string, ownerId?: string, options?: any) {
     // Uses the Factory Method defined in the Model
-    return await Lobby.createWithCanvas(name, ownerId);
+    return await Lobby.createWithCanvas(name, ownerId, options);
   }
 
   static async getAll() {

@@ -105,7 +105,7 @@ onMounted(() => {
   drawAll();
 });
 
-watch(() => [props.zoom, props.width, props.height, props.pixels], drawAll);
+watch(() => [props.zoom, props.width, props.height, props.pixels, props.palette], drawAll);
 
 // Efficiently handle remote pixel updates - only redraw the changed pixel
 watch(() => props.pixelUpdateEvent, (event) => {
@@ -172,7 +172,7 @@ defineExpose({
   image-rendering: pixelated;
   border: 1px solid #444;
   box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-  background-color: #000;
+  background-color: #fff;
   cursor: crosshair;
 }
 </style>
