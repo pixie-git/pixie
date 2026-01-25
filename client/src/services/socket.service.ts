@@ -5,12 +5,16 @@ class SocketService {
 
   connect() {
     const token = localStorage.getItem('authToken');
-    this.socket = io('http://localhost:3000', {
+    const url = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    this.socket = io(url, {
       auth: { token }
     });
   }
 
-  // Pure Model Logic: Mapping events to callbacks
+  onConnect(cb: () => void) {
+    this.socket?.on('connect', cb);
+  }
+
   onInit(cb: (state: { width: number; height: number; palette: string; data: ArrayBuffer }) => void) {
     this.socket?.on('INIT_STATE', cb);
   }

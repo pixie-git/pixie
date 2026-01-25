@@ -171,8 +171,18 @@ export const useEditorStore = defineStore('editor', () => {
     currentLobbyName.value = lobbyName;
 
     socketService.connect();
+
+    // Listen for connection (and reconnection)
+    socketService.onConnect(() => {
+      isConnected.value = true;
+      if (currentLobbyName.value) {
+        console.log('[Store] Socket connected, joining lobby:', currentLobbyName.value);
+        socketService.emitJoinLobby(currentLobbyName.value);
+      }
+    });
+
+    // Initial join attempt (in case socket was already open or connects fast)
     socketService.emitJoinLobby(lobbyName);
-    isConnected.value = true;
 
     // Logic to bind Model events to ViewModel state
     socketService.onInit((state) => {
