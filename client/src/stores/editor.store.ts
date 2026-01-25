@@ -192,6 +192,12 @@ export const useEditorStore = defineStore('editor', () => {
       // Palette comes from server as string[] now (from Canvas model)
       palette.value = p || getPalette('default');
       pixels.value = new Uint8Array(data);
+
+      // Ensure selected color is within bounds of the new palette
+      if (selectedColorIndex.value >= palette.value.length) {
+        selectedColorIndex.value = 0;
+      }
+
       triggerRef(pixels);
     });
 

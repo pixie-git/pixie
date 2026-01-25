@@ -60,6 +60,7 @@
                 </div>
 
                 <!-- Color Palette -->
+                <div class="form-group">
                     <label>Color Palette</label>
                     <select v-model="form.palette">
                         <option value="default">Default Palette</option>
