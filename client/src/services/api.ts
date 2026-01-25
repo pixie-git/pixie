@@ -32,6 +32,14 @@ import { ILobby } from "../types";
 
 export const getLobbies = () => api.get<ILobby[]>("/lobbies");
 export const getLobbyById = (id: string) => api.get<ILobby>(`/lobbies/${id}`);
-export const createLobby = (name: string) => api.post<ILobby>("/lobbies", { name });
+export const createLobby = (data: {
+	name: string;
+	ownerId?: string;
+	description?: string;
+	maxCollaborators?: number;
+	palette?: string;
+	width?: number;
+	height?: number;
+}) => api.post<ILobby>("/lobbies", data);
 
 export default api;

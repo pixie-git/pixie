@@ -29,7 +29,7 @@
     <div class="spacer"></div>
 
     <!-- Create Button (Desktop Only) -->
-    <button class="create-btn desktop-create-btn" title="Create (Coming Soon)">
+    <button class="create-btn desktop-create-btn" @click="$router.push('/create-lobby')">
       + Create New Canvas
     </button>
   </div>

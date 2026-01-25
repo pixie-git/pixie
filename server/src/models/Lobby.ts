@@ -4,6 +4,9 @@ import { CONFIG } from '../config.js';
 
 export interface ILobby extends Document {
   name: string;
+  description?: string;
+  maxCollaborators: number;
+  palette: string;
   owner?: Types.ObjectId; // Links to your User schema
   canvas: Types.ObjectId; // Links to Canvas schema
   allowedUsers: Types.ObjectId[];
@@ -14,7 +17,13 @@ export interface ILobby extends Document {
 
 // Static method interface
 interface LobbyModel extends Model<ILobby> {
-  createWithCanvas(name: string, ownerId?: string): Promise<ILobby>;
+  createWithCanvas(name: string, ownerId?: string, options?: {
+    description?: string;
+    maxCollaborators?: number;
+    palette?: string;
+    width?: number;
+    height?: number;
+  }): Promise<ILobby>;
 }
 
 const lobbySchema = new Schema<ILobby>({
@@ -24,6 +33,9 @@ const lobbySchema = new Schema<ILobby>({
     unique: true,
     trim: true
   },
+  description: { type: String, maxlength: 500 },
+  maxCollaborators: { type: Number, default: 10, min: 1, max: 50 },
+  palette: { type: String, default: 'default' },
   owner: { type: Schema.Types.ObjectId, ref: 'User' },
   canvas: { type: Schema.Types.ObjectId, ref: 'Canvas', required: true },
   allowedUsers: [{ type: Schema.Types.ObjectId, ref: 'User' }],
@@ -31,24 +43,35 @@ const lobbySchema = new Schema<ILobby>({
 }, { timestamps: true });
 
 // --- FACTORY METHOD: Creates Lobby + Empty Canvas atomically ---
-lobbySchema.statics.createWithCanvas = async function (name: string, ownerId?: string) {
+lobbySchema.statics.createWithCanvas = async function (name: string, ownerId?: string, options = {}) {
+  const {
+    description,
+    maxCollaborators = 10,
+    palette = 'default',
+    width = CONFIG.CANVAS.WIDTH,
+    height = CONFIG.CANVAS.HEIGHT
+  } = options;
+
   const lobbyId = new Types.ObjectId();
   const canvasId = new Types.ObjectId();
 
   // Initialized to 0 (Transparent/White depending on palette)
-  const emptyBuffer = Buffer.alloc(CONFIG.CANVAS.WIDTH * CONFIG.CANVAS.HEIGHT, 0);
+  const emptyBuffer = Buffer.alloc(width * height, 0);
 
   const canvas = new Canvas({
     _id: canvasId,
     lobby: lobbyId,
-    width: CONFIG.CANVAS.WIDTH,
-    height: CONFIG.CANVAS.HEIGHT,
+    width: width,
+    height: height,
     data: emptyBuffer
   });
 
   const lobby = new this({
     _id: lobbyId,
     name,
+    description,
+    maxCollaborators,
+    palette,
     owner: ownerId ? new Types.ObjectId(ownerId) : undefined,
     canvas: canvasId
   });

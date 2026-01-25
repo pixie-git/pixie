@@ -30,6 +30,9 @@
   justify-content: space-between;
   padding: 0 2rem;
   box-shadow: 0 2px 4px var(--color-shadow);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
 .mini-logo {

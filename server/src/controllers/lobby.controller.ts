@@ -6,13 +6,19 @@ export class LobbyController {
   // POST /api/lobbies
   static async create(req: Request, res: Response) {
     try {
-      const { name, ownerId } = req.body;
+      const { name, description, maxCollaborators, palette, width, height } = req.body;
+      const ownerId = (req as any).user?.id;
 
       if (!name) {
         return res.status(400).json({ error: 'Lobby name is required' });
       }
 
-      const lobby = await LobbyService.create(name, ownerId);
+      if (!ownerId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const options = { description, maxCollaborators, palette, width, height };
+      const lobby = await LobbyService.create(name, ownerId, options);
 
       return res.status(201).json(lobby);
 
