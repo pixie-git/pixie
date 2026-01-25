@@ -59,8 +59,8 @@ export const setupSocket = (io: Server) => {
 
       // 2. Broadcast if successful
       if (success) {
-        // Send to everyone in the room EXCEPT the sender
-        socket.to(lobbyName).emit(CONFIG.EVENTS.SERVER.PIXEL_UPDATE, { x, y, color });
+        // Send to everyone in the room INCLUDING the sender (for consistency)
+        io.to(lobbyName).emit(CONFIG.EVENTS.SERVER.PIXEL_UPDATE, { x, y, color });
       }
     });
 
@@ -89,8 +89,8 @@ export const setupSocket = (io: Server) => {
 
       // 2. Broadcast batch if any successful
       if (successfulUpdates.length > 0) {
-        // Send to everyone in the room EXCEPT the sender
-        socket.to(lobbyName).emit(CONFIG.EVENTS.SERVER.PIXEL_UPDATE_BATCH, { pixels: successfulUpdates });
+        // Send to everyone in the room INCLUDING the sender (for consistency)
+        io.to(lobbyName).emit(CONFIG.EVENTS.SERVER.PIXEL_UPDATE_BATCH, { pixels: successfulUpdates });
       }
     });
 
