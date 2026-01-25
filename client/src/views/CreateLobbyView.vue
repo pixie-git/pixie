@@ -141,14 +141,16 @@ const validateHexArray = (input: string): string[] | null => {
     // Try comma or newline separated
     colors = input.split(/[\n,]+/).map(s => s.trim()).filter(s => s);
   }
-  
+
+  if (colors.length === 0) return null;
+
   // Validate hex codes
   const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
-  const validColors = colors.filter(c => hexRegex.test(c));
-  
-  if (validColors.length === 0) return null;
-  if (validColors.length > 256) return null; // Max 256 colors
-  return validColors;
+  const allValid = colors.every(c => typeof c === 'string' && hexRegex.test(c));
+
+  if (!allValid) return null;
+  if (colors.length > 256) return null; // Max 256 colors
+  return colors;
 };
 
 const handleSubmit = async () => {
