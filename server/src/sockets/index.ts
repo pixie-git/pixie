@@ -35,20 +35,25 @@ export const setupSocket = (io: Server) => {
       // 1. Join the Socket.io room channel
       socket.join(lobbyName);
 
+      const user = (socket as AuthenticatedSocket).user;
+      if (!user) {
+        console.error(`[Socket] Error: User not found on socket ${socket.id}`);
+        return;
+      }
+
       try {
-        // 2. Get current state from Service
-        const state = await CanvasService.getState(lobbyName);
+        // 2. Broadcast to others that a new user joined (First, to avoid race conditions)
+        socket.to(lobbyName).emit(CONFIG.EVENTS.SERVER.USER_JOINED, user);
 
-        // 3. Send state back to the user
-        socket.emit(CONFIG.EVENTS.SERVER.INIT_STATE, state);
-
-        // 4. Send list of connected users to the new user
+        // 3. Send list of connected users to the new user
+        // We fetch sockets AFTER joining so the user is included in the list
         const sockets = await io.in(lobbyName).fetchSockets();
         const users = sockets.map(s => s.data.user).filter(u => u);
         socket.emit(CONFIG.EVENTS.SERVER.LOBBY_USERS, users);
 
-        // 5. Broadcast to others that a new user joined
-        socket.to(lobbyName).emit(CONFIG.EVENTS.SERVER.USER_JOINED, (socket as AuthenticatedSocket).user);
+        // 4. Get current state from Service & Send to user
+        const state = await CanvasService.getState(lobbyName);
+        socket.emit(CONFIG.EVENTS.SERVER.INIT_STATE, state);
       } catch (error) {
         console.error(`[Socket] Error joining lobby ${lobbyName}:`, error);
         socket.emit(CONFIG.EVENTS.SERVER.ERROR, { message: "Failed to join lobby" });

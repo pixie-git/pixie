@@ -65,12 +65,21 @@ export class LobbyController {
   static async getUsers(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const lobbyName = id; // Assuming lobby ID is the room name
+
+      // 1. Validate Lobby Exists & Get Name
+      const lobby = await LobbyService.getById(id);
+      if (!lobby) {
+        return res.status(404).json({ error: 'Lobby not found' });
+      }
 
       const io = (req as any).io;
       if (!io) {
         return res.status(500).json({ error: 'Socket.io not initialized' });
       }
+
+      // 2. Use Lobby Name for Socket Room
+      // The socket room is named after the lobby.name, not the _id
+      const lobbyName = lobby.name;
 
       const sockets = await io.in(lobbyName).fetchSockets();
       const users = sockets.map((s: any) => s.data.user).filter((u: any) => u);

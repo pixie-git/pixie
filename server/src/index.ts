@@ -6,6 +6,9 @@ import { connectDB } from "./db/connect.js";
 import router from "./routes/index.js";
 import { setupSocket } from "./sockets/index.js"; // Import the Socket Manager
 import { CONFIG } from "./config.js";
+import { errorHandler } from "./middlewares/errorMiddleware.js";
+import swaggerUi from "swagger-ui-express";
+import YAML from "yamljs";
 
 const PORT = CONFIG.PORT;
 
@@ -47,14 +50,10 @@ app.use((req, res, next) => {
 
 // Implementation Note: moved socket init before routes so we can attach it to req
 
-import { errorHandler } from "./middlewares/errorMiddleware.js";
-
 // API Routes (REST)
 app.use("/api", router);
 
 // Swagger UI
-import swaggerUi from "swagger-ui-express";
-import YAML from "yamljs";
 const swaggerDocument = YAML.load("./pixie-api.yaml");
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
