@@ -18,5 +18,6 @@ router.get("/users", authenticateToken, UserController.getAll)
 router.post("/lobbies", authenticateToken, LobbyController.create)
 router.get("/lobbies", authenticateToken, LobbyController.getAll)
 router.get("/lobbies/:id", authenticateToken, LobbyController.getById)
+router.get("/lobbies/:id/users", authenticateToken, LobbyController.getUsers)
 
 export default router

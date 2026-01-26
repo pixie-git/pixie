@@ -60,4 +60,25 @@ export class LobbyController {
       return res.status(500).json({ error: 'Internal Server Error' });
     }
   }
+
+  // GET /api/lobbies/:id/users
+  static async getUsers(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const lobbyName = id; // Assuming lobby ID is the room name
+
+      const io = (req as any).io;
+      if (!io) {
+        return res.status(500).json({ error: 'Socket.io not initialized' });
+      }
+
+      const sockets = await io.in(lobbyName).fetchSockets();
+      const users = sockets.map((s: any) => s.data.user).filter((u: any) => u);
+
+      return res.json(users);
+    } catch (error) {
+      console.error('[LobbyController] GetUsers Error:', error);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
 }
