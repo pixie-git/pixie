@@ -19,6 +19,7 @@ export const setupSocket = (io: Server) => {
       }
       // Attach user info to socket
       (socket as AuthenticatedSocket).user = decoded;
+      socket.data.user = decoded;
       next();
     });
   });
@@ -40,6 +41,14 @@ export const setupSocket = (io: Server) => {
 
         // 3. Send state back to the user
         socket.emit(CONFIG.EVENTS.SERVER.INIT_STATE, state);
+
+        // 4. Send list of connected users to the new user
+        const sockets = await io.in(lobbyName).fetchSockets();
+        const users = sockets.map(s => s.data.user).filter(u => u);
+        socket.emit(CONFIG.EVENTS.SERVER.LOBBY_USERS, users);
+
+        // 5. Broadcast to others that a new user joined
+        socket.to(lobbyName).emit(CONFIG.EVENTS.SERVER.USER_JOINED, (socket as AuthenticatedSocket).user);
       } catch (error) {
         console.error(`[Socket] Error joining lobby ${lobbyName}:`, error);
         socket.emit(CONFIG.EVENTS.SERVER.ERROR, { message: "Failed to join lobby" });
@@ -91,6 +100,16 @@ export const setupSocket = (io: Server) => {
       if (successfulUpdates.length > 0) {
         // Send to everyone in the room INCLUDING the sender (for consistency)
         io.to(lobbyName).emit(CONFIG.EVENTS.SERVER.PIXEL_UPDATE_BATCH, { pixels: successfulUpdates });
+      }
+    });
+
+    // --- DISCONNECTING ---
+    socket.on('disconnecting', () => {
+      // Notify rooms that user is leaving
+      for (const room of socket.rooms) {
+        if (room !== socket.id) {
+          socket.to(room).emit(CONFIG.EVENTS.SERVER.USER_LEFT, (socket as AuthenticatedSocket).user);
+        }
       }
     });
 
