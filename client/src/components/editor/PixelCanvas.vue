@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, onUnmounted } from 'vue';
 
 const props = withDefaults(defineProps<{
   width: number;
@@ -110,8 +110,10 @@ const clampPan = (x: number, y: number, scale: number) => {
 };
 
 const handleMouseDown = (e: MouseEvent) => {
-  if (isAltPressed.value) {
+  // Robustness: Check event flag directly
+  if (e.altKey || isAltPressed.value) {
     isPanning.value = true;
+    isAltPressed.value = true; // Sync state
     return;
   }
   const coords = getCoords(e);
@@ -121,6 +123,9 @@ const handleMouseDown = (e: MouseEvent) => {
 };
 
 const handleMouseMove = (e: MouseEvent) => {
+  // Robustness: Self-correct state if Alt is released outside
+  isAltPressed.value = e.altKey;
+
   // Panning Logic
   if (isPanning.value) {
     const newX = pan.value.x + e.movementX;
@@ -156,7 +161,6 @@ const handleWheel = (e: WheelEvent) => {
 
   // Standard zoom logic:
   // newScale = oldScale * (1 + delta)
-  
   const delta = -e.deltaY;
   const zoomFactor = 1.1;
   const newScale = delta > 0 ? scale.value * zoomFactor : scale.value / zoomFactor;
@@ -236,8 +240,6 @@ onMounted(() => {
   setTimeout(handleResize, 0);
 });
 
-// Cleanup would be good but not strictly requested, adding standard cleanup anyway
-import { onUnmounted } from 'vue';
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown);
   window.removeEventListener('keyup', handleKeyUp);
@@ -330,6 +332,8 @@ defineExpose({
   position: absolute;
   top: 0;
   left: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
   mix-blend-mode: difference;
   image-rendering: pixelated; 
