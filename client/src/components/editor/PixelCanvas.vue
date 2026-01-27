@@ -281,8 +281,10 @@ defineExpose({
     <div 
       class="grid"
       :style="{
+        width: `${props.width * scale}px`,
+        height: `${props.height * scale}px`,
+        transform: `translate(${pan.x}px, ${pan.y}px)`,
         'background-size': `${scale}px ${scale}px`,
-        'background-position': `${pan.x}px ${pan.y}px`,
         'background-image': `linear-gradient(to right, rgba(255, 255, 255, 0.25) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.25) 1px, transparent 1px)`
       }"
     ></div>
