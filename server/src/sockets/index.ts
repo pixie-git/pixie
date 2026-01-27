@@ -19,6 +19,7 @@ export const setupSocket = (io: Server) => {
       }
       // Attach user info to socket
       (socket as AuthenticatedSocket).user = decoded;
+      socket.data.user = decoded;
       next();
     });
   });
@@ -34,11 +35,24 @@ export const setupSocket = (io: Server) => {
       // 1. Join the Socket.io room channel
       socket.join(lobbyName);
 
-      try {
-        // 2. Get current state from Service
-        const state = await CanvasService.getState(lobbyName);
+      const user = (socket as AuthenticatedSocket).user;
+      if (!user) {
+        console.error(`[Socket] Error: User not found on socket ${socket.id}`);
+        return;
+      }
 
-        // 3. Send state back to the user
+      try {
+        // 2. Broadcast to others that a new user joined (First, to avoid race conditions)
+        socket.to(lobbyName).emit(CONFIG.EVENTS.SERVER.USER_JOINED, user);
+
+        // 3. Send list of connected users to the new user
+        // We fetch sockets AFTER joining so the user is included in the list
+        const sockets = await io.in(lobbyName).fetchSockets();
+        const users = sockets.map(s => s.data.user).filter(u => u);
+        socket.emit(CONFIG.EVENTS.SERVER.LOBBY_USERS, users);
+
+        // 4. Get current state from Service & Send to user
+        const state = await CanvasService.getState(lobbyName);
         socket.emit(CONFIG.EVENTS.SERVER.INIT_STATE, state);
       } catch (error) {
         console.error(`[Socket] Error joining lobby ${lobbyName}:`, error);
@@ -91,6 +105,16 @@ export const setupSocket = (io: Server) => {
       if (successfulUpdates.length > 0) {
         // Send to everyone in the room INCLUDING the sender (for consistency)
         io.to(lobbyName).emit(CONFIG.EVENTS.SERVER.PIXEL_UPDATE_BATCH, { pixels: successfulUpdates });
+      }
+    });
+
+    // --- DISCONNECTING ---
+    socket.on('disconnecting', () => {
+      // Notify rooms that user is leaving
+      for (const room of socket.rooms) {
+        if (room !== socket.id) {
+          socket.to(room).emit(CONFIG.EVENTS.SERVER.USER_LEFT, (socket as AuthenticatedSocket).user);
+        }
       }
     });
 

@@ -55,6 +55,36 @@ paths:
           description: Unauthorized (Missing token)
         '403':
           description: Forbidden (Invalid token)
+  /lobbies/{id}/users:
+    get:
+      summary: Get users in a lobby
+      description: Retrieve a list of users currently connected to a specific lobby.
+      tags:
+        - Lobbies
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Lobby ID
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of connected users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserSummary'
+        '404':
+          description: Lobby not found
+        '401':
+          description: Unauthorized
+        '500':
+          description: Server Error (e.g. Socket.io not initialized)
 components:
   securitySchemes:
     bearerAuth:
