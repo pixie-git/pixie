@@ -233,10 +233,6 @@ onMounted(() => {
   window.addEventListener('keyup', handleKeyUp);
   window.addEventListener('resize', handleResize);
   
-  // Initial center/clamp
-  // We need to wait for viewport to exist and have size? onMounted is safer but Vue refs might need a tick?
-  // Let's try to set initial constraints immediately if possible or rely on User interaction
-  // Better to force it once to prevent off-center start if possible.
   setTimeout(handleResize, 0);
 });
 
@@ -285,8 +281,7 @@ defineExpose({
         width: `${props.width * scale}px`,
         height: `${props.height * scale}px`,
         transform: `translate(${pan.x}px, ${pan.y}px)`,
-        'background-size': `${scale}px ${scale}px`,
-        'background-image': `linear-gradient(to right, rgba(255, 255, 255, 0.25) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.25) 1px, transparent 1px)`
+        'background-size': `${scale}px ${scale}px`
       }"
     ></div>
     <div 
@@ -335,12 +330,13 @@ defineExpose({
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
   pointer-events: none;
   mix-blend-mode: difference;
   image-rendering: pixelated; 
   z-index: 10;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.25) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.25) 1px, transparent 1px);
 }
 
 .pixel-canvas {
