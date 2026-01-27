@@ -87,6 +87,28 @@ const getCoords = (e: MouseEvent) => {
 
 // --- Interaction Handlers ---
 
+const getMinScale = () => {
+  if (!viewportRef.value) return 1;
+  const { width: vw, height: vh } = viewportRef.value.getBoundingClientRect();
+  return Math.min(vw / props.width, vh / props.height);
+};
+
+// Helper: Centers content if smaller than view, otherwise clamps to edges
+const clampAxis = (val: number, viewSize: number, contentSize: number) => {
+  if (contentSize < viewSize) return (viewSize - contentSize) / 2;
+  return Math.min(Math.max(val, viewSize - contentSize), 0);
+};
+
+const clampPan = (x: number, y: number, scale: number) => {
+  if (!viewportRef.value) return { x, y };
+  const { width: vw, height: vh } = viewportRef.value.getBoundingClientRect();
+  
+  return {
+    x: clampAxis(x, vw, props.width * scale),
+    y: clampAxis(y, vh, props.height * scale)
+  };
+};
+
 const handleMouseDown = (e: MouseEvent) => {
   if (isSpacePressed.value) {
     isPanning.value = true;
@@ -101,8 +123,13 @@ const handleMouseDown = (e: MouseEvent) => {
 const handleMouseMove = (e: MouseEvent) => {
   // Panning Logic
   if (isPanning.value) {
-    pan.value.x += e.movementX;
-    pan.value.y += e.movementY;
+    const newX = pan.value.x + e.movementX;
+    const newY = pan.value.y + e.movementY;
+    
+    // Apply clamping
+    const clamped = clampPan(newX, newY, scale.value);
+    pan.value.x = clamped.x;
+    pan.value.y = clamped.y;
     return;
   }
 
@@ -129,13 +156,13 @@ const handleWheel = (e: WheelEvent) => {
 
   // Standard zoom logic:
   // newScale = oldScale * (1 + delta)
-
+  
   const delta = -e.deltaY;
   const zoomFactor = 1.1;
   const newScale = delta > 0 ? scale.value * zoomFactor : scale.value / zoomFactor;
 
   // Clamp scale
-  const MIN_SCALE = 1;
+  const MIN_SCALE = getMinScale(); // Dynamic min scale
   const MAX_SCALE = 100;
   const clampedScale = Math.min(Math.max(newScale, MIN_SCALE), MAX_SCALE);
 
@@ -156,8 +183,14 @@ const handleWheel = (e: WheelEvent) => {
     // MouseScreen = WorldPos * NewScale + NewPan
     // NewPan = MouseScreen - WorldPos * NewScale
     
-    pan.value.x = mouseX - worldX * clampedScale;
-    pan.value.y = mouseY - worldY * clampedScale;
+    let targetX = mouseX - worldX * clampedScale;
+    let targetY = mouseY - worldY * clampedScale;
+
+    // Apply strict Pan Clamping on Zoom to prevent going out of bounds
+    const clampedPan = clampPan(targetX, targetY, clampedScale);
+    
+    pan.value.x = clampedPan.x;
+    pan.value.y = clampedPan.y;
   }
 
   scale.value = clampedScale;
@@ -177,10 +210,33 @@ const handleKeyUp = (e: KeyboardEvent) => {
   }
 };
 
+// Handle window resizing to keep constraints valid
+const handleResize = () => {
+  if (!viewportRef.value) return;
+  
+  // Ensure zoom is at least minScale
+  const minScale = getMinScale();
+  if (scale.value < minScale) {
+    scale.value = minScale;
+  }
+  
+  // Re-clamp pan
+  const clamped = clampPan(pan.value.x, pan.value.y, scale.value);
+  pan.value.x = clamped.x;
+  pan.value.y = clamped.y;
+};
+
 onMounted(() => {
   drawAll();
   window.addEventListener('keydown', handleKeyDown);
   window.addEventListener('keyup', handleKeyUp);
+  window.addEventListener('resize', handleResize);
+  
+  // Initial center/clamp
+  // We need to wait for viewport to exist and have size? onMounted is safer but Vue refs might need a tick?
+  // Let's try to set initial constraints immediately if possible or rely on User interaction
+  // Better to force it once to prevent off-center start if possible.
+  setTimeout(handleResize, 0);
 });
 
 // Cleanup would be good but not strictly requested, adding standard cleanup anyway
@@ -188,6 +244,7 @@ import { onUnmounted } from 'vue';
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown);
   window.removeEventListener('keyup', handleKeyUp);
+  window.removeEventListener('resize', handleResize);
 });
 
 watch(() => [props.width, props.height, props.pixels, props.palette], drawAll);
