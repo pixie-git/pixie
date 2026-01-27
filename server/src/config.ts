@@ -23,6 +23,7 @@ export const CONFIG = {
       JOIN_LOBBY: 'JOIN_LOBBY',
       DRAW: 'DRAW',
       DRAW_BATCH: 'DRAW_BATCH',
+      KICK_USER: 'KICK_USER',
     },
     SERVER: {
       INIT_STATE: 'INIT_STATE',
@@ -31,6 +32,7 @@ export const CONFIG = {
       LOBBY_USERS: 'LOBBY_USERS',
       USER_JOINED: 'USER_JOINED',
       USER_LEFT: 'USER_LEFT',
+      USER_KICKED: 'USER_KICKED',
       ERROR: 'ERROR'
     }
   }
