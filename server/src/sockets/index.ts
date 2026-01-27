@@ -2,6 +2,7 @@ import { Server, Socket } from 'socket.io';
 import { CanvasService } from '../services/canvas.service.js';
 import { CONFIG } from '../config.js';
 import { DrawPayload, DrawBatchPayload, AuthenticatedSocket } from './types.js';
+import { LobbyService } from '../services/lobby.service.js';
 import jwt from 'jsonwebtoken';
 
 export const setupSocket = (io: Server) => {
@@ -105,6 +106,41 @@ export const setupSocket = (io: Server) => {
       if (successfulUpdates.length > 0) {
         // Send to everyone in the room INCLUDING the sender (for consistency)
         io.to(lobbyName).emit(CONFIG.EVENTS.SERVER.PIXEL_UPDATE_BATCH, { pixels: successfulUpdates });
+      }
+    });
+
+
+    // --- EVENT: KICK_USER ---
+    socket.on(CONFIG.EVENTS.CLIENT.KICK_USER, async (payload: { lobbyName: string, targetUserId: string }) => {
+      const { lobbyName, targetUserId } = payload;
+      const user = (socket as AuthenticatedSocket).user;
+
+      if (!user || !lobbyName || !targetUserId) return;
+
+      try {
+        const lobby = await LobbyService.getByName(lobbyName);
+        if (!lobby) return;
+
+        // Check if requester is owner
+        if (lobby.owner?.toString() !== user._id) {
+          return;
+        }
+
+        const sockets = await io.in(lobbyName).fetchSockets();
+        const targetSocket = sockets.find(s => s.data.user?._id === targetUserId);
+
+        if (targetSocket) {
+          // Notify target
+          targetSocket.emit(CONFIG.EVENTS.SERVER.USER_KICKED, { lobbyName });
+
+          // Notify others
+          socket.to(lobbyName).emit(CONFIG.EVENTS.SERVER.USER_LEFT, targetSocket.data.user);
+
+          // Force leave
+          targetSocket.leave(lobbyName);
+        }
+      } catch (err) {
+        console.error(`[Socket] Error kicking user from ${lobbyName}:`, err);
       }
     });
 
