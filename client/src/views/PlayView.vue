@@ -56,7 +56,7 @@ onMounted(async () => {
       :pixels="pixels"
       :palette="palette"
       :pixel-update-event="pixelUpdateEvent"
-      :zoom="10"
+      :initial-zoom="10"
       @stroke-start="({x, y}) => store.startStroke(x, y)"
       @stroke-move="({x, y}) => store.continueStroke(x, y)"
       @stroke-end="store.endStroke()"

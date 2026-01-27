@@ -7,9 +7,9 @@ const props = withDefaults(defineProps<{
   pixels: Uint8Array;
   palette: string[];
   pixelUpdateEvent: { x: number; y: number; colorIndex: number } | { x: number; y: number; colorIndex: number }[] | null;
-  zoom?: number;
+  initialZoom?: number;
 }>(), {
-  zoom: 10
+  initialZoom: 10
 });
 
 // Emits stroke events
@@ -20,6 +20,13 @@ const emit = defineEmits<{
 }>();
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
+const viewportRef = ref<HTMLDivElement | null>(null);
+
+// Navigation State
+const scale = ref(props.initialZoom);
+const pan = ref({ x: 0, y: 0 });
+const isPanning = ref(false);
+const isSpacePressed = ref(false);
 
 const updatePixel = (x: number, y: number, colorIndex: number) => {
   const canvas = canvasRef.value;
@@ -30,23 +37,18 @@ const updatePixel = (x: number, y: number, colorIndex: number) => {
   const colorHex = props.palette[colorIndex] || '#000000';
   
   ctx.fillStyle = colorHex;
-  ctx.fillRect(
-    x * props.zoom, 
-    y * props.zoom, 
-    props.zoom, 
-    props.zoom
-  );
+  ctx.fillRect(x, y, 1, 1);
 };
 
-// Redraw the entire canvas
+// Redraw the entire canvas (1:1 scaling)
 const drawAll = () => {
   const canvas = canvasRef.value;
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
-  canvas.width = props.width * props.zoom;
-  canvas.height = props.height * props.zoom;
+  canvas.width = props.width;
+  canvas.height = props.height;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -54,11 +56,9 @@ const drawAll = () => {
     for (let x = 0; x < props.width; x++) {
       const index = y * props.width + x;
       const colorIndex = props.pixels[index];
-
       const colorHex = props.palette[colorIndex] || '#000000';
-      
       ctx.fillStyle = colorHex;
-      ctx.fillRect(x * props.zoom, y * props.zoom, props.zoom, props.zoom);
+      ctx.fillRect(x, y, 1, 1);
     }
   }
 };
@@ -68,11 +68,16 @@ const getCoords = (e: MouseEvent) => {
   if (!canvas) return null;
 
   const rect = canvas.getBoundingClientRect();
-  const clickX = e.clientX - rect.left;
-  const clickY = e.clientY - rect.top;
+  
+  // Calculate relative position within the canvas element
+  const relativeX = e.clientX - rect.left;
+  const relativeY = e.clientY - rect.top;
+  
+  const scaleX = rect.width / props.width;
+  const scaleY = rect.height / props.height;
 
-  const x = Math.floor(clickX / props.zoom);
-  const y = Math.floor(clickY / props.zoom);
+  const x = Math.floor(relativeX / scaleX);
+  const y = Math.floor(relativeY / scaleY);
 
   if (x >= 0 && x < props.width && y >= 0 && y < props.height) {
     return { x, y };
@@ -80,7 +85,13 @@ const getCoords = (e: MouseEvent) => {
   return null;
 };
 
+// --- Interaction Handlers ---
+
 const handleMouseDown = (e: MouseEvent) => {
+  if (isSpacePressed.value) {
+    isPanning.value = true;
+    return;
+  }
   const coords = getCoords(e);
   if (coords) {
     emit('stroke-start', coords);
@@ -88,6 +99,14 @@ const handleMouseDown = (e: MouseEvent) => {
 };
 
 const handleMouseMove = (e: MouseEvent) => {
+  // Panning Logic
+  if (isPanning.value) {
+    pan.value.x += e.movementX;
+    pan.value.y += e.movementY;
+    return;
+  }
+
+  // Drawing Logic
   // Check if primary button is pressed
   if (e.buttons !== 1) return;
   
@@ -98,14 +117,80 @@ const handleMouseMove = (e: MouseEvent) => {
 };
 
 const handleMouseUp = () => {
-  emit('stroke-end');
+  if (isPanning.value) {
+    isPanning.value = false;
+  } else {
+    emit('stroke-end');
+  }
+};
+
+const handleWheel = (e: WheelEvent) => {
+  e.preventDefault();
+
+  // Standard zoom logic:
+  // newScale = oldScale * (1 + delta)
+
+  const delta = -e.deltaY;
+  const zoomFactor = 1.1;
+  const newScale = delta > 0 ? scale.value * zoomFactor : scale.value / zoomFactor;
+
+  // Clamp scale
+  const MIN_SCALE = 1;
+  const MAX_SCALE = 100;
+  const clampedScale = Math.min(Math.max(newScale, MIN_SCALE), MAX_SCALE);
+
+  if (clampedScale === scale.value) return;
+
+  // Zoom towards mouse cursor
+  if (viewportRef.value) {
+    const rect = viewportRef.value.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    // Calculate mouse position relative to the transform origin (top-left of content)
+    // Current World Pos = (MouseScreen - Pan) / OldScale
+    const worldX = (mouseX - pan.value.x) / scale.value;
+    const worldY = (mouseY - pan.value.y) / scale.value;
+
+    // We want World Pos to be under Mouse Screen after Zoom
+    // MouseScreen = WorldPos * NewScale + NewPan
+    // NewPan = MouseScreen - WorldPos * NewScale
+    
+    pan.value.x = mouseX - worldX * clampedScale;
+    pan.value.y = mouseY - worldY * clampedScale;
+  }
+
+  scale.value = clampedScale;
+};
+
+// Global Input Listeners for Space key
+const handleKeyDown = (e: KeyboardEvent) => {
+  if (e.code === 'Space' && !e.repeat) {
+    isSpacePressed.value = true;
+  }
+};
+
+const handleKeyUp = (e: KeyboardEvent) => {
+  if (e.code === 'Space') {
+    isSpacePressed.value = false;
+    isPanning.value = false; // Stop dragging if space is released
+  }
 };
 
 onMounted(() => {
   drawAll();
+  window.addEventListener('keydown', handleKeyDown);
+  window.addEventListener('keyup', handleKeyUp);
 });
 
-watch(() => [props.zoom, props.width, props.height, props.pixels, props.palette], drawAll);
+// Cleanup would be good but not strictly requested, adding standard cleanup anyway
+import { onUnmounted } from 'vue';
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyDown);
+  window.removeEventListener('keyup', handleKeyUp);
+});
+
+watch(() => [props.width, props.height, props.pixels, props.palette], drawAll);
 
 // Efficiently handle remote pixel updates - only redraw the changed pixel
 watch(() => props.pixelUpdateEvent, (event) => {
@@ -126,30 +211,66 @@ defineExpose({
 </script>
 
 <template>
-  <div class="canvas-wrapper" :style="{ '--zoom': props.zoom + 'px' }">
-    <div class="grid"></div>
-    <canvas 
-      ref="canvasRef" 
-      @mousedown="handleMouseDown"
-      @mousemove="handleMouseMove"
-      @mouseup="handleMouseUp"
-      @mouseleave="handleMouseUp"
-      class="pixel-canvas"
-    ></canvas>
+  <div 
+    class="viewport" 
+    ref="viewportRef"
+    @wheel="handleWheel"
+    @mousedown="handleMouseDown"
+    @mousemove="handleMouseMove"
+    @mouseup="handleMouseUp"
+    @mouseleave="handleMouseUp"
+    :class="{ 'panning': isSpacePressed, 'dragging': isPanning }"
+  >
+    <div 
+      class="grid"
+      :style="{
+        'background-size': `${scale}px ${scale}px`,
+        'background-position': `${pan.x}px ${pan.y}px`,
+        'background-image': `linear-gradient(to right, rgba(255, 255, 255, 0.25) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.25) 1px, transparent 1px)`
+      }"
+    ></div>
+    <div 
+      class="transform-layer"
+      :style="{ 
+        transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})` 
+      }"
+    >
+      <canvas 
+        ref="canvasRef" 
+        class="pixel-canvas"
+      ></canvas>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.canvas-wrapper {
+.viewport {
   position: relative;
-  display: inline-block; /* Fits the content */
+  width: 100%; 
+  height: 600px; /* Default height, can be overridden */
+  overflow: hidden;
+  background-color: #222;
+  cursor: crosshair;
+  user-select: none;
 }
 
-/* 
-  Grid Overlay 
-  Uses CSS gradients to create a grid pattern efficiently.
-  Pointer events are disabled so drawing on the canvas underneath works.
-*/
+.viewport.panning {
+  cursor: grab;
+}
+
+.viewport.dragging {
+  cursor: grabbing;
+}
+
+.transform-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  /* Will-change optimizes compositing */
+  will-change: transform;
+}
+
 .grid {
   position: absolute;
   top: 0;
@@ -157,22 +278,16 @@ defineExpose({
   width: 100%;
   height: 100%;
   pointer-events: none;
-  background-size: var(--zoom) var(--zoom);
-  /* Use difference blend mode so lines act as inversion filters */
   mix-blend-mode: difference;
-  image-rendering: pixelated; /* Fix for variable line thickness */
-  background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.25) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.25) 1px, transparent 1px);
-  z-index: 10; /* Ensure it's above the canvas */
+  image-rendering: pixelated; 
+  z-index: 10;
 }
 
 .pixel-canvas {
-  display: block; /* Removes default inline spacing */
+  display: block;
   image-rendering: pixelated;
-  border: 1px solid #444;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
   background-color: #fff;
-  cursor: crosshair;
+  /* No border here, viewport has background */
+  box-shadow: 0 0 20px rgba(0,0,0,0.5); /* Shadow to separate canvas from void */
 }
 </style>
