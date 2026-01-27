@@ -182,10 +182,6 @@ const handleWheel = (e: WheelEvent) => {
     // Current World Pos = (MouseScreen - Pan) / OldScale
     const worldX = (mouseX - pan.value.x) / scale.value;
     const worldY = (mouseY - pan.value.y) / scale.value;
-
-    // We want World Pos to be under Mouse Screen after Zoom
-    // MouseScreen = WorldPos * NewScale + NewPan
-    // NewPan = MouseScreen - WorldPos * NewScale
     
     let targetX = mouseX - worldX * clampedScale;
     let targetY = mouseY - worldY * clampedScale;
