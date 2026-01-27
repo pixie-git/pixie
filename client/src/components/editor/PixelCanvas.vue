@@ -306,7 +306,7 @@ defineExpose({
 .viewport {
   position: relative;
   width: 100%; 
-  height: 600px; /* Default height, can be overridden */
+  height: 80vh; 
   overflow: hidden;
   background-color: #222;
   cursor: crosshair;
