@@ -26,7 +26,7 @@ const viewportRef = ref<HTMLDivElement | null>(null);
 const scale = ref(props.initialZoom);
 const pan = ref({ x: 0, y: 0 });
 const isPanning = ref(false);
-const isSpacePressed = ref(false);
+const isAltPressed = ref(false);
 
 const updatePixel = (x: number, y: number, colorIndex: number) => {
   const canvas = canvasRef.value;
@@ -110,7 +110,7 @@ const clampPan = (x: number, y: number, scale: number) => {
 };
 
 const handleMouseDown = (e: MouseEvent) => {
-  if (isSpacePressed.value) {
+  if (isAltPressed.value) {
     isPanning.value = true;
     return;
   }
@@ -196,17 +196,18 @@ const handleWheel = (e: WheelEvent) => {
   scale.value = clampedScale;
 };
 
-// Global Input Listeners for Space key
+// Global Input Listeners for Alt key
 const handleKeyDown = (e: KeyboardEvent) => {
-  if (e.code === 'Space' && !e.repeat) {
-    isSpacePressed.value = true;
+  if (e.key === 'Alt' && !e.repeat) {
+    e.preventDefault();
+    isAltPressed.value = true;
   }
 };
 
 const handleKeyUp = (e: KeyboardEvent) => {
-  if (e.code === 'Space') {
-    isSpacePressed.value = false;
-    isPanning.value = false; // Stop dragging if space is released
+  if (e.key === 'Alt') {
+    isAltPressed.value = false;
+    isPanning.value = false; // Stop dragging if Alt is released
   }
 };
 
@@ -276,7 +277,7 @@ defineExpose({
     @mousemove="handleMouseMove"
     @mouseup="handleMouseUp"
     @mouseleave="handleMouseUp"
-    :class="{ 'panning': isSpacePressed, 'dragging': isPanning }"
+    :class="{ 'panning': isAltPressed, 'dragging': isPanning }"
   >
     <div 
       class="grid"
