@@ -7,6 +7,7 @@ interface LoginResponse {
 	id: string
 	token: string
 	isNewUser: boolean
+	isAdmin: boolean
 }
 
 interface AllUsersResponse {
@@ -37,6 +38,7 @@ export class UserService {
 			id: user._id.toString(),
 			token: token,
 			isNewUser: isNewUser,
+			isAdmin: user.isAdmin,
 		}
 	}
 

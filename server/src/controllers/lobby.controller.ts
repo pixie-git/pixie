@@ -90,4 +90,21 @@ export class LobbyController {
       return res.status(500).json({ error: 'Internal Server Error' });
     }
   }
+
+  // DELETE /api/lobbies/:id
+  static async delete(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const result = await LobbyService.delete(id);
+
+      if (!result) {
+        return res.status(404).json({ error: 'Lobby not found' });
+      }
+
+      return res.status(200).json({ message: 'Lobby deleted successfully' });
+    } catch (error) {
+      console.error('[LobbyController] Delete Error:', error);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
 }

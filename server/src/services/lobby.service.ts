@@ -31,4 +31,8 @@ export class LobbyService {
     );
     return lobby;
   }
+
+  static async delete(id: string) {
+    return await Lobby.findByIdAndDelete(id);
+  }
 }
