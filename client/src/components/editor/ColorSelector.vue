@@ -26,32 +26,34 @@ const selectColor = (index: number) => {
 
 <style scoped>
 .color-picker {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  padding: 8px;
-  background: #2c2c2c;
-  border-radius: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2 columns like in the design */
+  gap: 8px;
+  padding: 12px;
+  background: #fff; /* White background as per design */
+  border-radius: 12px;
   width: fit-content;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border: 1px solid #e0e0e0;
 }
 
 .color-swatch {
-  width: 24px;
-  height: 24px;
-  border: 2px solid transparent;
+  width: 32px;
+  height: 32px;
+  border: 2px solid rgba(0,0,0,0.1);
   cursor: pointer;
-  border-radius: 4px;
-  transition: transform 0.1s;
+  border-radius: 6px;
+  transition: all 0.2s ease;
 }
 
 .color-swatch:hover {
   transform: scale(1.1);
-  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 .color-swatch.active {
-  border-color: white;
-  box-shadow: 0 0 4px rgba(0,0,0,0.5);
+  border-color: #333;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
   transform: scale(1.15);
   z-index: 1;
 }
