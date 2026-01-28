@@ -121,10 +121,12 @@ export const setupSocket = (io: Server) => {
         const lobby = await LobbyService.getByName(lobbyName);
         if (!lobby) return;
 
-        // Check if requester is owner
+        // AUTH CHECK: Owner OR Admin
         const ownerId = (lobby.owner as any)._id || lobby.owner;
+        const isOwner = ownerId?.toString() === user.id;
+        const isAdmin = user.isAdmin === true;
 
-        if (ownerId?.toString() !== user.id) {
+        if (!isOwner && !isAdmin) {
           return;
         }
 
@@ -157,10 +159,12 @@ export const setupSocket = (io: Server) => {
         const lobby = await LobbyService.getByName(lobbyName);
         if (!lobby) return;
 
-        // Check if requester is owner
+        // AUTH CHECK: Owner OR Admin
         const ownerId = (lobby.owner as any)._id || lobby.owner;
+        const isOwner = ownerId?.toString() === user.id;
+        const isAdmin = user.isAdmin === true;
 
-        if (ownerId?.toString() !== user.id) {
+        if (!isOwner && !isAdmin) {
           return;
         }
 

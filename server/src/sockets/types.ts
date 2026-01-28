@@ -13,5 +13,9 @@ export interface DrawBatchPayload {
 }
 
 export interface AuthenticatedSocket extends Socket {
-  user?: any; // We can refine this further if we know the JWT payload structure
+  user?: {
+    id: string;
+    username: string;
+    isAdmin: boolean;
+  };
 }
