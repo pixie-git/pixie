@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { LobbyService } from '../services/lobby.service.js';
+import { PNG } from 'pngjs';
 
 export class LobbyController {
 
@@ -182,6 +183,52 @@ export class LobbyController {
 
     } catch (error) {
       console.error('[LobbyController] Ban Error:', error);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+  // GET /api/lobbies/:id/image
+  static async getLobbyImage(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const lobby = await LobbyService.getById(id);
+
+      if (!lobby) {
+        return res.status(404).json({ error: 'Lobby not found' });
+      }
+
+      const { width, height, pixels, palette } = lobby;
+
+      const png = new PNG({ width, height });
+
+      // pixels is a Buffer or Uint8Array. 
+      // If it's missing or wrong size, handle gracefully? 
+      // Assuming valid data for now as per schema.
+
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const pixelIndex = y * width + x;
+          const colorIndex = pixels[pixelIndex];
+          const colorHex = palette[colorIndex] || '#000000';
+
+          // Parse Hex to RGB
+          const r = parseInt(colorHex.slice(1, 3), 16);
+          const g = parseInt(colorHex.slice(3, 5), 16);
+          const b = parseInt(colorHex.slice(5, 7), 16);
+
+          const idx = (width * y + x) << 2; // * 4
+
+          png.data[idx] = r;
+          png.data[idx + 1] = g;
+          png.data[idx + 2] = b;
+          png.data[idx + 3] = 255; // Alpha
+        }
+      }
+
+      res.setHeader('Content-Type', 'image/png');
+      png.pack().pipe(res);
+
+    } catch (error) {
+      console.error('[LobbyController] GetImage Error:', error);
       return res.status(500).json({ error: 'Internal Server Error' });
     }
   }
