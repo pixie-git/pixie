@@ -22,4 +22,8 @@ export class LobbyService {
   static async getById(id: string) {
     return await Lobby.findById(id).populate('owner', 'username');
   }
+
+  static async delete(id: string) {
+    return await Lobby.findByIdAndDelete(id);
+  }
 }

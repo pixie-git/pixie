@@ -22,9 +22,14 @@ export const router = createRouter({
 
 router.beforeEach((to, _from, next) => {
     const userStore = useUserStore()
+
     if (to.meta.requiresAuth && !userStore.token) {
-        next('/')
-    } else {
-        next()
+        return next('/')
     }
+
+    if (to.meta.requiresAdmin && !userStore.isAdmin) {
+        return next('/lobbies')
+    }
+
+    next()
 })

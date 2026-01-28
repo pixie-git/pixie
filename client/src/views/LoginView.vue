@@ -40,6 +40,7 @@ interface LoginResponse {
 	id: string
 	token: string
 	isNewUser: boolean
+	isAdmin: boolean
 }
 
 const handleLogin = async () => {
@@ -57,11 +58,11 @@ const handleLogin = async () => {
 			message.value = `✨ Nuovo utente "${response.data.username}" creato con successo!`
 			messageType.value = "success"
 			setTimeout(() => {
-				userStore.login(response.data.username, response.data.token)
+				userStore.login(response.data.username, response.data.token, response.data.id, response.data.isAdmin)
 			router.push("/lobbies")
 			}, 2000)
 		} else {
-			userStore.login(response.data.username, response.data.token)
+			userStore.login(response.data.username, response.data.token, response.data.id, response.data.isAdmin)
 			router.push("/lobbies")
 		}
 	} catch (error) {
