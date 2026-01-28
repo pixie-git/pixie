@@ -175,7 +175,7 @@ const handleSubmit = async () => {
   isLoading.value = true;
 
   try {
-    await createLobby({
+    const response = await createLobby({
       name: form.name,
       description: form.description,
       maxCollaborators: form.maxCollaborators,
@@ -184,8 +184,8 @@ const handleSubmit = async () => {
       height: form.height
     });
     
-    // Redirect to the new lobby or the lobby list
-    router.push('/lobbies');
+    // Redirect to the new lobby
+    router.push(`/play/${response.data._id}`);
   } catch (err: any) {
     console.error("Create Lobby Error:", err);
     error.value = err.response?.data?.error || "Failed to create canvas. Try a different name.";
