@@ -13,15 +13,28 @@ api.interceptors.request.use((config) => {
 	return config
 })
 
+import { useNotificationStore } from "../stores/notification";
+
 // Global Error Handling
 api.interceptors.response.use(
 	(response) => response,
 	(error) => {
-		if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-			// Token invalid or expired
-			localStorage.removeItem("authToken");
-			// Force redirect to login (avoiding router circular dependency)
-			window.location.href = "/";
+		const notificationStore = useNotificationStore();
+
+		if (error.response) {
+			const message = error.response.data?.error || "An unexpected error occurred.";
+			notificationStore.add(message, 'error');
+
+			if (error.response.status === 401 || error.response.status === 403) {
+				// Token invalid or expired
+				localStorage.removeItem("authToken");
+				// Force redirect to login (avoiding router circular dependency)
+				if (window.location.pathname !== '/') {
+					window.location.href = "/";
+				}
+			}
+		} else {
+			notificationStore.add("Network Error. Please check your connection.", 'error');
 		}
 		return Promise.reject(error);
 	}
