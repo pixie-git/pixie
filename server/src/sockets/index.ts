@@ -146,6 +146,46 @@ export const setupSocket = (io: Server) => {
       }
     });
 
+    // --- EVENT: BAN_USER ---
+    socket.on(CONFIG.EVENTS.CLIENT.BAN_USER, async (payload: { lobbyName: string, targetUserId: string }) => {
+      const { lobbyName, targetUserId } = payload;
+      const user = (socket as AuthenticatedSocket).user;
+
+      if (!user || !lobbyName || !targetUserId) return;
+
+      try {
+        const lobby = await LobbyService.getByName(lobbyName);
+        if (!lobby) return;
+
+        // Check if requester is owner
+        const ownerId = (lobby.owner as any)._id || lobby.owner;
+
+        if (ownerId?.toString() !== user.id) {
+          return;
+        }
+
+        // Persist Ban
+        await LobbyService.banUser(lobbyName, targetUserId);
+
+        // Kick logic
+        const sockets = await io.in(lobbyName).fetchSockets();
+        const targetSocket = sockets.find(s => s.data.user?.id === targetUserId);
+
+        if (targetSocket) {
+          // Notify target
+          targetSocket.emit(CONFIG.EVENTS.SERVER.USER_BANNED, { lobbyName });
+
+          // Notify others
+          socket.to(lobbyName).emit(CONFIG.EVENTS.SERVER.USER_LEFT, targetSocket.data.user);
+
+          // Force leave
+          targetSocket.leave(lobbyName);
+        }
+      } catch (err) {
+        console.error(`[Socket] Error banning user from ${lobbyName}:`, err);
+      }
+    });
+
     // --- DISCONNECTING ---
     socket.on('disconnecting', () => {
       // Notify rooms that user is leaving
