@@ -7,6 +7,7 @@ interface LoginResponse {
 	id: string
 	token: string
 	isNewUser: boolean
+	isAdmin: boolean
 }
 
 interface AllUsersResponse {
@@ -30,13 +31,14 @@ export class UserService {
 			isNewUser = true
 		}
 
-		const token = jwt.sign({ id: user._id, username: user.username }, JWT_SECRET, { expiresIn: CONFIG.JWT.EXPIRES_IN as any })
+		const token = jwt.sign({ id: user._id, username: user.username, isAdmin: user.isAdmin }, JWT_SECRET, { expiresIn: CONFIG.JWT.EXPIRES_IN as any })
 
 		return {
 			username: user.username,
 			id: user._id.toString(),
 			token: token,
 			isNewUser: isNewUser,
+			isAdmin: user.isAdmin,
 		}
 	}
 

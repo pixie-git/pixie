@@ -1,7 +1,7 @@
 <template>
 	<div class="login-container">
 		<div class="login-card">
-			<img src="@/assets/PixieLogo.jpeg" alt="Pixie Logo" class="logo" />
+			<img src="@/assets/PixieLogo.png" alt="Pixie Logo" class="logo" />
 			<h1>Benvenuto in Pixie</h1>
 
 			<Transition name="message">
@@ -40,6 +40,7 @@ interface LoginResponse {
 	id: string
 	token: string
 	isNewUser: boolean
+	isAdmin: boolean
 }
 
 const handleLogin = async () => {
@@ -57,12 +58,12 @@ const handleLogin = async () => {
 			message.value = `✨ Nuovo utente "${response.data.username}" creato con successo!`
 			messageType.value = "success"
 			setTimeout(() => {
-				userStore.login(response.data.username, response.data.token)
-				router.push("/play")
+				userStore.login(response.data.username, response.data.token, response.data.id, response.data.isAdmin)
+			router.push("/lobbies")
 			}, 2000)
 		} else {
-			userStore.login(response.data.username, response.data.token)
-			router.push("/play")
+			userStore.login(response.data.username, response.data.token, response.data.id, response.data.isAdmin)
+			router.push("/lobbies")
 		}
 	} catch (error) {
 		console.error("Login failed:", error)

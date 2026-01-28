@@ -6,16 +6,17 @@ import { CONFIG } from '../config.js';
 export class CanvasService {
 
   // Request Coalescing: Track pending loads to prevent duplicate DB fetches
-  private static pendingLoads: Map<string, Promise<Uint8Array>> = new Map();
+  private static pendingLoads: Map<string, Promise<{ width: number; height: number; palette: string[]; data: Uint8Array }>> = new Map();
 
   // Write-Behind: Track active save timers for each lobby
   private static saveTimers: Map<string, NodeJS.Timeout> = new Map();
 
   // Retrieves pixel state from memory, loading from DB if necessary
-  static async getState(lobbyName: string): Promise<Uint8Array> {
+  static async getState(lobbyName: string): Promise<{ width: number; height: number; palette: string[]; data: Uint8Array }> {
     // 1. Fast Path: Already in memory
     if (canvasStore.isLobbyInMemory(lobbyName)) {
-      return canvasStore.getLobbyPixelData(lobbyName)!;
+      const meta = canvasStore.getLobbyMetaData(lobbyName)!;
+      return { width: meta.width, height: meta.height, palette: meta.palette, data: meta.data };
     }
 
     // 2. Coalescing Path: Already loading, wait for existing promise
@@ -32,7 +33,10 @@ export class CanvasService {
         const canvas = await Canvas.findById(lobby.canvas);
         if (!canvas) throw new Error(`Canvas data missing for lobby '${lobbyName}'`);
 
-        return canvasStore.loadLobbyToMemory(lobbyName, canvas.data);
+        // Load with dimensions and palette
+        const palette = canvas.palette; // Palette is now an array on Canvas
+        const data = canvasStore.loadLobbyToMemory(lobbyName, canvas.width, canvas.height, palette, canvas.data);
+        return { width: canvas.width, height: canvas.height, palette, data };
       } finally {
         // Cleanup promise when done (success or failure)
         this.pendingLoads.delete(lobbyName);
@@ -43,14 +47,9 @@ export class CanvasService {
     return loadPromise;
   }
 
-  // Updates a pixel in memory if coordinates are valid
+  // Updates a pixel in memory (validation handled by store now)
   static draw(lobbyName: string, x: number, y: number, color: number) {
-    if (x < 0 || x >= CONFIG.CANVAS.WIDTH || y < 0 || y >= CONFIG.CANVAS.HEIGHT) {
-      return false;
-    }
-
-    const index = y * CONFIG.CANVAS.WIDTH + x;
-    const changed = canvasStore.modifyPixelColor(lobbyName, index, color);
+    const changed = canvasStore.modifyPixelColor(lobbyName, x, y, color);
 
     if (changed) {
       this.scheduleSave(lobbyName);

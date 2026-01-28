@@ -1,10 +1,10 @@
-import { Lobby } from '../models/Lobby.js';
+import { Lobby, ILobby } from '../models/Lobby.js';
 
 export class LobbyService {
 
-  static async create(name: string, ownerId?: string) {
+  static async create(name: string, ownerId?: string, options?: any) {
     // Uses the Factory Method defined in the Model
-    return await Lobby.createWithCanvas(name, ownerId);
+    return await Lobby.createWithCanvas(name, ownerId, options);
   }
 
   static async getAll() {
@@ -17,5 +17,22 @@ export class LobbyService {
 
   static async getByName(name: string) {
     return await Lobby.findOne({ name }).populate('owner', 'username');
+  }
+
+  static async getById(id: string) {
+    return await Lobby.findById(id).populate('owner', 'username');
+  }
+
+  static async banUser(lobbyName: string, userId: string): Promise<ILobby | null> {
+    const lobby = await Lobby.findOneAndUpdate(
+      { name: lobbyName },
+      { $addToSet: { bannedUsers: userId } },
+      { new: true }
+    );
+    return lobby;
+  }
+
+  static async delete(id: string) {
+    return await Lobby.findByIdAndDelete(id);
   }
 }

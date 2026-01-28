@@ -1,41 +1,52 @@
 import { CONFIG } from '../config.js';
 
 export class CanvasStore {
-  private buffers: Map<string, Uint8Array> = new Map();
+  private lobbies: Map<string, { width: number; height: number; palette: string[]; data: Uint8Array }> = new Map();
 
   public isLobbyInMemory(lobbyName: string): boolean {
-    return this.buffers.has(lobbyName);
+    return this.lobbies.has(lobbyName);
+  }
+
+  public getLobbyMetaData(lobbyName: string) {
+    return this.lobbies.get(lobbyName);
   }
 
   public getLobbyPixelData(lobbyName: string): Uint8Array | undefined {
-    return this.buffers.get(lobbyName);
+    return this.lobbies.get(lobbyName)?.data;
   }
 
   // Load data from DB buffer to RAM Uint8Array
-  public loadLobbyToMemory(lobbyName: string, data: Buffer | Uint8Array): Uint8Array {
-    console.log(`[CanvasStore] Loading lobby: ${lobbyName}`);
+  public loadLobbyToMemory(lobbyName: string, width: number, height: number, palette: string[], data: Buffer | Uint8Array): Uint8Array {
+    console.log(`[CanvasStore] Loading lobby: ${lobbyName} (${width}x${height}, palette len: ${palette.length})`);
     const memoryBuffer = new Uint8Array(data);
-    this.buffers.set(lobbyName, memoryBuffer);
+    this.lobbies.set(lobbyName, { width, height, palette, data: memoryBuffer });
     return memoryBuffer;
   }
 
-  public modifyPixelColor(lobbyName: string, index: number, color: number): boolean {
-    const buffer = this.buffers.get(lobbyName);
-    if (!buffer) return false;
+  public modifyPixelColor(lobbyName: string, x: number, y: number, color: number): boolean {
+    const lobby = this.lobbies.get(lobbyName);
+    if (!lobby) return false;
 
-    // Boundary check
-    if (index < 0 || index >= buffer.length) return false;
+    // Validate coordinates against specific lobby dimensions
+    if (x < 0 || x >= lobby.width || y < 0 || y >= lobby.height) {
+      return false;
+    }
+
+    const index = y * lobby.width + x;
+
+    // Boundary check (extra safety)
+    if (index < 0 || index >= lobby.data.length) return false;
 
     // Optimization: only update if value changed
-    if (buffer[index] !== color) {
-      buffer[index] = color;
+    if (lobby.data[index] !== color) {
+      lobby.data[index] = color;
       return true;
     }
     return false;
   }
 
   public getInMemoryLobbyIds(): string[] {
-    return Array.from(this.buffers.keys());
+    return Array.from(this.lobbies.keys());
   }
 }
 

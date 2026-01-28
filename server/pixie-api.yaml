@@ -55,6 +55,236 @@ paths:
           description: Unauthorized (Missing token)
         '403':
           description: Forbidden (Invalid token)
+  /lobbies/{id}/users:
+    get:
+      summary: Get users in a lobby
+      description: Retrieve a list of users currently connected to a specific lobby.
+      tags:
+        - Lobbies
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Lobby ID
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of connected users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserSummary'
+        '404':
+          description: Lobby not found
+        '401':
+          description: Unauthorized
+        '500':
+          description: Server Error (e.g. Socket.io not initialized)
+  /lobbies:
+    post:
+      summary: Create a new lobby
+      description: Create a new lobby with specified parameters.
+      tags:
+        - Lobbies
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LobbyCreateRequest'
+      responses:
+        '201':
+          description: Lobby created successfully
+          content:
+            application/json:
+              schema:
+                 $ref: '#/components/schemas/LobbyResponse'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '409':
+          description: Lobby name already taken
+    get:
+      summary: Get all lobbies
+      description: Retrieve a list of all active lobbies.
+      tags:
+        - Lobbies
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of lobbies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LobbyResponse'
+  /lobbies/{id}:
+    get:
+      summary: Get lobby details
+      description: Retrieve details of a specific lobby.
+      tags:
+        - Lobbies
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Lobby ID
+      responses:
+        '200':
+          description: Lobby details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LobbyResponse'
+        '404':
+          description: Lobby not found
+    delete:
+      summary: Delete a lobby
+      description: Delete a specific lobby. Only the owner can delete it.
+      tags:
+        - Lobbies
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Lobby ID
+      responses:
+        '200':
+          description: Lobby deleted successfully
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden (Not the owner)
+        '404':
+          description: Lobby not found
+  /lobbies/{id}/image:
+    get:
+      summary: Export lobby canvas as PNG
+      description: Export the current lobby canvas as a PNG image.
+      tags:
+        - Lobbies
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Lobby ID
+        - in: query
+          name: scale
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 10
+            default: 1
+          required: false
+          description: Scale factor (1-10) for the exported image
+      responses:
+        '200':
+          description: Canvas image
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Lobby not found
+        '500':
+          description: Internal Server Error
+  /lobbies/{id}/kick:
+    post:
+      summary: Kick a user from the lobby
+      description: Kick a user from the lobby. Only the owner can kick users.
+      tags:
+        - Lobbies
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Lobby ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                targetUserId:
+                  type: string
+              required:
+                - targetUserId
+      responses:
+        '200':
+          description: User kicked successfully
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden (Not the owner)
+        '404':
+          description: Lobby or User not found
+  /lobbies/{id}/ban:
+    post:
+      summary: Ban a user from the lobby
+      description: Ban a user from the lobby. Only the owner can ban users.
+      tags:
+        - Lobbies
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Lobby ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                targetUserId:
+                  type: string
+              required:
+                - targetUserId
+      responses:
+        '200':
+          description: User banned successfully
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden (Not the owner)
+        '404':
+          description: Lobby not found
 components:
   securitySchemes:
     bearerAuth:
@@ -89,3 +319,59 @@ components:
         isNewUser:
           type: boolean
           description: True if a new account was created
+    LobbyCreateRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          example: "Artistic Lobby"
+        description:
+          type: string
+          example: "A place for artists"
+        maxCollaborators:
+          type: integer
+          example: 10
+        palette:
+          type: array
+          items:
+            type: string
+          example: ["#000000", "#FFFFFF"]
+        width:
+          type: integer
+          example: 800
+        height:
+          type: integer
+          example: 600
+    LobbyResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "60d0fe4f5311236168a109cb"
+        name:
+          type: string
+          example: "Artistic Lobby"
+        description:
+          type: string
+          example: "A place for artists"
+        owner:
+          type: string
+          example: "60d0fe4f5311236168a109ca"
+        maxCollaborators:
+          type: integer
+          example: 10
+        width:
+          type: integer
+          example: 800
+        height:
+          type: integer
+          example: 600
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+

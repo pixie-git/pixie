@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, shallowRef, triggerRef } from 'vue';
-import { defaultPalette } from '../config/defaultPalette';
+import { getPalette } from '../config/palettes';
 import { socketService } from '@/services/socket.service';
 
 export const useEditorStore = defineStore('editor', () => {
@@ -22,7 +22,7 @@ export const useEditorStore = defineStore('editor', () => {
   const pixelUpdateEvent = ref<{ x: number; y: number; colorIndex: number } | { x: number; y: number; colorIndex: number }[] | null>(null);
 
   // Defensive copy of the palette
-  const palette = ref<string[]>([...defaultPalette]);
+  const palette = ref<string[]>(getPalette('default'));
 
   const selectedColorIndex = ref<number>(1);
 
@@ -135,6 +135,9 @@ export const useEditorStore = defineStore('editor', () => {
     lastY.value = y;
   };
 
+  // State for current lobby
+  const currentLobbyName = ref<string>('');
+
   const endStroke = () => {
     if (!isDrawing.value) return;
 
@@ -143,9 +146,9 @@ export const useEditorStore = defineStore('editor', () => {
     lastY.value = null;
 
     // Send the buffer to the server
-    if (pixelsBuffer.value.length > 0) {
+    if (pixelsBuffer.value.length > 0 && currentLobbyName.value) {
       socketService.emitDrawBatch({
-        lobbyName: 'Default Lobby',
+        lobbyName: currentLobbyName.value,
         pixels: pixelsBuffer.value
       });
       pixelsBuffer.value = [];
@@ -163,14 +166,38 @@ export const useEditorStore = defineStore('editor', () => {
     pixels.value.fill(0);
   };
 
-  function init() {
+  function init(lobbyName: string) {
+    if (!lobbyName) return;
+    currentLobbyName.value = lobbyName;
+
     socketService.connect();
-    socketService.emitJoinLobby('Default Lobby');
-    isConnected.value = true;
+
+    // Listen for connection (and reconnection)
+    socketService.onConnect(() => {
+      isConnected.value = true;
+      if (currentLobbyName.value) {
+        console.log('[Store] Socket connected, joining lobby:', currentLobbyName.value);
+        socketService.emitJoinLobby(currentLobbyName.value);
+      }
+    });
+
+    // Initial join attempt (in case socket was already open or connects fast)
+    socketService.emitJoinLobby(lobbyName);
 
     // Logic to bind Model events to ViewModel state
-    socketService.onInit((buffer) => {
-      pixels.value = new Uint8Array(buffer);
+    socketService.onInit((state) => {
+      const { width: w, height: h, palette: p, data } = state as any;
+      width.value = w;
+      height.value = h;
+      // Palette comes from server as string[] now (from Canvas model)
+      palette.value = p || getPalette('default');
+      pixels.value = new Uint8Array(data);
+
+      // Ensure selected color is within bounds of the new palette
+      if (selectedColorIndex.value >= palette.value.length) {
+        selectedColorIndex.value = 0;
+      }
+
       triggerRef(pixels);
     });
 

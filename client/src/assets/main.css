@@ -1,3 +1,10 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+
 :root {
     /* Color Palette - Light Theme */
     --color-background: #f5f5f5;
@@ -10,6 +17,37 @@
     --color-border: #dddddd;
     --color-input-bg: #ffffff;
     --color-canvas-bg: #ffffff;
+
+    /* New Semantic Colors */
+    --color-navbar-bg: #E0E0E0;
+    --color-card-header-bg: #f0f0f0;
+    --color-shadow: rgba(0, 0, 0, 0.1);
+    --color-shadow-hover: rgba(0, 0, 0, 0.2);
+    --color-btn-primary: #2196F3;
+    --color-btn-primary-hover: #1976D2;
+    --color-icon: #333333;
+}
+
+[data-theme="dark"] {
+    --color-background: #121212;
+    --color-surface: #1e1e1e;
+    --color-text: #e0e0e0;
+    --color-text-muted: #a0a0a0;
+    --color-primary: #66bb6a;
+    --color-primary-hover: #81c784;
+    --color-secondary: #64b5f6;
+    --color-border: #333333;
+    --color-input-bg: #2c2c2c;
+    --color-canvas-bg: #1e1e1e;
+
+    /* Semantic Overrides */
+    --color-navbar-bg: #2c2c2c;
+    --color-card-header-bg: #2c2c2c;
+    --color-shadow: rgba(0, 0, 0, 0.5);
+    --color-shadow-hover: rgba(0, 0, 0, 0.7);
+    --color-btn-primary: #1976D2;
+    --color-btn-primary-hover: #1565C0;
+    --color-icon: #ffffff;
 }
 
 body {
