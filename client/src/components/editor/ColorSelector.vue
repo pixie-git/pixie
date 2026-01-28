@@ -44,6 +44,7 @@ const selectColor = (index: number) => {
   cursor: pointer;
   border-radius: 6px;
   transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .color-swatch:hover {
@@ -56,5 +57,27 @@ const selectColor = (index: number) => {
   box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
   transform: scale(1.15);
   z-index: 1;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .color-picker {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    padding: 8px;
+    gap: 12px;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    justify-content: center; /* Center if few colors, or start if scrolling */
+  }
+
+  .color-swatch {
+    width: 36px;
+    height: 36px;
+  }
 }
 </style>
