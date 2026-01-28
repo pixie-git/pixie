@@ -107,4 +107,82 @@ export class LobbyController {
       return res.status(500).json({ error: 'Internal Server Error' });
     }
   }
+  // POST /api/lobbies/:id/kick
+  static async kickUser(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { targetUserId } = req.body;
+
+      if (!targetUserId) {
+        return res.status(400).json({ error: 'Target user ID is required' });
+      }
+
+      const lobby = await LobbyService.getById(id);
+      if (!lobby) {
+        return res.status(404).json({ error: 'Lobby not found' });
+      }
+
+      const io = (req as any).io;
+      if (!io) {
+        return res.status(500).json({ error: 'Socket.io not initialized' });
+      }
+
+      const sockets = await io.in(lobby.name).fetchSockets();
+      const targetSocket = sockets.find((s: any) => s.data.user?.id === targetUserId);
+
+      if (targetSocket) {
+        // Notify target
+        targetSocket.emit('USER_KICKED', { lobbyName: lobby.name });
+        // Notify others
+        targetSocket.to(lobby.name).emit('USER_LEFT', targetSocket.data.user);
+        // Force leave
+        targetSocket.leave(lobby.name);
+        return res.status(200).json({ message: 'User kicked successfully' });
+      } else {
+        return res.status(404).json({ error: 'User not found in lobby' });
+      }
+
+    } catch (error) {
+      console.error('[LobbyController] Kick Error:', error);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+
+  // POST /api/lobbies/:id/ban
+  static async banUser(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { targetUserId } = req.body;
+
+      if (!targetUserId) {
+        return res.status(400).json({ error: 'Target user ID is required' });
+      }
+
+      const lobby = await LobbyService.getById(id);
+      if (!lobby) {
+        return res.status(404).json({ error: 'Lobby not found' });
+      }
+
+      // Persist Ban
+      await LobbyService.banUser(lobby.name, targetUserId);
+
+      const io = (req as any).io;
+      if (io) {
+        const sockets = await io.in(lobby.name).fetchSockets();
+        const targetSocket = sockets.find((s: any) => s.data.user?.id === targetUserId);
+
+        if (targetSocket) {
+          targetSocket.emit('USER_BANNED', { lobbyName: lobby.name });
+          targetSocket.to(lobby.name).emit('USER_LEFT', targetSocket.data.user);
+          targetSocket.leave(lobby.name);
+        }
+      }
+
+      return res.status(200).json({ message: 'User banned successfully' });
+
+    } catch (error) {
+      console.error('[LobbyController] Ban Error:', error);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
 }
