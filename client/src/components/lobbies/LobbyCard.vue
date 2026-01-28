@@ -36,7 +36,7 @@ defineProps<{
 }>();
 
 defineEmits<{
-  (e: 'join', lobbyName: string): void;
+  (e: 'join', lobbyId: string): void;
 }>();
 
 const formatDate = (dateString: string) => {
