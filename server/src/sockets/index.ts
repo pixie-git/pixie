@@ -122,12 +122,12 @@ export const setupSocket = (io: Server) => {
         if (!lobby) return;
 
         // Check if requester is owner
-        if (lobby.owner?.toString() !== user._id) {
+        if (lobby.owner?.toString() !== user.id) {
           return;
         }
 
         const sockets = await io.in(lobbyName).fetchSockets();
-        const targetSocket = sockets.find(s => s.data.user?._id === targetUserId);
+        const targetSocket = sockets.find(s => s.data.user?.id === targetUserId);
 
         if (targetSocket) {
           // Notify target
