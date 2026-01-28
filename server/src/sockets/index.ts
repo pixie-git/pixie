@@ -122,7 +122,9 @@ export const setupSocket = (io: Server) => {
         if (!lobby) return;
 
         // Check if requester is owner
-        if (lobby.owner?.toString() !== user.id) {
+        const ownerId = (lobby.owner as any)._id || lobby.owner;
+
+        if (ownerId?.toString() !== user.id) {
           return;
         }
 
