@@ -1,14 +1,19 @@
 <template>
   <div id="app">
+    <GlobalErrorPopup />
     <router-view />
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
+import GlobalErrorPopup from './components/common/GlobalErrorPopup.vue';
 
 export default defineComponent({
-  name: 'App'
+  name: 'App',
+  components: {
+    GlobalErrorPopup
+  }
 })
 </script>
 
