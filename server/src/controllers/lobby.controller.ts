@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { LobbyService } from '../services/lobby.service.js';
+import { ImageService } from '../services/image.service.js';
 
 export class LobbyController {
 
@@ -182,6 +183,28 @@ export class LobbyController {
 
     } catch (error) {
       console.error('[LobbyController] Ban Error:', error);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+  // GET /api/lobbies/:id/image
+  static async getLobbyImage(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const lobby = await LobbyService.getById(id);
+
+      if (!lobby) {
+        return res.status(404).json({ error: 'Lobby not found' });
+      }
+
+      const scaleStr = req.query.scale as string;
+      const scale = scaleStr ? parseInt(scaleStr, 10) : 1;
+
+      const png = await ImageService.generateLobbyPng(lobby.name, scale);
+
+      res.setHeader('Content-Type', 'image/png');
+      png.pack().pipe(res);
+    } catch (error) {
+      console.error('[LobbyController] GetLobbyImage Error:', error);
       return res.status(500).json({ error: 'Internal Server Error' });
     }
   }

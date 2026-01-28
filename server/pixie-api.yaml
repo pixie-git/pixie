@@ -175,6 +175,42 @@ paths:
           description: Forbidden (Not the owner)
         '404':
           description: Lobby not found
+  /lobbies/{id}/image:
+    get:
+      summary: Export lobby canvas as PNG
+      description: Export the current lobby canvas as a PNG image.
+      tags:
+        - Lobbies
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Lobby ID
+        - in: query
+          name: scale
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 10
+            default: 1
+          required: false
+          description: Scale factor (1-10) for the exported image
+      responses:
+        '200':
+          description: Canvas image
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Lobby not found
+        '500':
+          description: Internal Server Error
   /lobbies/{id}/kick:
     post:
       summary: Kick a user from the lobby
