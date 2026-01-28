@@ -1,6 +1,6 @@
 <template>
   <div class="lobbies-container">
-    <LobbyHeader />
+    <LobbyHeader title="Join a Canvas" />
 
     <main class="main-content">
       <LobbyFilters 

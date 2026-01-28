@@ -4,6 +4,8 @@ import { storeToRefs } from 'pinia';
 import { useEditorStore } from '@/stores/editor.store';
 import PixelCanvas from '@/components/editor/PixelCanvas.vue';
 import ColorSelector from '@/components/editor/ColorSelector.vue';
+import MobileNavBar from '@/components/lobbies/MobileNavBar.vue';
+import LobbyHeader from '@/components/lobbies/LobbyHeader.vue';
 import { useRoute } from 'vue-router';
 import { getLobbyById } from '../services/api';
 
@@ -37,22 +39,7 @@ onMounted(async () => {
 <template>
   <div class="editor-layout">
     <!-- Header -->
-    <header class="editor-header">
-      <div class="header-left mobile-hidden">
-        <img src="@/assets/PixieLogo.png" alt="Pixie Logo" class="logo" />
-      </div>
-      <div class="header-center">
-        <h1>Pixel Art Editor</h1>
-      </div>
-      <div class="header-right">
-        <button class="icon-btn notification-btn">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-        </button>
-        <button class="icon-btn desktop-only">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-        </button>
-      </div>
-    </header>
+    <LobbyHeader :title="'Pixel Art Editor'" />
 
     <!-- Main Content -->
     <main class="editor-main">
@@ -95,19 +82,7 @@ onMounted(async () => {
     </main>
 
     <!-- Bottom Navigation Bar (Mobile Only) -->
-    <nav class="mobile-nav">
-      <button class="nav-item">
-        <img src="@/assets/PixieLogo.png" alt="Character" class="nav-icon-img" />
-      </button>
-      
-      <button class="nav-fab">
-        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-      </button>
-      
-      <button class="nav-item">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-      </button>
-    </nav>
+    <MobileNavBar />
   </div>
 </template>
 
@@ -118,49 +93,6 @@ onMounted(async () => {
   height: 100vh;
   background-color: #fff;
   font-family: 'Inter', sans-serif;
-}
-
-/* Header */
-.editor-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 2rem;
-  background: #fff;
-  border-bottom: 1px solid #eee;
-  height: 64px;
-  box-sizing: border-box;
-}
-
-.logo {
-  height: 40px;
-  width: auto;
-}
-
-.header-center h1 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #333;
-  margin: 0;
-}
-
-.header-right {
-  display: flex;
-  gap: 1rem;
-}
-
-.icon-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 50%;
-  color: #333;
-  transition: background 0.2s;
-}
-
-.icon-btn:hover {
-  background: #f5f5f5;
 }
 
 /* Main Layout */
@@ -267,11 +199,6 @@ onMounted(async () => {
   justify-content: center;
 }
 
-/* Mobile Navigation */
-.mobile-nav {
-  display: none;
-}
-
 /* Utilities */
 .mobile-hidden {
   display: block;
@@ -286,12 +213,6 @@ onMounted(async () => {
   .editor-layout {
     height: 100vh;
     overflow: hidden;
-  }
-
-  .editor-header {
-    padding: 0.5rem 1rem;
-    justify-content: center;
-    position: relative;
   }
   
   .header-left.mobile-hidden {
@@ -314,6 +235,7 @@ onMounted(async () => {
   .editor-main {
     flex-direction: column;
     overflow-y: auto; /* Allow scrolling if needed, though we try to fit */
+    padding-bottom: 70px; /* Space for MobileNavBar */
   }
 
   .editor-sidebar {
@@ -373,46 +295,6 @@ onMounted(async () => {
     padding: 4px 8px;
     font-size: 0.9rem;
     border: 1px solid #eee;
-  }
-
-  /* Bottom Navigation */
-  .mobile-nav {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 2rem;
-    height: 70px;
-    background: white;
-    border-top: 1px solid #eee;
-    z-index: 50;
-  }
-  
-  .nav-item {
-    background: none;
-    border: none;
-    padding: 10px;
-    color: #666;
-    cursor: pointer;
-  }
-  
-  .nav-icon-img {
-    width: 32px;
-    height: 32px;
-    object-fit: contain;
-  }
-  
-  .nav-fab {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: #3b82f6;
-    color: white;
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-    transform: translateY(-10px); /* Pop out effect */
   }
 }
 </style>

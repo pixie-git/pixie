@@ -3,7 +3,7 @@
     <div class="logo-section">
       <img src="@/assets/PixieLogo.png" alt="Pixie" class="mini-logo" />
     </div>
-    <h1>Join a Canvas</h1>
+    <h1>{{ title }}</h1>
     
     <div class="user-actions">
       <button class="icon-btn" title="Notifications">
@@ -18,7 +18,12 @@
 </template>
 
 <script setup lang="ts">
-// Pure presentation component
+defineProps({
+  title: {
+    type: String,
+    default: 'Join a Canvas'
+  }
+});
 </script>
 
 <style scoped>
