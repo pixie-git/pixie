@@ -15,6 +15,7 @@
 		"express": "^4.21.2",
 		"jsonwebtoken": "^9.0.3",
 		"mongoose": "^8.9.5",
+		"pngjs": "^7.0.0",
 		"socket.io": "^4.8.1",
 		"swagger-ui-express": "^5.0.1",
 		"yamljs": "^0.3.0"
@@ -24,6 +25,7 @@
 		"@types/express": "^4.17.21",
 		"@types/jsonwebtoken": "^9.0.7",
 		"@types/node": "^20.10.6",
+		"@types/pngjs": "^6.0.5",
 		"@types/swagger-ui-express": "^4.1.8",
 		"@types/yamljs": "^0.2.34",
 		"nodemon": "^3.1.9",
