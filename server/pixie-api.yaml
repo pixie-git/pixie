@@ -190,6 +190,15 @@ paths:
             type: string
           required: true
           description: Lobby ID
+        - in: query
+          name: scale
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 10
+            default: 1
+          required: false
+          description: Scale factor (1-10) for the exported image
       responses:
         '200':
           description: Canvas image
