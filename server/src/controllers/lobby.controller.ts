@@ -196,7 +196,10 @@ export class LobbyController {
         return res.status(404).json({ error: 'Lobby not found' });
       }
 
-      const png = await ImageService.generateLobbyPng(lobby.name);
+      const scaleStr = req.query.scale as string;
+      const scale = scaleStr ? parseInt(scaleStr, 10) : 1;
+
+      const png = await ImageService.generateLobbyPng(lobby.name, scale);
 
       res.setHeader('Content-Type', 'image/png');
       png.pack().pipe(res);
