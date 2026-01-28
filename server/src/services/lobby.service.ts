@@ -1,4 +1,4 @@
-import { Lobby } from '../models/Lobby.js';
+import { Lobby, ILobby } from '../models/Lobby.js';
 
 export class LobbyService {
 
@@ -21,6 +21,15 @@ export class LobbyService {
 
   static async getById(id: string) {
     return await Lobby.findById(id).populate('owner', 'username');
+  }
+
+  static async banUser(lobbyName: string, userId: string): Promise<ILobby | null> {
+    const lobby = await Lobby.findOneAndUpdate(
+      { name: lobbyName },
+      { $addToSet: { bannedUsers: userId } },
+      { new: true }
+    );
+    return lobby;
   }
 
   static async delete(id: string) {

@@ -2,6 +2,7 @@ import { Server, Socket } from 'socket.io';
 import { CanvasService } from '../services/canvas.service.js';
 import { CONFIG } from '../config.js';
 import { DrawPayload, DrawBatchPayload, AuthenticatedSocket } from './types.js';
+import { LobbyService } from '../services/lobby.service.js';
 import jwt from 'jsonwebtoken';
 
 export const setupSocket = (io: Server) => {
@@ -107,6 +108,7 @@ export const setupSocket = (io: Server) => {
         io.to(lobbyName).emit(CONFIG.EVENTS.SERVER.PIXEL_UPDATE_BATCH, { pixels: successfulUpdates });
       }
     });
+
 
     // --- DISCONNECTING ---
     socket.on('disconnecting', () => {
