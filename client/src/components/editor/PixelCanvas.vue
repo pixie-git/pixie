@@ -169,8 +169,6 @@ const handleWheel = (e: WheelEvent) => {
 
   if (clampedScale === scale.value) return;
 
-  if (clampedScale === scale.value) return;
-
   if (viewportRef.value) {
     const rect = viewportRef.value.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
