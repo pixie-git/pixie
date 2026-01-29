@@ -4,6 +4,7 @@ import { CONFIG } from '../config.js';
 import { DrawPayload, DrawBatchPayload, AuthenticatedSocket } from './types.js';
 import { LobbyService } from '../services/lobby.service.js';
 import jwt from 'jsonwebtoken';
+import { getLobbyUserCount, getUsersInLobby, broadcastToLobby, broadcastToOthers } from '../utils/socketUtils.js';
 
 export const setupSocket = (io: Server) => {
   // Authentication Middleware
@@ -33,26 +34,36 @@ export const setupSocket = (io: Server) => {
     socket.on(CONFIG.EVENTS.CLIENT.JOIN_LOBBY, async (lobbyName: string) => {
       console.log(`[Socket] ${socket.id} joining lobby: ${lobbyName}`);
 
-      // 1. Join the Socket.io room channel
-      socket.join(lobbyName);
-
-      const user = (socket as AuthenticatedSocket).user;
-      if (!user) {
-        console.error(`[Socket] Error: User not found on socket ${socket.id}`);
-        return;
-      }
-
       try {
-        // 2. Broadcast to others that a new user joined (First, to avoid race conditions)
-        socket.to(lobbyName).emit(CONFIG.EVENTS.SERVER.USER_JOINED, user);
+        // 1. Get User
+        const user = (socket as AuthenticatedSocket).user;
+        if (!user || !user.id) {
+          console.error(`[Socket] Error: User not found on socket ${socket.id}`);
+          return;
+        }
 
-        // 3. Send list of connected users to the new user
-        // We fetch sockets AFTER joining so the user is included in the list
-        const sockets = await io.in(lobbyName).fetchSockets();
-        const users = sockets.map(s => s.data.user).filter(u => u);
+        // 2. Validate Join (Service checks existence, ban status, and capacity)
+        const currentCount = getLobbyUserCount(io, lobbyName);
+
+        try {
+          await LobbyService.verifyCanJoin(lobbyName, user.id, currentCount);
+        } catch (e: any) {
+          console.error(`[Socket] Join blocked: ${e.message}`);
+          socket.emit(CONFIG.EVENTS.SERVER.ERROR, { message: e.message });
+          return;
+        }
+
+        // 3. Join the Socket.io room channel
+        socket.join(lobbyName);
+
+        // 4. Broadcast to others that a new user joined
+        broadcastToOthers(socket, lobbyName, CONFIG.EVENTS.SERVER.USER_JOINED, user);
+
+        // 5. Send list of connected users to the new user
+        const users = await getUsersInLobby(io, lobbyName);
         socket.emit(CONFIG.EVENTS.SERVER.LOBBY_USERS, users);
 
-        // 4. Get current state from Service & Send to user
+        // 6. Get current state from Service & Send to user
         const state = await CanvasService.getState(lobbyName);
         socket.emit(CONFIG.EVENTS.SERVER.INIT_STATE, state);
       } catch (error) {
@@ -75,7 +86,7 @@ export const setupSocket = (io: Server) => {
       // 2. Broadcast if successful
       if (success) {
         // Send to everyone in the room INCLUDING the sender (for consistency)
-        io.to(lobbyName).emit(CONFIG.EVENTS.SERVER.PIXEL_UPDATE, { x, y, color });
+        broadcastToLobby(io, lobbyName, CONFIG.EVENTS.SERVER.PIXEL_UPDATE, { x, y, color });
       }
     });
 
@@ -105,7 +116,7 @@ export const setupSocket = (io: Server) => {
       // 2. Broadcast batch if any successful
       if (successfulUpdates.length > 0) {
         // Send to everyone in the room INCLUDING the sender (for consistency)
-        io.to(lobbyName).emit(CONFIG.EVENTS.SERVER.PIXEL_UPDATE_BATCH, { pixels: successfulUpdates });
+        broadcastToLobby(io, lobbyName, CONFIG.EVENTS.SERVER.PIXEL_UPDATE_BATCH, { pixels: successfulUpdates });
       }
     });
 
@@ -115,10 +126,10 @@ export const setupSocket = (io: Server) => {
       // Notify rooms that user is leaving
       for (const room of socket.rooms) {
         if (room !== socket.id) {
-          socket.to(room).emit(CONFIG.EVENTS.SERVER.USER_LEFT, (socket as AuthenticatedSocket).user);
+          broadcastToOthers(socket, room, CONFIG.EVENTS.SERVER.USER_LEFT, (socket as AuthenticatedSocket).user);
 
           // Check if room is empty (excluding this socket)
-          const socketsInRoom = await io.in(room).fetchSockets();
+          const socketsInRoom = await getUsersInLobby(io, room);
           const remainingUsers = socketsInRoom.length - 1; // fetchSockets includes the disconnecting socket
 
           if (remainingUsers <= 0) {
