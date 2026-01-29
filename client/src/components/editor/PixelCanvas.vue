@@ -12,7 +12,7 @@ const props = withDefaults(defineProps<{
   initialZoom: 10
 });
 
-// Emits stroke events
+
 const emit = defineEmits<{
   (e: 'stroke-start', payload: { x: number, y: number }): void;
   (e: 'stroke-move', payload: { x: number, y: number }): void;
@@ -22,7 +22,6 @@ const emit = defineEmits<{
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const viewportRef = ref<HTMLDivElement | null>(null);
 
-// Navigation State
 const scale = ref(props.initialZoom);
 const pan = ref({ x: 0, y: 0 });
 const isPanning = ref(false);
@@ -41,11 +40,17 @@ const updatePixel = (x: number, y: number, colorIndex: number) => {
 };
 
 // Redraw the entire canvas (1:1 scaling)
-const drawAll = () => {
+const renderFullCanvas = () => {
   const canvas = canvasRef.value;
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
+  
+  if (props.width === 0 || props.height === 0) {
+    canvas.width = 0;
+    canvas.height = 0;
+    return;
+  }
 
   canvas.width = props.width;
   canvas.height = props.height;
@@ -63,13 +68,14 @@ const drawAll = () => {
   }
 };
 
-const getCoords = (e: MouseEvent) => {
+const getGridCoordinates = (e: MouseEvent) => {
   const canvas = canvasRef.value;
   if (!canvas) return null;
+  
+  if (props.width === 0 || props.height === 0) return null;
 
   const rect = canvas.getBoundingClientRect();
   
-  // Calculate relative position within the canvas element
   const relativeX = e.clientX - rect.left;
   const relativeY = e.clientY - rect.top;
   
@@ -85,15 +91,15 @@ const getCoords = (e: MouseEvent) => {
   return null;
 };
 
-// --- Interaction Handlers ---
+
 
 const getMinScale = () => {
   if (!viewportRef.value) return 1;
+  if (props.width === 0 || props.height === 0) return 1;
   const { width: vw, height: vh } = viewportRef.value.getBoundingClientRect();
   return Math.min(vw / props.width, vh / props.height);
 };
 
-// Helper: Centers content if smaller than view, otherwise clamps to edges
 const clampAxis = (val: number, viewSize: number, contentSize: number) => {
   if (contentSize < viewSize) return (viewSize - contentSize) / 2;
   return Math.min(Math.max(val, viewSize - contentSize), 0);
@@ -110,39 +116,33 @@ const clampPan = (x: number, y: number, scale: number) => {
 };
 
 const handleMouseDown = (e: MouseEvent) => {
-  // Robustness: Check event flag directly
   if (e.altKey || isAltPressed.value) {
     isPanning.value = true;
     isAltPressed.value = true; // Sync state
     return;
   }
-  const coords = getCoords(e);
+  const coords = getGridCoordinates(e);
   if (coords) {
     emit('stroke-start', coords);
   }
 };
 
 const handleMouseMove = (e: MouseEvent) => {
-  // Robustness: Self-correct state if Alt is released outside
   isAltPressed.value = e.altKey;
 
-  // Panning Logic
   if (isPanning.value) {
     const newX = pan.value.x + e.movementX;
     const newY = pan.value.y + e.movementY;
     
-    // Apply clamping
     const clamped = clampPan(newX, newY, scale.value);
     pan.value.x = clamped.x;
     pan.value.y = clamped.y;
     return;
   }
 
-  // Drawing Logic
-  // Check if primary button is pressed
   if (e.buttons !== 1) return;
   
-  const coords = getCoords(e);
+  const coords = getGridCoordinates(e);
   if (coords) {
     emit('stroke-move', coords);
   }
@@ -159,34 +159,27 @@ const handleMouseUp = () => {
 const handleWheel = (e: WheelEvent) => {
   e.preventDefault();
 
-  // Standard zoom logic:
-  // newScale = oldScale * (1 + delta)
   const delta = -e.deltaY;
   const zoomFactor = 1.1;
   const newScale = delta > 0 ? scale.value * zoomFactor : scale.value / zoomFactor;
 
-  // Clamp scale
-  const MIN_SCALE = getMinScale(); // Dynamic min scale
+  const MIN_SCALE = getMinScale();
   const MAX_SCALE = 100;
   const clampedScale = Math.min(Math.max(newScale, MIN_SCALE), MAX_SCALE);
 
   if (clampedScale === scale.value) return;
 
-  // Zoom towards mouse cursor
   if (viewportRef.value) {
     const rect = viewportRef.value.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
 
-    // Calculate mouse position relative to the transform origin (top-left of content)
-    // Current World Pos = (MouseScreen - Pan) / OldScale
     const worldX = (mouseX - pan.value.x) / scale.value;
     const worldY = (mouseY - pan.value.y) / scale.value;
     
     let targetX = mouseX - worldX * clampedScale;
     let targetY = mouseY - worldY * clampedScale;
 
-    // Apply strict Pan Clamping on Zoom to prevent going out of bounds
     const clampedPan = clampPan(targetX, targetY, clampedScale);
     
     pan.value.x = clampedPan.x;
@@ -196,7 +189,6 @@ const handleWheel = (e: WheelEvent) => {
   scale.value = clampedScale;
 };
 
-// Global Input Listeners for Alt key
 const handleKeyDown = (e: KeyboardEvent) => {
   if (e.key === 'Alt' && !e.repeat) {
     e.preventDefault();
@@ -211,29 +203,40 @@ const handleKeyUp = (e: KeyboardEvent) => {
   }
 };
 
-// Handle window resizing to keep constraints valid
+const fitToScreen = () => {
+   if (!viewportRef.value) return;
+   if (props.width === 0 || props.height === 0) return;
+   
+   const minScale = getMinScale();
+   scale.value = minScale;
+   
+   const clamped = clampPan(0, 0, scale.value);
+   pan.value.x = clamped.x;
+   pan.value.y = clamped.y;
+};
+
 const handleResize = () => {
   if (!viewportRef.value) return;
   
-  // Ensure zoom is at least minScale
   const minScale = getMinScale();
   if (scale.value < minScale) {
     scale.value = minScale;
   }
   
-  // Re-clamp pan
   const clamped = clampPan(pan.value.x, pan.value.y, scale.value);
   pan.value.x = clamped.x;
   pan.value.y = clamped.y;
 };
 
 onMounted(() => {
-  drawAll();
+  renderFullCanvas();
   window.addEventListener('keydown', handleKeyDown);
   window.addEventListener('keyup', handleKeyUp);
   window.addEventListener('resize', handleResize);
   
-  setTimeout(handleResize, 0);
+  setTimeout(() => {
+    fitToScreen();
+  }, 0);
 });
 
 onUnmounted(() => {
@@ -242,9 +245,13 @@ onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
 });
 
-watch(() => [props.width, props.height, props.pixels, props.palette], drawAll);
+watch(() => [props.width, props.height], () => {
+  renderFullCanvas();
+  fitToScreen();
+});
 
-// Efficiently handle remote pixel updates - only redraw the changed pixel
+watch(() => [props.pixels, props.palette], renderFullCanvas);
+
 watch(() => props.pixelUpdateEvent, (event) => {
   if (!event) return;
 
@@ -257,7 +264,7 @@ watch(() => props.pixelUpdateEvent, (event) => {
 
 defineExpose({
   updatePixel,
-  drawAll
+  renderFullCanvas
 });
 
 </script>
