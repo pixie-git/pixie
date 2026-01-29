@@ -48,6 +48,11 @@ export class CanvasStore {
   public getInMemoryLobbyIds(): string[] {
     return Array.from(this.lobbies.keys());
   }
+
+  public removeLobby(lobbyName: string): boolean {
+    console.log(`[CanvasStore] Removing lobby from memory: ${lobbyName}`);
+    return this.lobbies.delete(lobbyName);
+  }
 }
 
 export const canvasStore = new CanvasStore();

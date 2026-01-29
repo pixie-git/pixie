@@ -11,7 +11,7 @@ import { getLobbyById } from '../services/api';
 
 // Setup Store
 const store = useEditorStore();
-const { width, height, pixels, palette, selectedColorIndex, isConnected, pixelUpdateEvent } = storeToRefs(store);
+const { width, height, pixels, palette, pixelUpdateEvent } = storeToRefs(store);
 
 const route = useRoute();
 
@@ -33,6 +33,12 @@ onMounted(async () => {
   }
 
   store.init(lobbyName);
+});
+
+import { onUnmounted } from 'vue';
+
+onUnmounted(() => {
+  store.cleanup();
 });
 </script>
 

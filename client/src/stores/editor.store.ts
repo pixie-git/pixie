@@ -229,6 +229,14 @@ export const useEditorStore = defineStore('editor', () => {
     });
   }
 
+  const cleanup = () => {
+    socketService.disconnect();
+    isConnected.value = false;
+    currentLobbyName.value = '';
+    pixelsBuffer.value = [];
+    isDrawing.value = false;
+  };
+
   return {
     width,
     height,
@@ -247,6 +255,7 @@ export const useEditorStore = defineStore('editor', () => {
     endStroke,
     clearCanvas,
     isConnected,
-    init
+    init,
+    cleanup
   };
 });

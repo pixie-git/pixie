@@ -38,6 +38,13 @@ class SocketService {
   emitJoinLobby(lobbyName: string) {
     this.socket?.emit('JOIN_LOBBY', lobbyName);
   }
+
+  disconnect() {
+    if (this.socket) {
+      this.socket.disconnect();
+      this.socket = null;
+    }
+  }
 }
 
 export const socketService = new SocketService();
