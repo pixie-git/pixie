@@ -1,7 +1,6 @@
 import { Response, NextFunction } from "express";
 import { AuthRequest } from "./authMiddleware.js";
 import { Lobby } from "../models/Lobby.js";
-import { Types } from "mongoose";
 import { LobbyService } from "../services/lobby.service.js";
 
 /**
