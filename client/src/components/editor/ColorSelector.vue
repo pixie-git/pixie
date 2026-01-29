@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { useEditorStore } from '@/stores/editor.store';
+import { useCanvasStore } from '@/stores/canvas.store';
 import { storeToRefs } from 'pinia';
 
-const store = useEditorStore();
+const store = useCanvasStore();
 
 const { palette, selectedColorIndex } = storeToRefs(store);
 
