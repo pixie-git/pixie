@@ -111,11 +111,20 @@ export const setupSocket = (io: Server) => {
 
 
     // --- DISCONNECTING ---
-    socket.on('disconnecting', () => {
+    socket.on('disconnecting', async () => {
       // Notify rooms that user is leaving
       for (const room of socket.rooms) {
         if (room !== socket.id) {
           socket.to(room).emit(CONFIG.EVENTS.SERVER.USER_LEFT, (socket as AuthenticatedSocket).user);
+
+          // Check if room is empty (excluding this socket)
+          const socketsInRoom = await io.in(room).fetchSockets();
+          const remainingUsers = socketsInRoom.length - 1; // fetchSockets includes the disconnecting socket
+
+          if (remainingUsers <= 0) {
+            // Room is empty, unload from hot storage
+            await CanvasService.unloadLobby(room);
+          }
         }
       }
     });

@@ -90,4 +90,23 @@ export class CanvasService {
 
     console.log(`[CanvasService] Saved lobby '${lobbyName}' to DB`);
   }
+
+  // Unloads a lobby from memory, persisting it first
+  static async unloadLobby(lobbyName: string) {
+    if (!canvasStore.isLobbyInMemory(lobbyName)) return;
+
+    console.log(`[CanvasService] Unloading idle lobby: ${lobbyName}`);
+
+    // If there's a pending save timer, cancel it and save immediately
+    if (this.saveTimers.has(lobbyName)) {
+      clearTimeout(this.saveTimers.get(lobbyName));
+      this.saveTimers.delete(lobbyName);
+    }
+
+    // Force strict save
+    await this.saveToDB(lobbyName);
+
+    // Remove from memory
+    canvasStore.removeLobby(lobbyName);
+  }
 }
