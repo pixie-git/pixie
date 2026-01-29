@@ -49,18 +49,4 @@ export class LobbyService {
     }
   }
 
-  static async verifyCanJoin(lobbyName: string, userId: string, currentCount: number) {
-    const lobby = await this.getByName(lobbyName);
-    if (!lobby) {
-      throw new Error("Lobby not found");
-    }
-
-    // 1. Check Banned
-    this.validateJoinAccess(lobby, userId);
-
-    // 2. Check Capacity
-    this.validateCapacity(lobby, currentCount);
-
-    return lobby;
-  }
 }
