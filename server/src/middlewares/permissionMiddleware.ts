@@ -1,7 +1,7 @@
 import { Response, NextFunction } from "express";
 import { AuthRequest } from "./authMiddleware.js";
 import { Lobby } from "../models/Lobby.js";
-import { Types } from "mongoose";
+import { LobbyService } from "../services/lobby.service.js";
 
 /**
  * Middleware to check if the user is a System Administrator.
@@ -61,9 +61,11 @@ export const requireLobbyAccess = async (req: AuthRequest, res: Response, next: 
             return res.status(404).json({ error: "Lobby not found" });
         }
 
-        // Check if user is banned
-        if (lobby.bannedUsers.some((id: Types.ObjectId) => id.toString() === userId)) {
-            return res.status(403).json({ error: "Access denied. You are banned from this lobby." });
+        // reused logic from Service
+        try {
+            LobbyService.validateJoinAccess(lobby, userId);
+        } catch (e: any) {
+            return res.status(403).json({ error: e.message });
         }
 
         // If we implement private lobbies in the future, check allowedUsers here

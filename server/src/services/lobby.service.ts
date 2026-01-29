@@ -35,4 +35,18 @@ export class LobbyService {
   static async delete(id: string) {
     return await Lobby.findByIdAndDelete(id);
   }
+
+  // Common validation logic for joining/accessing a lobby
+  static validateJoinAccess(lobby: ILobby, userId: string): void {
+    if (lobby.bannedUsers.some((id: any) => id.toString() === userId)) {
+      throw new Error("Access denied. You are banned from this lobby.");
+    }
+  }
+
+  static validateCapacity(lobby: ILobby, currentCount: number): void {
+    if (currentCount >= lobby.maxCollaborators) {
+      throw new Error(`Lobby is full`);
+    }
+  }
+
 }

@@ -58,6 +58,27 @@ export class CanvasService {
     return changed;
   }
 
+  // Updates multiple pixels
+  static drawBatch(lobbyName: string, pixels: { x: number, y: number, color: number }[]): { x: number, y: number, color: number }[] {
+    const successfulUpdates: { x: number, y: number, color: number }[] = [];
+    let anyChanged = false;
+
+    for (const p of pixels) {
+      // Basic validation
+      if (!p || typeof p.x !== 'number' || typeof p.y !== 'number' || typeof p.color !== 'number') continue;
+
+      const changed = canvasStore.modifyPixelColor(lobbyName, p.x, p.y, p.color);
+      if (changed) {
+        // Sanitize the object we return to avoid echoing unexpected client properties
+        successfulUpdates.push({ x: p.x, y: p.y, color: p.color });
+        anyChanged = true;
+      }
+    }
+
+    if (anyChanged) this.scheduleSave(lobbyName);
+    return successfulUpdates;
+  }
+
   // Schedules a DB save if one isn't already pending
   private static scheduleSave(lobbyName: string) {
     if (this.saveTimers.has(lobbyName)) {
