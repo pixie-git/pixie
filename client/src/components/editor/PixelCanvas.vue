@@ -234,8 +234,6 @@ onMounted(() => {
   window.addEventListener('keyup', handleKeyUp);
   window.addEventListener('resize', handleResize);
   
-  window.addEventListener('resize', handleResize);
-  
   setTimeout(() => {
     fitToScreen();
   }, 0);
