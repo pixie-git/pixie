@@ -252,8 +252,6 @@ watch(() => [props.width, props.height], () => {
 
 watch(() => [props.pixels, props.palette], renderFullCanvas);
 
-watch(() => [props.pixels, props.palette], renderFullCanvas);
-
 watch(() => props.pixelUpdateEvent, (event) => {
   if (!event) return;
 
