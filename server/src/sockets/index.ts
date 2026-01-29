@@ -24,7 +24,12 @@ export const setupSocket = (io: Server) => {
     socket.on(CONFIG.EVENTS.CLIENT.JOIN_LOBBY, async (lobbyName: string) => {
       try {
         const user = (socket as AuthenticatedSocket).user;
-        if (!user?.id) return console.error(`[Socket] User not found: ${socket.id}`);
+        if (!user?.id) {
+          console.error(`[Socket] User not found: ${socket.id}`);
+          socket.emit(CONFIG.EVENTS.SERVER.ERROR, { message: "User not authenticated" });
+          socket.disconnect(true);
+          return;
+        }
 
         const lobby = await LobbyService.getByName(lobbyName);
         if (!lobby) return socket.emit(CONFIG.EVENTS.SERVER.ERROR, { message: "Lobby not found" });
