@@ -215,6 +215,7 @@ export const useEditorStore = defineStore('editor', () => {
     height.value = 0;
     pixels.value = new Uint8Array(0);
     palette.value = getPalette('default');
+    selectedColorIndex.value = 0;
   };
 
   return {
