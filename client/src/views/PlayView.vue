@@ -24,7 +24,7 @@ const handleExport = async () => {
     const response = await exportLobbyImage(lobbyId, 1);
     
     // Create blob link to download
-    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const url = window.URL.createObjectURL(response.data);
     const link = document.createElement('a');
     link.href = url;
     
@@ -32,7 +32,7 @@ const handleExport = async () => {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     link.setAttribute('download', `lobby-${lobbyId}-${timestamp}.png`);
     
-    // Append to html link element page
+    // Append link element to page
     document.body.appendChild(link);
     
     // Start download
