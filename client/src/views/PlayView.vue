@@ -8,6 +8,7 @@ import MobileNavBar from '@/components/lobbies/MobileNavBar.vue';
 import LobbyHeader from '@/components/lobbies/LobbyHeader.vue';
 import { useRoute } from 'vue-router';
 import { getLobbyById } from '../services/api';
+import { onUnmounted } from 'vue';
 
 // Setup Store
 const store = useEditorStore();
@@ -34,8 +35,6 @@ onMounted(async () => {
 
   store.init(lobbyName);
 });
-
-import { onUnmounted } from 'vue';
 
 onUnmounted(() => {
   store.cleanup();
