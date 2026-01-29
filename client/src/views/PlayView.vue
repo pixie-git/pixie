@@ -7,7 +7,7 @@ import ColorSelector from '@/components/editor/ColorSelector.vue';
 import MobileNavBar from '@/components/lobbies/MobileNavBar.vue';
 import LobbyHeader from '@/components/lobbies/LobbyHeader.vue';
 import { useRoute } from 'vue-router';
-import { getLobbyById } from '../services/api';
+import { getLobbyById, exportLobbyImage } from '../services/api';
 import { onUnmounted } from 'vue';
 
 // Setup Store
@@ -15,6 +15,37 @@ const store = useEditorStore();
 const { width, height, pixels, palette, pixelUpdateEvent } = storeToRefs(store);
 
 const route = useRoute();
+
+const handleExport = async () => {
+  const lobbyId = route.params.id as string;
+  if (!lobbyId) return;
+
+  try {
+    const response = await exportLobbyImage(lobbyId, 1);
+    
+    // Create blob link to download
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    
+    // Suggest a filename
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    link.setAttribute('download', `lobby-${lobbyId}-${timestamp}.png`);
+    
+    // Append to html link element page
+    document.body.appendChild(link);
+    
+    // Start download
+    link.click();
+    
+    // Clean up and remove the link
+    link.parentNode?.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  } catch (e) {
+    console.error("Failed to export image", e);
+  }
+};
+
 
 onMounted(async () => {
   const lobbyId = route.params.id as string;
@@ -56,7 +87,7 @@ onUnmounted(() => {
         </div>
         
         <!-- Export Button -->
-        <button class="export-btn">
+        <button class="export-btn" @click="handleExport">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/></svg>
           Export
         </button>

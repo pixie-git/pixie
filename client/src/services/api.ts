@@ -45,6 +45,7 @@ import { ILobby } from "../types";
 
 export const getLobbies = () => api.get<ILobby[]>("/lobbies");
 export const getLobbyById = (id: string) => api.get<ILobby>(`/lobbies/${id}`);
+
 export const createLobby = (data: {
 	name: string;
 	ownerId?: string;
@@ -54,5 +55,11 @@ export const createLobby = (data: {
 	width?: number;
 	height?: number;
 }) => api.post<ILobby>("/lobbies", data);
+
+export const exportLobbyImage = (id: string, scale: number = 1) =>
+	api.get(`/lobbies/${id}/image`, {
+		params: { scale },
+		responseType: 'blob'
+	});
 
 export default api;
