@@ -69,7 +69,8 @@ export class CanvasService {
 
       const changed = canvasStore.modifyPixelColor(lobbyName, p.x, p.y, p.color);
       if (changed) {
-        successfulUpdates.push(p);
+        // Sanitize the object we return to avoid echoing unexpected client properties
+        successfulUpdates.push({ x: p.x, y: p.y, color: p.color });
         anyChanged = true;
       }
     }
