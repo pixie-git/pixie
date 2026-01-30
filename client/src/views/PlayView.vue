@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia';
 import { useCanvasStore } from '@/stores/canvas.store';
 import { useLobbyStore } from '@/stores/lobby.store';
 import { useUserStore } from '@/stores/user';
+import { useModalStore } from '@/stores/modal.store';
 import PixelCanvas from '@/components/editor/PixelCanvas.vue';
 import ColorSelector from '@/components/editor/ColorSelector.vue';
 import MobileNavBar from '@/components/lobbies/MobileNavBar.vue';
@@ -19,6 +20,7 @@ const { width, height, pixels, palette, pixelUpdateEvent } = storeToRefs(canvasS
 const lobbyStore = useLobbyStore();
 const { users, disconnectReason, lobbyName } = storeToRefs(lobbyStore);
 const userStore = useUserStore();
+const modalStore = useModalStore();
 
 const route = useRoute();
 const router = useRouter();
@@ -70,8 +72,15 @@ const handleCreateNew = () => {
   router.push('/create-lobby');
 };
 
-const handleClear = () => {
-  if (confirm("Are you sure you want to clear the entire canvas? This cannot be undone.")) {
+const handleClear = async () => {
+  const confirmed = await modalStore.confirm({
+    title: 'Clear Canvas',
+    message: 'Are you sure you want to clear the entire canvas? This cannot be undone.',
+    confirmText: 'Clear',
+    type: 'danger'
+  });
+
+  if (confirmed) {
     canvasStore.clearLobby();
   }
 };

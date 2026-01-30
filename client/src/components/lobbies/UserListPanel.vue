@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import type { User } from '@/stores/lobby.store';
 import { useUserStore } from '@/stores/user';
+import { useModalStore } from '@/stores/modal.store';
 
 const props = defineProps<{ 
   users: User[];
@@ -15,15 +16,30 @@ const emit = defineEmits<{
 
 const isOpen = ref(true);
 const userStore = useUserStore();
+const modalStore = useModalStore();
 
-const handleKick = (userId: string) => {
-  if (confirm('Are you sure you want to kick this user?')) {
+const handleKick = async (userId: string) => {
+  const confirmed = await modalStore.confirm({
+    title: 'Kick User',
+    message: 'Are you sure you want to kick this user?',
+    confirmText: 'Kick',
+    type: 'warning'
+  });
+
+  if (confirmed) {
     emit('kick', userId);
   }
 };
 
-const handleBan = (userId: string) => {
-  if (confirm('Are you sure you want to BAN this user? They will not be able to rejoin.')) {
+const handleBan = async (userId: string) => {
+  const confirmed = await modalStore.confirm({
+    title: 'Ban User',
+    message: 'Are you sure you want to BAN this user? They will not be able to rejoin.',
+    confirmText: 'Ban',
+    type: 'danger'
+  });
+
+  if (confirmed) {
     emit('ban', userId);
   }
 };

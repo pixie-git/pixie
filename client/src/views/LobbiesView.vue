@@ -28,6 +28,7 @@ import { useUserStore } from '../stores/user';
 import { getLobbies, deleteLobby } from '../services/api';
 import type { ILobby } from '../types';
 import { useNotificationStore } from '../stores/notification';
+import { useModalStore } from '../stores/modal.store';
 
 // Components
 import LobbyHeader from '../components/lobbies/LobbyHeader.vue';
@@ -38,6 +39,7 @@ import MobileNavBar from '../components/lobbies/MobileNavBar.vue';
 const router = useRouter();
 const userStore = useUserStore();
 const notificationStore = useNotificationStore();
+const modalStore = useModalStore();
 
 const lobbies = ref<ILobby[]>([]);
 const loading = ref(true);
@@ -79,7 +81,14 @@ const handleJoin = (lobbyId: string) => {
 };
 
 const handleDelete = async (lobbyId: string) => {
-  if (!confirm('Are you sure you want to delete this lobby? This action cannot be undone.')) {
+  const confirmed = await modalStore.confirm({
+    title: 'Delete Lobby',
+    message: 'Are you sure you want to delete this lobby? This action cannot be undone.',
+    confirmText: 'Delete',
+    type: 'danger'
+  });
+
+  if (!confirmed) {
     return;
   }
 

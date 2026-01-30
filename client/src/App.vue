@@ -1,6 +1,7 @@
 <template>
   <div id="app">
     <GlobalErrorPopup />
+    <ConfirmationModal />
     <router-view />
   </div>
 </template>
@@ -8,11 +9,13 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import GlobalErrorPopup from './components/common/GlobalErrorPopup.vue';
+import ConfirmationModal from './components/common/ConfirmationModal.vue';
 
 export default defineComponent({
   name: 'App',
   components: {
-    GlobalErrorPopup
+    GlobalErrorPopup,
+    ConfirmationModal
   }
 })
 </script>
