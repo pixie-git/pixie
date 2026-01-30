@@ -11,7 +11,7 @@
       <LobbyGrid 
         :lobbies="filteredLobbies"
         :loading="loading"
-        :error="error"
+        error=""
         @join="handleJoin"
       />
     </main>
@@ -38,7 +38,6 @@ const userStore = useUserStore();
 
 const lobbies = ref<ILobby[]>([]);
 const loading = ref(true);
-const error = ref('');
 const searchQuery = ref('');
 const filter = ref<'all' | 'mine'>('all');
 
@@ -49,7 +48,7 @@ const fetchLobbies = async () => {
     lobbies.value = response.data;
   } catch (err) {
     console.error(err);
-    error.value = "Failed to load lobbies";
+    // Error handled by global interceptor
   } finally {
     loading.value = false;
   }

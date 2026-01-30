@@ -61,7 +61,7 @@ onMounted(async () => {
         const res = await getLobbyById(lobbyId);
         lobbyName = res.data.name;
       } catch (e) {
-        console.error("Failed to load lobby by ID", e);
+        // Error handled globally or ignored (fallback to default name)
       }
     } else {
       lobbyName = lobbyId;
