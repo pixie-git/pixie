@@ -27,7 +27,7 @@ import { useRouter } from 'vue-router';
 import { useUserStore } from '../stores/user';
 import { getLobbies, deleteLobby } from '../services/api';
 import type { ILobby } from '../types';
-import { useNotificationStore } from '../stores/notification';
+import { useToastStore } from '../stores/toast.store';
 import { useModalStore } from '../stores/modal.store';
 
 // Components
@@ -38,7 +38,7 @@ import MobileNavBar from '../components/lobbies/MobileNavBar.vue';
 
 const router = useRouter();
 const userStore = useUserStore();
-const notificationStore = useNotificationStore();
+const toastStore = useToastStore();
 const modalStore = useModalStore();
 
 const lobbies = ref<ILobby[]>([]);
@@ -94,7 +94,7 @@ const handleDelete = async (lobbyId: string) => {
 
   try {
     await deleteLobby(lobbyId);
-    notificationStore.add('Lobby deleted successfully', 'success');
+    toastStore.add('Lobby deleted successfully', 'success');
     // Refresh list
     await fetchLobbies();
   } catch (err) {

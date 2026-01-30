@@ -1,5 +1,8 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
+import { EventSourcePolyfill } from 'event-source-polyfill';
+import { useUserStore } from './user';
+import { useToastStore } from './toast.store';
 
 export interface InAppNotification {
     id: string;
@@ -10,31 +13,10 @@ export interface InAppNotification {
 }
 
 export const useInAppNotificationStore = defineStore('inAppNotification', () => {
-    const notifications = ref<InAppNotification[]>([
-        {
-            id: '1',
-            title: 'JohnDoe commented on your post',
-            description: '"Great work on the new pixel art piece! Love the colors."',
-            timeAgo: '2 hours ago',
-            isRead: true
-        },
-        {
-            id: '2',
-            title: 'AliceSmith invited you to collaborate on "Sunset Landscape"',
-            description: 'You have a new invitation to collaborate on a project.',
-            timeAgo: '5 hours ago',
-            isRead: false
-        },
-        {
-            id: '3',
-            title: 'BobWilliams liked your "Cityscape" artwork',
-            description: 'Your artwork "Cityscape" received a new like.',
-            timeAgo: '1 day ago',
-            isRead: true
-        }
-    ]);
+    const notifications = ref<InAppNotification[]>([]);
 
     const unreadCount = computed(() => notifications.value.filter(n => !n.isRead).length);
+    let eventSource: any = null;
 
     const markAsRead = (id: string) => {
         const notification = notifications.value.find(n => n.id === id);
@@ -48,7 +30,66 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
     };
 
     const fetchNotifications = async () => {
+        // actionable: simulate API call
         return Promise.resolve();
+    };
+
+    const setupSSE = () => {
+        const userStore = useUserStore();
+        const token = userStore.token || localStorage.getItem('token');
+
+        if (!token) return;
+
+        if (eventSource) {
+            eventSource.close();
+        }
+
+        const url = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/notifications/stream`;
+
+        eventSource = new EventSourcePolyfill(url, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        eventSource.onopen = () => {
+            console.log('[SSE] Connected to notification stream');
+        };
+
+        eventSource.onmessage = (event: any) => {
+            // Heartbeat or simple message
+            if (event.data === ': connected') return;
+
+            console.log('[SSE] Message received:', event.data);
+            try {
+                const payload = JSON.parse(event.data);
+                console.log('[SSE] Parsed payload:', payload);
+                addNotification(payload);
+            } catch (e) {
+                console.error('[SSE] Failed to parse message', e);
+            }
+        };
+
+        eventSource.onerror = () => {
+            // console.error('[SSE] Error:', error);
+            // Polyfill might error on re-connect attempts, usually safe to ignore or just log
+        };
+    };
+
+    const addNotification = (notification: InAppNotification) => {
+        notifications.value.unshift(notification);
+
+        // Show toast
+        const toastStore = useToastStore();
+        toastStore.add(notification.title, 'info', 5000);
+    };
+
+    const disconnectSSE = () => {
+        if (eventSource) {
+            eventSource.close();
+            eventSource = null;
+            console.log('[SSE] Disconnected');
+        }
     };
 
     return {
@@ -56,6 +97,8 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
         unreadCount,
         markAsRead,
         markAllAsRead,
-        fetchNotifications
+        fetchNotifications,
+        setupSSE,
+        disconnectSSE
     };
 });

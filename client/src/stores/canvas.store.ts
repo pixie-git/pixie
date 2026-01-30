@@ -209,9 +209,9 @@ export const useCanvasStore = defineStore('canvas', () => {
       console.log('[Store] Lobby deleted:', message);
 
       // Use notification store
-      import('../stores/notification').then(({ useNotificationStore }) => {
-        const notificationStore = useNotificationStore();
-        notificationStore.add(`${message} Redirecting...`, 'error', 5000);
+      import('../stores/toast.store').then(({ useToastStore }) => {
+        const toastStore = useToastStore();
+        toastStore.add(`${message} Redirecting...`, 'error', 5000);
       });
 
       // Disable canvas to prevent further edits

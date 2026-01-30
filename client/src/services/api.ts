@@ -13,17 +13,17 @@ api.interceptors.request.use((config) => {
 	return config
 })
 
-import { useNotificationStore } from "../stores/notification";
+import { useToastStore } from "../stores/toast.store";
 
 // Global Error Handling
 api.interceptors.response.use(
 	(response) => response,
 	(error) => {
-		const notificationStore = useNotificationStore();
+		const toastStore = useToastStore();
 
 		if (error.response) {
 			const message = error.response.data?.error || "An unexpected error occurred.";
-			notificationStore.add(message, 'error');
+			toastStore.add(message, 'error');
 
 			if (error.response.status === 401) {
 				// Token invalid or expired
@@ -34,7 +34,7 @@ api.interceptors.response.use(
 				}
 			}
 		} else {
-			notificationStore.add("Network Error. Please check your connection.", 'error');
+			toastStore.add("Network Error. Please check your connection.", 'error');
 		}
 		return Promise.reject(error);
 	}

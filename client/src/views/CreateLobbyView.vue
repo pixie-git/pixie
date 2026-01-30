@@ -113,10 +113,10 @@ import { useRouter } from 'vue-router';
 import { createLobby } from '../services/api';
 import { PALETTES } from '../config/palettes';
 
-import { useNotificationStore } from '../stores/notification';
+import { useToastStore } from '../stores/toast.store';
 
 const router = useRouter();
-const notificationStore = useNotificationStore();
+const toastStore = useToastStore();
 
 const MIN_WIDTH = 16;
 const MIN_HEIGHT = 16;
@@ -161,12 +161,12 @@ const validateHexArray = (input: string): string[] | null => {
 
 const handleSubmit = async () => {
   if (!form.name.trim()) {
-      notificationStore.add("Canvas Name is required", 'error');
+      toastStore.add("Canvas Name is required", 'error');
       return;
   }
 
   if (form.width < MIN_WIDTH || form.height < MIN_HEIGHT) {
-      notificationStore.add(`Canvas dimensions must be at least ${MIN_WIDTH}x${MIN_HEIGHT}`, 'error');
+      toastStore.add(`Canvas dimensions must be at least ${MIN_WIDTH}x${MIN_HEIGHT}`, 'error');
       return;
   }
   
@@ -174,7 +174,7 @@ const handleSubmit = async () => {
   if (form.palette === 'custom') {
      const validated = validateHexArray(form.customPalette);
      if (!validated) {
-       notificationStore.add("Invalid custom palette. Please provide valid hex codes.", 'error');
+       toastStore.add("Invalid custom palette. Please provide valid hex codes.", 'error');
        return;
      }
      paletteArray = validated;
