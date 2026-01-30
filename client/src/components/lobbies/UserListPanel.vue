@@ -8,7 +8,13 @@ const isOpen = ref(true);
 
 <template>
   <div class="user-panel" :class="{ 'closed': !isOpen }">
-    <button class="toggle-btn" @click="isOpen = !isOpen" title="Toggle User List">
+    <button 
+      class="toggle-btn" 
+      @click="isOpen = !isOpen" 
+      title="Toggle User List"
+      type="button"
+      :aria-label="isOpen ? 'Collapse user list' : 'Expand user list'"
+    >
       <span v-if="isOpen">→</span>
       <span v-else>←</span>
     </button>
