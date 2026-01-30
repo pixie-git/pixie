@@ -45,7 +45,7 @@
                         v-model.number="form.width" 
                         type="number" 
                         placeholder="Width" 
-                        min="16" 
+                        :min="MIN_WIDTH" 
                         max="128"
                         />
                         <span class="x-separator">x</span>
@@ -53,7 +53,7 @@
                         v-model.number="form.height" 
                         type="number" 
                         placeholder="Height" 
-                        min="16" 
+                        :min="MIN_HEIGHT" 
                         max="128"
                         />
                     </div>
@@ -118,6 +118,9 @@ import { useNotificationStore } from '../stores/notification';
 const router = useRouter();
 const notificationStore = useNotificationStore();
 
+const MIN_WIDTH = 16;
+const MIN_HEIGHT = 16;
+
 const isLoading = ref(false);
 
 const form = reactive({
@@ -159,6 +162,11 @@ const validateHexArray = (input: string): string[] | null => {
 const handleSubmit = async () => {
   if (!form.name.trim()) {
       notificationStore.add("Canvas Name is required", 'error');
+      return;
+  }
+
+  if (form.width < MIN_WIDTH || form.height < MIN_HEIGHT) {
+      notificationStore.add(`Canvas dimensions must be at least ${MIN_WIDTH}x${MIN_HEIGHT}`, 'error');
       return;
   }
   
