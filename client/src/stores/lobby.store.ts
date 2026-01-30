@@ -31,7 +31,6 @@ export const useLobbyStore = defineStore('lobby', () => {
     });
 
     // Listen for new user joining
-    // Listen for new user joining
     socketService.onUserJoined<User>((user) => {
       // Avoid duplicates
       if (!users.value.find(u => u.id === user.id)) {
@@ -39,7 +38,6 @@ export const useLobbyStore = defineStore('lobby', () => {
       }
     });
 
-    // Listen for user leaving
     // Listen for user leaving
     socketService.onUserLeft<User>((user) => {
       users.value = users.value.filter(u => u.id !== user.id);
