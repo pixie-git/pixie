@@ -11,7 +11,7 @@ import { onMounted, onUnmounted } from 'vue';
 import GlobalErrorPopup from './components/common/GlobalErrorPopup.vue';
 import ConfirmationModal from './components/common/ConfirmationModal.vue';
 import { useInAppNotificationStore } from './stores/inAppNotification.store';
-import { useUserStore } from './stores/user';
+import { useUserStore } from './stores/user.store';
 
 const notificationStore = useInAppNotificationStore();
 const userStore = useUserStore();

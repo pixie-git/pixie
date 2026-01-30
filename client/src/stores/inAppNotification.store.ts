@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { EventSourcePolyfill } from 'event-source-polyfill';
-import { useUserStore } from './user';
+import { useUserStore } from './user.store';
 
 
 export interface InAppNotification {

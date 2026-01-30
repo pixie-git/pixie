@@ -3,7 +3,7 @@ import { onMounted, computed, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useCanvasStore } from '@/stores/canvas.store';
 import { useLobbyStore } from '@/stores/lobby.store';
-import { useUserStore } from '@/stores/user';
+import { useUserStore } from '@/stores/user.store';
 import { useModalStore } from '@/stores/modal.store';
 import PixelCanvas from '@/components/editor/PixelCanvas.vue';
 import ColorSelector from '@/components/editor/ColorSelector.vue';

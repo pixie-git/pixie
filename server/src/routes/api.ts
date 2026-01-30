@@ -1,6 +1,6 @@
 import express, { Router } from "express"
-import { LoginController } from "../controllers/LoginController.js"
-import { UserController } from "../controllers/UserController.js"
+import { LoginController } from "../controllers/login.controller.js"
+import { UserController } from "../controllers/user.controller.js"
 import { authenticateToken } from "../middlewares/authMiddleware.js"
 import { requireLobbyAccess, requireLobbyOwner } from "../middlewares/permissionMiddleware.js"
 import { LobbyController } from "../controllers/lobby.controller.js"

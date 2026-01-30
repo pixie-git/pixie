@@ -24,7 +24,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useUserStore } from '../stores/user';
+import { useUserStore } from '../stores/user.store';
 import { getLobbies, deleteLobby } from '../services/api';
 import type { ILobby } from '../types';
 import { useToastStore } from '../stores/toast.store';
