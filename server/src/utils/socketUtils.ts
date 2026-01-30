@@ -31,3 +31,34 @@ export const broadcastToLobby = (io: Server, lobbyName: string, event: string, d
 export const broadcastToOthers = (socket: Socket, lobbyName: string, event: string, data: any) => {
   socket.to(lobbyName).emit(event, data);
 };
+
+/**
+ * Disconnects a specific user from a lobby room.
+ * Emits FORCE_DISCONNECT event, notifies others with USER_LEFT, and leaves room.
+ * 
+ * @param io - Socket.IO server instance
+ * @param lobbyName - The lobby room name
+ * @param userId - The user ID to disconnect
+ * @param reason - Reason for disconnect (e.g., 'duplicate_session', 'kicked', 'banned')
+ * @returns true if user was found and disconnected, false otherwise
+ */
+export const disconnectUserFromLobby = async (
+  io: Server,
+  lobbyName: string,
+  userId: string,
+  reason: string
+): Promise<boolean> => {
+  const sockets = await io.in(lobbyName).fetchSockets();
+  const targetSocket = sockets.find((s: any) => s.data.user?.id === userId);
+
+  if (!targetSocket) return false;
+
+  // Notify the disconnected user with the reason
+  targetSocket.emit('FORCE_DISCONNECT', { lobbyName, reason });
+  // Notify other users in the lobby (broadcast to room except target)
+  io.to(lobbyName).except(targetSocket.id).emit('USER_LEFT', targetSocket.data.user);
+  // Remove from room
+  targetSocket.leave(lobbyName);
+
+  return true;
+};
