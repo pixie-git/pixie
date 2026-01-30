@@ -11,8 +11,11 @@
     <h1>{{ title }}</h1>
     
     <div class="user-actions">
-      <button class="icon-btn" title="Notifications">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+      <button class="icon-btn" title="Notifications" @click="$router.push('/notifications')">
+        <div class="icon-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+          <span v-if="unreadCount > 0" class="badge">{{ unreadCount }}</span>
+        </div>
       </button>
       <!-- Profile Icon in Header (Desktop Only) -->
       <button class="icon-btn profile-header-btn" title="Profile">
@@ -24,6 +27,8 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
+import { useInAppNotificationStore } from '../../stores/inAppNotification.store';
+import { storeToRefs } from 'pinia';
 
 defineProps({
   title: {
@@ -33,6 +38,9 @@ defineProps({
 });
 
 const router = useRouter();
+const notificationStore = useInAppNotificationStore();
+const { unreadCount } = storeToRefs(notificationStore);
+
 const goToLobbies = () => {
   router.push('/lobbies');
 };
@@ -75,6 +83,30 @@ const goToLobbies = () => {
   font-size: 1.5rem;
   cursor: pointer;
   color: var(--color-icon);
+}
+
+.icon-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background-color: #ef4444;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: bold;
+  height: 16px;
+  min-width: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
 }
 
 /* Mobile Adjustments */
