@@ -21,9 +21,9 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useNotificationStore, type NotificationType } from '../../stores/notification';
+import { useToastStore, type NotificationType } from '../../stores/toast.store';
 
-const store = useNotificationStore();
+const store = useToastStore();
 const { notifications } = storeToRefs(store);
 const { remove } = store;
 

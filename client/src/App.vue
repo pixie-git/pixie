@@ -6,18 +6,25 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
+<script setup lang="ts">
+import { onMounted, onUnmounted } from 'vue';
 import GlobalErrorPopup from './components/common/GlobalErrorPopup.vue';
 import ConfirmationModal from './components/common/ConfirmationModal.vue';
+import { useInAppNotificationStore } from './stores/inAppNotification.store';
+import { useUserStore } from './stores/user';
 
-export default defineComponent({
-  name: 'App',
-  components: {
-    GlobalErrorPopup,
-    ConfirmationModal
+const notificationStore = useInAppNotificationStore();
+const userStore = useUserStore();
+
+onMounted(() => {
+  if (userStore.isAuthenticated) {
+    notificationStore.setupSSE();
   }
-})
+});
+
+onUnmounted(() => {
+  notificationStore.disconnectSSE();
+});
 </script>
 
 <style>

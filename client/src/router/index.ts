@@ -6,11 +6,13 @@ import NotFound from '../views/NotFound.vue'
 import { useUserStore } from '../stores/user'
 
 import CreateLobbyView from '../views/CreateLobbyView.vue'
+import NotificationsView from '../views/NotificationsView.vue'
 
 const routes: RouteRecordRaw[] = [
     { path: '/', component: LoginView },
     { path: '/lobbies', component: LobbiesView, meta: { requiresAuth: true } },
     { path: '/create-lobby', component: CreateLobbyView, meta: { requiresAuth: true } },
+    { path: '/notifications', component: NotificationsView, meta: { requiresAuth: true } },
     { path: '/play/:id', component: PlayView, meta: { requiresAuth: true } },
     { path: '/:pathMatch(.*)*', component: NotFound }
 ]
