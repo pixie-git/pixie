@@ -16,7 +16,7 @@ import { onUnmounted } from 'vue';
 const canvasStore = useCanvasStore();
 const { width, height, pixels, palette, pixelUpdateEvent } = storeToRefs(canvasStore);
 const lobbyStore = useLobbyStore();
-const { users, disconnectReason } = storeToRefs(lobbyStore);
+const { users, disconnectReason, lobbyName } = storeToRefs(lobbyStore);
 
 const route = useRoute();
 const router = useRouter();
@@ -66,25 +66,25 @@ const handleCreateNew = () => {
 
 onMounted(async () => {
   const lobbyId = route.params.id as string;
-  let lobbyName = 'Default Lobby';
+  let resolvedLobbyName = 'Default Lobby';
 
   if (lobbyId) {
     if (/^[0-9a-fA-F]{24}$/.test(lobbyId)) {
       try {
         const res = await getLobbyById(lobbyId);
-        lobbyName = res.data.name;
+        resolvedLobbyName = res.data.name;
       } catch (e) {
         // Error handled globally or ignored (fallback to default name)
       }
     } else {
-      lobbyName = lobbyId;
+      resolvedLobbyName = lobbyId;
     }
   }
-
+  
   // Initialize stores
   // Order matters: lobby store connects socket, canvas store listens to events
-  lobbyStore.joinLobby(lobbyName);
-  canvasStore.init(lobbyName);
+  lobbyStore.joinLobby(resolvedLobbyName);
+  canvasStore.init(resolvedLobbyName);
 });
 
 onUnmounted(() => {
@@ -96,7 +96,7 @@ onUnmounted(() => {
 <template>
   <div class="editor-layout">
     <!-- Header -->
-    <LobbyHeader :title="'Pixel Art Editor'" />
+    <LobbyHeader :title="lobbyName" />
 
     <!-- Main Content -->
     <main class="editor-main">
