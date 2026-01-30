@@ -99,7 +99,7 @@
           {{ isLoading ? 'Creating...' : 'Create Canvas' }}
         </button>
 
-        <p v-if="error" class="error-msg">{{ error }}</p>
+
 
       </form>
     </div>
@@ -112,10 +112,12 @@ import { useRouter } from 'vue-router';
 import { createLobby } from '../services/api';
 import { PALETTES } from '../config/palettes';
 
+import { useNotificationStore } from '../stores/notification';
+
 const router = useRouter();
+const notificationStore = useNotificationStore();
 
 const isLoading = ref(false);
-const error = ref('');
 
 const form = reactive({
   name: '',
@@ -155,7 +157,7 @@ const validateHexArray = (input: string): string[] | null => {
 
 const handleSubmit = async () => {
   if (!form.name.trim()) {
-      error.value = "Canvas Name is required";
+      notificationStore.add("Canvas Name is required", 'error');
       return;
   }
   
@@ -163,7 +165,7 @@ const handleSubmit = async () => {
   if (form.palette === 'custom') {
      const validated = validateHexArray(form.customPalette);
      if (!validated) {
-       error.value = "Invalid custom palette. Please provide valid hex codes.";
+       notificationStore.add("Invalid custom palette. Please provide valid hex codes.", 'error');
        return;
      }
      paletteArray = validated;
@@ -171,7 +173,6 @@ const handleSubmit = async () => {
     paletteArray = PALETTES[form.palette] || PALETTES['default'];
   }
 
-  error.value = '';
   isLoading.value = true;
 
   try {
@@ -188,7 +189,7 @@ const handleSubmit = async () => {
     router.push(`/play/${response.data._id}`);
   } catch (err: any) {
     console.error("Create Lobby Error:", err);
-    error.value = err.response?.data?.error || "Failed to create canvas. Try a different name.";
+    // Error handled by global interceptor
   } finally {
     isLoading.value = false;
   }
