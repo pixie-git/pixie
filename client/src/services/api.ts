@@ -56,6 +56,8 @@ export const createLobby = (data: {
 	height?: number;
 }) => api.post<ILobby>("/lobbies", data);
 
+export const deleteLobby = (id: string) => api.delete<{ message: string }>(`/lobbies/${id}`);
+
 export const exportLobbyImage = (id: string, scale: number = 1) =>
 	api.get(`/lobbies/${id}/image`, {
 		params: { scale },

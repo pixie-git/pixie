@@ -27,6 +27,10 @@ class SocketService {
     this.socket?.on('PIXEL_UPDATE_BATCH', cb);
   }
 
+  onLobbyDeleted(cb: (data: { message: string }) => void) {
+    this.socket?.on('LOBBY_DELETED', cb);
+  }
+
   emitDraw(payload: { lobbyName: string; x: number; y: number; color: number }) {
     this.socket?.emit('DRAW', payload);
   }
