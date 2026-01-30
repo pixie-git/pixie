@@ -75,8 +75,8 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  canvasStore.reset();
   lobbyStore.leaveLobby();
+  canvasStore.reset();
 });
 </script>
 
