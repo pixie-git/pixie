@@ -35,6 +35,7 @@ export const CONFIG = {
       USER_LEFT: 'USER_LEFT',
       USER_KICKED: 'USER_KICKED',
       USER_BANNED: 'USER_BANNED',
+      FORCE_DISCONNECT: 'FORCE_DISCONNECT',
       ERROR: 'ERROR'
     }
   }

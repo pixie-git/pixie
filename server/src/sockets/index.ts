@@ -4,7 +4,7 @@ import { CONFIG } from '../config.js';
 import { DrawPayload, DrawBatchPayload, AuthenticatedSocket } from './types.js';
 import { LobbyService } from '../services/lobby.service.js';
 import jwt from 'jsonwebtoken';
-import { getLobbyUserCount, getUsersInLobby, broadcastToLobby, broadcastToOthers } from '../utils/socketUtils.js';
+import { getLobbyUserCount, getUsersInLobby, broadcastToLobby, broadcastToOthers, disconnectUserFromLobby } from '../utils/socketUtils.js';
 
 export const setupSocket = (io: Server) => {
   io.use((socket, next) => {
@@ -39,6 +39,9 @@ export const setupSocket = (io: Server) => {
         } catch (e: any) {
           return socket.emit(CONFIG.EVENTS.SERVER.ERROR, { message: e.message });
         }
+
+        // Disconnect any existing session for this user in the same lobby (last connection wins)
+        await disconnectUserFromLobby(io, lobbyName, user.id, 'duplicate_session');
 
         socket.join(lobbyName); // Optimistic Join
 

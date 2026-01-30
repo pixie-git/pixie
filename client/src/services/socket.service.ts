@@ -51,6 +51,10 @@ class SocketService {
     this.socket?.on('USER_LEFT', cb);
   }
 
+  onForceDisconnect(cb: (data: { lobbyName: string; reason: string }) => void) {
+    this.socket?.on('FORCE_DISCONNECT', cb);
+  }
+
   disconnect() {
     if (this.socket) {
       this.socket.disconnect();

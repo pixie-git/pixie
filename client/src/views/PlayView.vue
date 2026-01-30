@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useCanvasStore } from '@/stores/canvas.store';
 import { useLobbyStore } from '@/stores/lobby.store';
@@ -8,7 +8,7 @@ import ColorSelector from '@/components/editor/ColorSelector.vue';
 import MobileNavBar from '@/components/lobbies/MobileNavBar.vue';
 import LobbyHeader from '@/components/lobbies/LobbyHeader.vue';
 import UserListPanel from '@/components/lobbies/UserListPanel.vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { getLobbyById, exportLobbyImage } from '../services/api';
 import { onUnmounted } from 'vue';
 
@@ -16,9 +16,18 @@ import { onUnmounted } from 'vue';
 const canvasStore = useCanvasStore();
 const { width, height, pixels, palette, pixelUpdateEvent } = storeToRefs(canvasStore);
 const lobbyStore = useLobbyStore();
-const { users } = storeToRefs(lobbyStore);
+const { users, disconnectReason } = storeToRefs(lobbyStore);
 
 const route = useRoute();
+const router = useRouter();
+
+// Watch for force disconnect and navigate to lobbies
+watch(disconnectReason, (reason) => {
+  if (reason) {
+    console.log('[PlayView] Force disconnected, redirecting. Reason:', reason);
+    router.push('/lobbies');
+  }
+});
 
 const handleExport = async () => {
   const lobbyId = route.params.id as string;
