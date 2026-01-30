@@ -220,7 +220,7 @@ export const useCanvasStore = defineStore('canvas', () => {
       // Redirect after 3 seconds
       setTimeout(() => {
         window.location.href = '/lobbies';
-      }, 3000);
+      }, 1000);
     });
 
     socketService.onCanvasCleared(() => {

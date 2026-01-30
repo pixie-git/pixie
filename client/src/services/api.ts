@@ -25,7 +25,7 @@ api.interceptors.response.use(
 			const message = error.response.data?.error || "An unexpected error occurred.";
 			notificationStore.add(message, 'error');
 
-			if (error.response.status === 401 || error.response.status === 403) {
+			if (error.response.status === 401) {
 				// Token invalid or expired
 				localStorage.removeItem("authToken");
 				// Force redirect to login (avoiding router circular dependency)
@@ -63,5 +63,11 @@ export const exportLobbyImage = (id: string, scale: number = 1) =>
 		params: { scale },
 		responseType: 'blob'
 	});
+
+export const kickUser = (lobbyId: string, userId: string) =>
+	api.post<{ message: string }>(`/lobbies/${lobbyId}/kick`, { targetUserId: userId });
+
+export const banUser = (lobbyId: string, userId: string) =>
+	api.post<{ message: string }>(`/lobbies/${lobbyId}/ban`, { targetUserId: userId });
 
 export default api;
