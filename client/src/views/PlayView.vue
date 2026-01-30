@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { onMounted, watch } from 'vue';
+import { onMounted, computed, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useCanvasStore } from '@/stores/canvas.store';
 import { useLobbyStore } from '@/stores/lobby.store';
+import { useUserStore } from '@/stores/user';
 import PixelCanvas from '@/components/editor/PixelCanvas.vue';
 import ColorSelector from '@/components/editor/ColorSelector.vue';
 import MobileNavBar from '@/components/lobbies/MobileNavBar.vue';
@@ -17,9 +18,15 @@ const canvasStore = useCanvasStore();
 const { width, height, pixels, palette, pixelUpdateEvent } = storeToRefs(canvasStore);
 const lobbyStore = useLobbyStore();
 const { users, disconnectReason, lobbyName } = storeToRefs(lobbyStore);
+const userStore = useUserStore();
 
 const route = useRoute();
 const router = useRouter();
+
+const lobbyOwnerId = ref<string>('');
+const canClear = computed(() => {
+  return userStore.isAdmin || (userStore.id && lobbyOwnerId.value === userStore.id);
+});
 
 // Watch for force disconnect and navigate to lobbies
 watch(disconnectReason, (reason) => {
@@ -63,6 +70,12 @@ const handleCreateNew = () => {
   router.push('/create-lobby');
 };
 
+const handleClear = () => {
+  if (confirm("Are you sure you want to clear the entire canvas? This cannot be undone.")) {
+    canvasStore.clearLobby();
+  }
+};
+
 
 onMounted(async () => {
   const lobbyId = route.params.id as string;
@@ -73,6 +86,9 @@ onMounted(async () => {
       try {
         const res = await getLobbyById(lobbyId);
         resolvedLobbyName = res.data.name;
+        if (res.data.owner && res.data.owner._id) {
+           lobbyOwnerId.value = res.data.owner._id;
+        }
       } catch (e) {
         // Error handled globally or ignored (fallback to default name)
       }
@@ -101,23 +117,35 @@ onUnmounted(() => {
     <!-- Main Content -->
     <main class="editor-main">
       <!-- Left Sidebar (Desktop) / Bottom Content (Mobile) -->
+      <!-- Left Sidebar (Desktop) / Bottom Content (Mobile) -->
       <aside class="editor-sidebar">
-        <!-- Color Selector -->
-        <div class="sidebar-group">
-           <ColorSelector />
+        <div class="sidebar-controls">
+          <!-- Color Selector -->
+          <div class="sidebar-group">
+             <ColorSelector />
+          </div>
+          
+          <!-- Clear Canvas and Export Group -->
+          <div class="sidebar-actions-row">
+              <!-- Clear Canvas Button (Owner/Admin only) -->
+              <button v-if="canClear" class="clear-btn" @click="handleClear">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                Clear
+              </button>
+              
+              <!-- Export Button -->
+              <button class="export-btn" @click="handleExport">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/></svg>
+                Export
+              </button>
+          </div>
+  
+          <!-- Create New Button -->
+          <button class="create-btn" @click="handleCreateNew">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            New Canvas
+          </button>
         </div>
-        
-        <!-- Export Button -->
-        <button class="export-btn" @click="handleExport">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/></svg>
-          Export
-        </button>
-
-        <!-- Create New Button -->
-        <button class="create-btn" @click="handleCreateNew">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          New Canvas
-        </button>
 
       </aside>
 
@@ -177,10 +205,26 @@ onUnmounted(() => {
   z-index: 10;
 }
 
+/* Sidebar Controls Wrapper */
+.sidebar-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: fit-content; /* Allow container to shrink to widest child (Palette) */
+  margin: 0 auto; /* Center in sidebar */
+}
+
 .sidebar-group {
   width: 100%;
   display: flex;
   justify-content: center;
+}
+
+.sidebar-actions-row {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
 }
 
 .export-btn {
@@ -190,13 +234,13 @@ onUnmounted(() => {
   background-color: #a855f7; /* Purple */
   color: white;
   border: none;
-  padding: 12px 24px;
+  padding: 12px;
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s;
-  width: 100%;
   justify-content: center;
+  width: 100%;
 }
 
 .export-btn:hover {
@@ -221,6 +265,26 @@ onUnmounted(() => {
 
 .create-btn:hover {
   background-color: #059669; /* Emerald 600 */
+}
+
+.clear-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #ef4444; /* Red 500 */
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  justify-content: center;
+  width: 100%;
+}
+
+.clear-btn:hover {
+  background-color: #dc2626; /* Red 600 */
 }
 
 .user-avatar-container {
@@ -309,6 +373,12 @@ onUnmounted(() => {
     padding-bottom: 70px; /* Space for MobileNavBar */
   }
 
+  .sidebar-controls {
+    width: 100%;
+    margin: 0;
+    gap: 1rem;
+  }
+
   .editor-sidebar {
     width: 100%;
     height: auto;
@@ -318,7 +388,15 @@ onUnmounted(() => {
     border-top: none;
     order: 2; /* Move to bottom */
     background: transparent;
-    gap: 1rem;
+    gap: 0; /* Let sidebar-controls handle gap */
+  }
+  
+  .sidebar-actions-row {
+    flex-direction: row;
+  }
+  
+  .export-btn, .clear-btn {
+    flex: 1;
   }
   
   .sidebar-group {
@@ -329,7 +407,6 @@ onUnmounted(() => {
   }
 
   .export-btn {
-    width: 100%;
     padding: 14px;
     font-size: 1rem;
     box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);

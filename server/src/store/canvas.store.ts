@@ -45,6 +45,13 @@ export class CanvasStore {
     return false;
   }
 
+  public clearLobbyCanvas(lobbyName: string): boolean {
+    const lobby = this.lobbies.get(lobbyName);
+    if (!lobby) return false;
+    lobby.data.fill(0); // Fill with index 0 (assumed transparent/background)
+    return true;
+  }
+
   public getInMemoryLobbyIds(): string[] {
     return Array.from(this.lobbies.keys());
   }
