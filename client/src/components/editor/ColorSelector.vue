@@ -27,14 +27,16 @@ const selectColor = (index: number) => {
 <style scoped>
 .color-picker {
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* 2 columns like in the design */
+  grid-template-columns: repeat(3, 1fr); /* 3 columns for better density */
   gap: 8px;
   padding: 12px;
-  background: #fff; /* White background as per design */
+  background: #fff;
   border-radius: 12px;
   width: fit-content;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   border: 1px solid #e0e0e0;
+  max-height: 60vh; /* Limit height to allow scrolling */
+  overflow-y: auto; /* Enable vertical scrolling */
 }
 
 .color-swatch {

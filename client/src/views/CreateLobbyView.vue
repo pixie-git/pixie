@@ -66,6 +66,7 @@
                         <option value="default">Default Palette</option>
                         <option value="retro">Retro (Gameboy)</option>
                         <option value="neon">Neon</option>
+                        <option value="large">Large (256 Colors)</option>
                         <option value="custom">Custom</option>
                     </select>
                 </div>
