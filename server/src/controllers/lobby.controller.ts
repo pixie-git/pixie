@@ -3,6 +3,7 @@ import { LobbyService } from '../services/lobby.service.js';
 import { ImageService } from '../services/image.service.js';
 import { disconnectUserFromLobby } from '../utils/socketUtils.js';
 import { AppError } from '../utils/AppError.js';
+import { CONFIG } from '../config.js';
 
 export class LobbyController {
 
@@ -18,6 +19,10 @@ export class LobbyController {
 
       if (!ownerId) {
         throw new AppError('Unauthorized', 401);
+      }
+
+      if (width < CONFIG.CANVAS.MIN_WIDTH || height < CONFIG.CANVAS.MIN_HEIGHT) {
+        throw new AppError(`Canvas dimensions must be at least ${CONFIG.CANVAS.MIN_WIDTH}x${CONFIG.CANVAS.MIN_HEIGHT}`, 400);
       }
 
       const options = { description, maxCollaborators, palette, width, height };
