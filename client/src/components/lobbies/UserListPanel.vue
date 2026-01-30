@@ -54,10 +54,6 @@ const isOpen = ref(true);
 .toggle-btn {
   position: absolute;
   top: 10px;
-  right: 100%; 
-  margin-right: 5px; /* Place button outside or inside? Let's keep it simple inside top-right or just a clean header toggle */
-  /* Actually, for KISS, a header click or specific button inside is fine. */
-  /* Let's put it top-right inside the panel */
   right: 5px;
   background: #eee;
   border: none;
