@@ -26,12 +26,13 @@ export const useLobbyStore = defineStore('lobby', () => {
     });
 
     // Listen for initial user list
-    socketService.onLobbyUsers((userList: User[]) => {
+    socketService.onLobbyUsers<User>((userList) => {
       users.value = userList;
     });
 
     // Listen for new user joining
-    socketService.onUserJoined((user: User) => {
+    // Listen for new user joining
+    socketService.onUserJoined<User>((user) => {
       // Avoid duplicates
       if (!users.value.find(u => u.id === user.id)) {
         users.value.push(user);
@@ -39,7 +40,8 @@ export const useLobbyStore = defineStore('lobby', () => {
     });
 
     // Listen for user leaving
-    socketService.onUserLeft((user: User) => {
+    // Listen for user leaving
+    socketService.onUserLeft<User>((user) => {
       users.value = users.value.filter(u => u.id !== user.id);
     });
   };
