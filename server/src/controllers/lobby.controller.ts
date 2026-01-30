@@ -1,21 +1,22 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { LobbyService } from '../services/lobby.service.js';
 import { ImageService } from '../services/image.service.js';
+import { AppError } from '../utils/AppError.js';
 
 export class LobbyController {
 
   // POST /api/lobbies
-  static async create(req: Request, res: Response) {
+  static async create(req: Request, res: Response, next: NextFunction) {
     try {
       const { name, description, maxCollaborators, palette, width, height } = req.body;
       const ownerId = (req as any).user?.id;
 
       if (!name) {
-        return res.status(400).json({ error: 'Lobby name is required' });
+        throw new AppError('Lobby name is required', 400);
       }
 
       if (!ownerId) {
-        return res.status(401).json({ error: 'Unauthorized' });
+        throw new AppError('Unauthorized', 401);
       }
 
       const options = { description, maxCollaborators, palette, width, height };
@@ -26,60 +27,56 @@ export class LobbyController {
     } catch (error: any) {
       // Duplicate name
       if (error.code === 11000) {
-        return res.status(409).json({ error: 'Lobby name already taken' });
+        return next(new AppError('Lobby name already taken', 409));
       }
 
-      console.error('[LobbyController] Create Error:', error);
-      return res.status(500).json({ error: 'Internal Server Error' });
+      next(error);
     }
   }
 
   // GET /api/lobbies
-  static async getAll(req: Request, res: Response) {
+  static async getAll(req: Request, res: Response, next: NextFunction) {
     try {
       const lobbies = await LobbyService.getAll();
       return res.json(lobbies);
     } catch (error) {
-      console.error('[LobbyController] GetAll Error:', error);
-      return res.status(500).json({ error: 'Internal Server Error' });
+      next(error);
     }
   }
 
   // GET /api/lobbies/:id
-  static async getById(req: Request, res: Response) {
+  static async getById(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
       const lobby = await LobbyService.getById(id);
 
       if (!lobby) {
-        return res.status(404).json({ error: 'Lobby not found' });
+        throw new AppError('Lobby not found', 404);
       }
 
       return res.json(lobby);
     } catch (error) {
-      console.error('[LobbyController] GetById Error:', error);
-      return res.status(500).json({ error: 'Internal Server Error' });
+      next(error);
     }
   }
 
   // GET /api/lobbies/:id/users
-  static async getUsers(req: Request, res: Response) {
+  static async getUsers(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
 
       // 1. Validate Lobby Exists & Get Name
       const lobby = await LobbyService.getById(id);
       if (!lobby) {
-        return res.status(404).json({ error: 'Lobby not found' });
+        throw new AppError('Lobby not found', 404);
       }
 
       const io = (req as any).io;
       if (!io) {
-        return res.status(500).json({ error: 'Socket.io not initialized' });
+        throw new AppError('Socket.io not initialized', 500);
       }
 
       // 2. Use Lobby Name for Socket Room
-      // The socket room is named after the lobby.name, not the _id
       const lobbyName = lobby.name;
 
       const sockets = await io.in(lobbyName).fetchSockets();
@@ -87,24 +84,23 @@ export class LobbyController {
 
       return res.json(users);
     } catch (error) {
-      console.error('[LobbyController] GetUsers Error:', error);
-      return res.status(500).json({ error: 'Internal Server Error' });
+      next(error);
     }
   }
 
   // DELETE /api/lobbies/:id
-  static async delete(req: Request, res: Response) {
+  static async delete(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
       const user = (req as any).user;
 
       if (!user) {
-        return res.status(401).json({ error: 'Unauthorized' });
+        throw new AppError('Unauthorized', 401);
       }
 
       const lobby = await LobbyService.getById(id);
       if (!lobby) {
-        return res.status(404).json({ error: 'Lobby not found' });
+        throw new AppError('Lobby not found', 404);
       }
 
       // Authorization Check: Owner or Admin
@@ -112,7 +108,7 @@ export class LobbyController {
       const isAdmin = user.isAdmin;
 
       if (!isOwner && !isAdmin) {
-        return res.status(403).json({ error: 'Forbidden: You do not have permission to delete this lobby' });
+        throw new AppError('Forbidden: You do not have permission to delete this lobby', 403);
       }
 
       // Notify and Disconnect Sockets
@@ -126,32 +122,32 @@ export class LobbyController {
         io.in(lobbyName).disconnectSockets();
       }
 
-      const result = await LobbyService.delete(id);
+      await LobbyService.delete(id);
 
       return res.status(200).json({ message: 'Lobby deleted successfully' });
     } catch (error) {
-      console.error('[LobbyController] Delete Error:', error);
-      return res.status(500).json({ error: 'Internal Server Error' });
+      next(error);
     }
   }
+
   // POST /api/lobbies/:id/kick
-  static async kickUser(req: Request, res: Response) {
+  static async kickUser(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
       const { targetUserId } = req.body;
 
       if (!targetUserId) {
-        return res.status(400).json({ error: 'Target user ID is required' });
+        throw new AppError('Target user ID is required', 400);
       }
 
       const lobby = await LobbyService.getById(id);
       if (!lobby) {
-        return res.status(404).json({ error: 'Lobby not found' });
+        throw new AppError('Lobby not found', 404);
       }
 
       const io = (req as any).io;
       if (!io) {
-        return res.status(500).json({ error: 'Socket.io not initialized' });
+        throw new AppError('Socket.io not initialized', 500);
       }
 
       const sockets = await io.in(lobby.name).fetchSockets();
@@ -166,28 +162,27 @@ export class LobbyController {
         targetSocket.leave(lobby.name);
         return res.status(200).json({ message: 'User kicked successfully' });
       } else {
-        return res.status(404).json({ error: 'User not found in lobby' });
+        throw new AppError('User not found in lobby', 404);
       }
 
     } catch (error) {
-      console.error('[LobbyController] Kick Error:', error);
-      return res.status(500).json({ error: 'Internal Server Error' });
+      next(error);
     }
   }
 
   // POST /api/lobbies/:id/ban
-  static async banUser(req: Request, res: Response) {
+  static async banUser(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
       const { targetUserId } = req.body;
 
       if (!targetUserId) {
-        return res.status(400).json({ error: 'Target user ID is required' });
+        throw new AppError('Target user ID is required', 400);
       }
 
       const lobby = await LobbyService.getById(id);
       if (!lobby) {
-        return res.status(404).json({ error: 'Lobby not found' });
+        throw new AppError('Lobby not found', 404);
       }
 
       // Persist Ban
@@ -208,18 +203,18 @@ export class LobbyController {
       return res.status(200).json({ message: 'User banned successfully' });
 
     } catch (error) {
-      console.error('[LobbyController] Ban Error:', error);
-      return res.status(500).json({ error: 'Internal Server Error' });
+      next(error);
     }
   }
+
   // GET /api/lobbies/:id/image
-  static async getLobbyImage(req: Request, res: Response) {
+  static async getLobbyImage(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
       const lobby = await LobbyService.getById(id);
 
       if (!lobby) {
-        return res.status(404).json({ error: 'Lobby not found' });
+        throw new AppError('Lobby not found', 404);
       }
 
       const scaleStr = req.query.scale as string;
@@ -230,8 +225,7 @@ export class LobbyController {
       res.setHeader('Content-Type', 'image/png');
       png.pack().pipe(res);
     } catch (error) {
-      console.error('[LobbyController] GetLobbyImage Error:', error);
-      return res.status(500).json({ error: 'Internal Server Error' });
+      next(error);
     }
   }
 }
