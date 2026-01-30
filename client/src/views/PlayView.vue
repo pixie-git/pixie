@@ -320,16 +320,15 @@ onUnmounted(() => {
     justify-content: center;
   }
 
-  .export-btn,
-  .create-btn {
+  .export-btn {
     width: 100%;
     padding: 14px;
     font-size: 1rem;
-    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3); /* Keep purple shadow or change? Maybe separate. */
+    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
   }
   
   .create-btn {
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); /* Green shadow */
+    display: none;
   }
 
   .canvas-area {
