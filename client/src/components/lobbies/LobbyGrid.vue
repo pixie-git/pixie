@@ -8,6 +8,7 @@
       :key="lobby._id" 
       :lobby="lobby" 
       @join="$emit('join', $event)"
+      @delete="$emit('delete', $event)"
     />
     
     <div v-if="lobbies.length === 0" class="empty-state">
@@ -28,6 +29,7 @@ defineProps<{
 
 defineEmits<{
   (e: 'join', lobbyId: string): void;
+  (e: 'delete', lobbyId: string): void;
 }>();
 </script>
 

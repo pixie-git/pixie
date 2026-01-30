@@ -96,11 +96,37 @@ export class LobbyController {
   static async delete(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const result = await LobbyService.delete(id);
+      const user = (req as any).user;
 
-      if (!result) {
+      if (!user) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const lobby = await LobbyService.getById(id);
+      if (!lobby) {
         return res.status(404).json({ error: 'Lobby not found' });
       }
+
+      // Authorization Check: Owner or Admin
+      const isOwner = lobby.owner?.id === user.id || lobby.owner?._id.toString() === user.id;
+      const isAdmin = user.isAdmin;
+
+      if (!isOwner && !isAdmin) {
+        return res.status(403).json({ error: 'Forbidden: You do not have permission to delete this lobby' });
+      }
+
+      // Notify and Disconnect Sockets
+      const io = (req as any).io;
+      if (io) {
+        const lobbyName = lobby.name;
+        // Emit 'LOBBY_DELETED' to all in room
+        io.to(lobbyName).emit('LOBBY_DELETED', { message: 'This lobby has been deleted by the owner.' });
+
+        // Force disconnect/leave logic could go here, or client handles the event to redirect
+        io.in(lobbyName).disconnectSockets();
+      }
+
+      const result = await LobbyService.delete(id);
 
       return res.status(200).json({ message: 'Lobby deleted successfully' });
     } catch (error) {

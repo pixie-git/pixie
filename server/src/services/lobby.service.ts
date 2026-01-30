@@ -33,6 +33,16 @@ export class LobbyService {
   }
 
   static async delete(id: string) {
+    const lobby = await Lobby.findById(id);
+    if (!lobby) return null;
+
+    // Delete associated Canvas
+    // @ts-ignore
+    if (lobby.canvas) {
+      // @ts-ignore
+      await import('../models/Canvas.js').then(m => m.Canvas.findByIdAndDelete(lobby.canvas));
+    }
+
     return await Lobby.findByIdAndDelete(id);
   }
 

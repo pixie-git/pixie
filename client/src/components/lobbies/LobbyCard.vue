@@ -21,6 +21,9 @@
         </div>
       </div>
 
+      <button v-if="isOwner" @click.stop="$emit('delete', lobby._id)" class="delete-btn">
+        Delete
+      </button>
       <button @click="$emit('join', lobby._id)" class="join-btn">
         Join Canvas
       </button>
@@ -30,14 +33,22 @@
 
 <script setup lang="ts">
 import type { ILobby } from '../../types';
+import { useUserStore } from '../../stores/user';
+import { computed } from 'vue';
 
-defineProps<{
+const props = defineProps<{
   lobby: ILobby;
 }>();
 
 defineEmits<{
   (e: 'join', lobbyId: string): void;
+  (e: 'delete', lobbyId: string): void;
 }>();
+
+const userStore = useUserStore();
+const isOwner = computed(() => {
+    return props.lobby.owner?.username === userStore.username || userStore.isAdmin; // Assuming username check for now, ideally ID
+});
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
@@ -127,5 +138,22 @@ h3 {
 
 .join-btn:hover {
   background-color: var(--color-btn-primary-hover);
+}
+
+.delete-btn {
+  width: 100%;
+  padding: 8px;
+  background-color: #ef4444; /* Red-500 */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  transition: background-color 0.2s;
+}
+
+.delete-btn:hover {
+  background-color: #dc2626; /* Red-600 */
 }
 </style>
