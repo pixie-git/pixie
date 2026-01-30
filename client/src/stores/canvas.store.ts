@@ -3,11 +3,10 @@ import { ref, shallowRef, triggerRef } from 'vue';
 import { getPalette } from '../config/palettes';
 import { socketService } from '@/services/socket.service';
 
-export const useEditorStore = defineStore('editor', () => {
+export const useCanvasStore = defineStore('canvas', () => {
 
   const width = ref<number>(0);
   const height = ref<number>(0);
-  const isConnected = ref(false);
 
   const pixels = shallowRef<Uint8Array>(new Uint8Array(0));
 
@@ -151,17 +150,9 @@ export const useEditorStore = defineStore('editor', () => {
     if (!lobbyName) return;
     currentLobbyName.value = lobbyName;
 
-    socketService.connect();
+    // We assume socket is connected by lobby store
+    // Subscribing to canvas events
 
-    socketService.onConnect(() => {
-      isConnected.value = true;
-      if (currentLobbyName.value) {
-        console.log('[Store] Socket connected, joining lobby:', currentLobbyName.value);
-        socketService.emitJoinLobby(currentLobbyName.value);
-      }
-    });
-
-    socketService.emitJoinLobby(lobbyName);
 
     socketService.onInit((state) => {
       const { width: w, height: h, palette: p, data } = state as any;
@@ -222,9 +213,8 @@ export const useEditorStore = defineStore('editor', () => {
     });
   }
 
-  const cleanup = () => {
-    socketService.disconnect();
-    isConnected.value = false;
+  const reset = () => {
+    // socketService.disconnect(); // Handled by lobby store
     currentLobbyName.value = '';
     pendingDrawBuffer.value = [];
     isDrawing.value = false;
@@ -253,8 +243,7 @@ export const useEditorStore = defineStore('editor', () => {
     continueStroke,
     endStroke,
     clearCanvas,
-    isConnected,
     init,
-    cleanup
+    reset
   };
 });

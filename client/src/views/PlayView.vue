@@ -1,18 +1,22 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useEditorStore } from '@/stores/editor.store';
+import { useCanvasStore } from '@/stores/canvas.store';
+import { useLobbyStore } from '@/stores/lobby.store';
 import PixelCanvas from '@/components/editor/PixelCanvas.vue';
 import ColorSelector from '@/components/editor/ColorSelector.vue';
 import MobileNavBar from '@/components/lobbies/MobileNavBar.vue';
 import LobbyHeader from '@/components/lobbies/LobbyHeader.vue';
+import UserListPanel from '@/components/lobbies/UserListPanel.vue';
 import { useRoute } from 'vue-router';
 import { getLobbyById, exportLobbyImage } from '../services/api';
 import { onUnmounted } from 'vue';
 
 // Setup Store
-const store = useEditorStore();
-const { width, height, pixels, palette, pixelUpdateEvent } = storeToRefs(store);
+const canvasStore = useCanvasStore();
+const { width, height, pixels, palette, pixelUpdateEvent } = storeToRefs(canvasStore);
+const lobbyStore = useLobbyStore();
+const { users } = storeToRefs(lobbyStore);
 
 const route = useRoute();
 
@@ -64,11 +68,15 @@ onMounted(async () => {
     }
   }
 
-  store.init(lobbyName);
+  // Initialize stores
+  // Order matters: lobby store connects socket, canvas store listens to events
+  lobbyStore.joinLobby(lobbyName);
+  canvasStore.init(lobbyName);
 });
 
 onUnmounted(() => {
-  store.cleanup();
+  lobbyStore.leaveLobby();
+  canvasStore.reset();
 });
 </script>
 
@@ -96,24 +104,22 @@ onUnmounted(() => {
 
       <!-- Center Canvas Area -->
       <section class="canvas-area">
-        <div class="online-indicator">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-          <span>5</span> <!-- Placeholder for online count -->
+        <div class="canvas-container">
+          <div class="canvas-wrapper">
+            <PixelCanvas
+              :width="width"
+              :height="height"
+              :pixels="pixels"
+              :palette="palette"
+              :pixel-update-event="pixelUpdateEvent"
+              :initial-zoom="10"
+              @stroke-start="({x, y}) => canvasStore.startStroke(x, y)"
+              @stroke-move="({x, y}) => canvasStore.continueStroke(x, y)"
+              @stroke-end="canvasStore.endStroke()"
+            />
+          </div>
         </div>
-
-        <div class="canvas-wrapper">
-          <PixelCanvas
-            :width="width"
-            :height="height"
-            :pixels="pixels"
-            :palette="palette"
-            :pixel-update-event="pixelUpdateEvent"
-            :initial-zoom="10"
-            @stroke-start="({x, y}) => store.startStroke(x, y)"
-            @stroke-move="({x, y}) => store.continueStroke(x, y)"
-            @stroke-end="store.endStroke()"
-          />
-        </div>
+        <UserListPanel :users="users" />
       </section>
     </main>
 
@@ -198,28 +204,18 @@ onUnmounted(() => {
   z-index: 20;
 }
 
-/* Canvas Area */
 .canvas-area {
   flex: 1;
   position: relative;
   background-color: #f8f9fa;
   overflow: hidden;
+  display: flex; /* NEW: Flex layout for side-by-side */
 }
 
-.online-indicator {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: white;
-  padding: 8px 12px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  font-weight: 600;
-  color: #333;
-  z-index: 20;
+.canvas-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
 }
 
 .canvas-wrapper {
@@ -309,6 +305,14 @@ onUnmounted(() => {
     justify-content: center;
     align-items: center;
     padding: 1rem;
+    position: relative;
+    width: 100%; /* Ensure full width */
+  }
+
+  .canvas-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
   }
   
   .canvas-wrapper {
@@ -325,12 +329,6 @@ onUnmounted(() => {
     border: 1px solid #eee;
   }
 
-  .online-indicator {
-    top: 10px;
-    right: 10px;
-    padding: 4px 8px;
-    font-size: 0.9rem;
-    border: 1px solid #eee;
-  }
+
 }
 </style>
