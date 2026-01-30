@@ -10,7 +10,7 @@ import MobileNavBar from '@/components/lobbies/MobileNavBar.vue';
 import LobbyHeader from '@/components/lobbies/LobbyHeader.vue';
 import UserListPanel from '@/components/lobbies/UserListPanel.vue';
 import { useRoute, useRouter } from 'vue-router';
-import { getLobbyById, exportLobbyImage } from '../services/api';
+import { getLobbyById, exportLobbyImage, kickUser, banUser } from '../services/api';
 import { onUnmounted } from 'vue';
 
 // Setup Store
@@ -24,8 +24,8 @@ const route = useRoute();
 const router = useRouter();
 
 const lobbyOwnerId = ref<string>('');
-const canClear = computed(() => {
-  return userStore.isAdmin || (userStore.id && lobbyOwnerId.value === userStore.id);
+const hasLobbyPermissions = computed(() => {
+  return !!(userStore.isAdmin || (userStore.id && lobbyOwnerId.value === userStore.id));
 });
 
 // Watch for force disconnect and navigate to lobbies
@@ -76,6 +76,26 @@ const handleClear = () => {
   }
 };
 
+const handleKickUser = async (userId: string) => {
+  const lobbyId = route.params.id as string;
+  try {
+    await kickUser(lobbyId, userId);
+    // Socket will handle list update
+  } catch (e) {
+    console.error("Failed to kick user:", e);
+  }
+};
+
+const handleBanUser = async (userId: string) => {
+  const lobbyId = route.params.id as string;
+  try {
+    await banUser(lobbyId, userId);
+    // Socket will handle list update
+  } catch (e) {
+    console.error("Failed to ban user:", e);
+  }
+};
+
 
 onMounted(async () => {
   const lobbyId = route.params.id as string;
@@ -89,8 +109,16 @@ onMounted(async () => {
         if (res.data.owner && res.data.owner._id) {
            lobbyOwnerId.value = res.data.owner._id;
         }
-      } catch (e) {
-        // Error handled globally or ignored (fallback to default name)
+      } catch (e: any) {
+        if (e.response && e.response.status === 403) {
+          // Ban detected - Notification is handled globally by api.ts
+          console.warn("User is banned from this lobby.");
+          setTimeout(() => {
+            router.push('/lobbies');
+          }, 1000);
+          return; // Stop initialization
+        }
+        // Other errors ignored (fallback to default name)
       }
     } else {
       resolvedLobbyName = lobbyId;
@@ -128,7 +156,7 @@ onUnmounted(() => {
           <!-- Clear Canvas and Export Group -->
           <div class="sidebar-actions-row">
               <!-- Clear Canvas Button (Owner/Admin only) -->
-              <button v-if="canClear" class="clear-btn" @click="handleClear">
+              <button v-if="hasLobbyPermissions" class="clear-btn" @click="handleClear">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                 Clear
               </button>
@@ -166,7 +194,12 @@ onUnmounted(() => {
             />
           </div>
         </div>
-        <UserListPanel :users="users" />
+        <UserListPanel 
+          :users="users" 
+          :can-moderate="hasLobbyPermissions"
+          @kick="handleKickUser"
+          @ban="handleBanUser"
+        />
       </section>
     </main>
 
