@@ -4,7 +4,7 @@ import type { User } from '@/stores/lobby.store';
 import { useUserStore } from '@/stores/user';
 import { useModalStore } from '@/stores/modal.store';
 
-const props = defineProps<{ 
+defineProps<{ 
   users: User[];
   canModerate?: boolean; 
 }>();
