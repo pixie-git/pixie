@@ -8,7 +8,7 @@ import ColorSelector from '@/components/editor/ColorSelector.vue';
 import MobileNavBar from '@/components/lobbies/MobileNavBar.vue';
 import LobbyHeader from '@/components/lobbies/LobbyHeader.vue';
 import UserListPanel from '@/components/lobbies/UserListPanel.vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { getLobbyById, exportLobbyImage } from '../services/api';
 import { onUnmounted } from 'vue';
 
@@ -19,6 +19,7 @@ const lobbyStore = useLobbyStore();
 const { users } = storeToRefs(lobbyStore);
 
 const route = useRoute();
+const router = useRouter();
 
 const handleExport = async () => {
   const lobbyId = route.params.id as string;
@@ -48,6 +49,10 @@ const handleExport = async () => {
   } catch (e) {
     console.error("Failed to export image", e);
   }
+};
+
+const handleCreateNew = () => {
+  router.push('/create-lobby');
 };
 
 
@@ -98,6 +103,12 @@ onUnmounted(() => {
         <button class="export-btn" @click="handleExport">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/></svg>
           Export
+        </button>
+
+        <!-- Create New Button -->
+        <button class="create-btn" @click="handleCreateNew">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          New Canvas
         </button>
 
       </aside>
@@ -182,6 +193,26 @@ onUnmounted(() => {
 
 .export-btn:hover {
   background-color: #9333ea;
+}
+
+.create-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #10b981; /* Emerald 500 */
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  width: 100%;
+  justify-content: center;
+}
+
+.create-btn:hover {
+  background-color: #059669; /* Emerald 600 */
 }
 
 .user-avatar-container {
@@ -289,11 +320,16 @@ onUnmounted(() => {
     justify-content: center;
   }
 
-  .export-btn {
+  .export-btn,
+  .create-btn {
     width: 100%;
     padding: 14px;
     font-size: 1rem;
-    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3); /* Keep purple shadow or change? Maybe separate. */
+  }
+  
+  .create-btn {
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); /* Green shadow */
   }
 
   .canvas-area {
