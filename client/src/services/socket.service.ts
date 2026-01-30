@@ -4,6 +4,13 @@ class SocketService {
   private socket: Socket | null = null;
 
   connect() {
+    // Clean up any existing socket to prevent orphaned connections
+    if (this.socket) {
+      this.socket.removeAllListeners();
+      this.socket.disconnect();
+      this.socket = null;
+    }
+
     const token = localStorage.getItem('authToken');
     const url = import.meta.env.VITE_API_URL || 'http://localhost:3000';
     this.socket = io(url, {
@@ -57,6 +64,7 @@ class SocketService {
 
   disconnect() {
     if (this.socket) {
+      this.socket.removeAllListeners();
       this.socket.disconnect();
       this.socket = null;
     }
