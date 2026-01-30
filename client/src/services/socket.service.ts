@@ -39,6 +39,18 @@ class SocketService {
     this.socket?.emit('JOIN_LOBBY', lobbyName);
   }
 
+  onLobbyUsers<T>(cb: (users: T[]) => void) {
+    this.socket?.on('LOBBY_USERS', cb);
+  }
+
+  onUserJoined<T>(cb: (user: T) => void) {
+    this.socket?.on('USER_JOINED', cb);
+  }
+
+  onUserLeft<T>(cb: (user: T) => void) {
+    this.socket?.on('USER_LEFT', cb);
+  }
+
   disconnect() {
     if (this.socket) {
       this.socket.disconnect();
