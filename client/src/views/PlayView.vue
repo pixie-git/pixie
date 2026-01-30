@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted, computed, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useCanvasStore } from '@/stores/canvas.store';
 import { useLobbyStore } from '@/stores/lobby.store';
+import { useUserStore } from '@/stores/user';
 import PixelCanvas from '@/components/editor/PixelCanvas.vue';
 import ColorSelector from '@/components/editor/ColorSelector.vue';
 import MobileNavBar from '@/components/lobbies/MobileNavBar.vue';
@@ -17,9 +18,15 @@ const canvasStore = useCanvasStore();
 const { width, height, pixels, palette, pixelUpdateEvent } = storeToRefs(canvasStore);
 const lobbyStore = useLobbyStore();
 const { users } = storeToRefs(lobbyStore);
+const userStore = useUserStore();
 
 const route = useRoute();
 const router = useRouter();
+
+const lobbyOwnerId = ref<string>('');
+const canClear = computed(() => {
+  return userStore.isAdmin || (userStore.id && lobbyOwnerId.value === userStore.id);
+});
 
 const handleExport = async () => {
   const lobbyId = route.params.id as string;
@@ -55,28 +62,37 @@ const handleCreateNew = () => {
   router.push('/create-lobby');
 };
 
+const handleClear = () => {
+  if (confirm("Are you sure you want to clear the entire canvas? This cannot be undone.")) {
+    canvasStore.clearLobby();
+  }
+};
+
 
 onMounted(async () => {
   const lobbyId = route.params.id as string;
-  let lobbyName = 'Default Lobby';
+  let resolvedLobbyName = 'Default Lobby';
 
   if (lobbyId) {
     if (/^[0-9a-fA-F]{24}$/.test(lobbyId)) {
       try {
         const res = await getLobbyById(lobbyId);
-        lobbyName = res.data.name;
+        resolvedLobbyName = res.data.name;
+        if (res.data.owner && res.data.owner._id) {
+           lobbyOwnerId.value = res.data.owner._id;
+        }
       } catch (e) {
         // Error handled globally or ignored (fallback to default name)
       }
     } else {
-      lobbyName = lobbyId;
+      resolvedLobbyName = lobbyId;
     }
   }
 
   // Initialize stores
   // Order matters: lobby store connects socket, canvas store listens to events
-  lobbyStore.joinLobby(lobbyName);
-  canvasStore.init(lobbyName);
+  lobbyStore.joinLobby(resolvedLobbyName);
+  canvasStore.init(resolvedLobbyName);
 });
 
 onUnmounted(() => {
@@ -98,6 +114,12 @@ onUnmounted(() => {
         <div class="sidebar-group">
            <ColorSelector />
         </div>
+        
+        <!-- Clear Canvas Button (Owner/Admin only) -->
+        <button v-if="canClear" class="clear-btn" @click="handleClear">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+          Clear Canvas
+        </button>
         
         <!-- Export Button -->
         <button class="export-btn" @click="handleExport">
@@ -213,6 +235,27 @@ onUnmounted(() => {
 
 .create-btn:hover {
   background-color: #059669; /* Emerald 600 */
+}
+
+.clear-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #ef4444; /* Red 500 */
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  width: 100%;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.clear-btn:hover {
+  background-color: #dc2626; /* Red 600 */
 }
 
 .user-avatar-container {

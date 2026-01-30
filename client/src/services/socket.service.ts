@@ -43,6 +43,14 @@ class SocketService {
     this.socket?.emit('JOIN_LOBBY', lobbyName);
   }
 
+  emitClearCanvas(lobbyName: string) {
+    this.socket?.emit('CLEAR_CANVAS', lobbyName);
+  }
+
+  onCanvasCleared(cb: () => void) {
+    this.socket?.on('CANVAS_CLEARED', cb);
+  }
+
   onLobbyUsers<T>(cb: (users: T[]) => void) {
     this.socket?.on('LOBBY_USERS', cb);
   }

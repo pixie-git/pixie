@@ -58,6 +58,14 @@ export class CanvasService {
     return changed;
   }
 
+  static clearCanvas(lobbyName: string): boolean {
+    const success = canvasStore.clearLobbyCanvas(lobbyName);
+    if (success) {
+      this.scheduleSave(lobbyName);
+    }
+    return success;
+  }
+
   // Updates multiple pixels
   static drawBatch(lobbyName: string, pixels: { x: number, y: number, color: number }[]): { x: number, y: number, color: number }[] {
     const successfulUpdates: { x: number, y: number, color: number }[] = [];

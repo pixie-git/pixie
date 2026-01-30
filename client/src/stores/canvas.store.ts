@@ -142,8 +142,19 @@ export const useCanvasStore = defineStore('canvas', () => {
     endStroke();
   };
 
+  // Emits clear request to server
+  const clearLobby = () => {
+    if (currentLobbyName.value) {
+      socketService.emitClearCanvas(currentLobbyName.value);
+    }
+  };
+
   const clearCanvas = (): void => {
-    pixels.value.fill(0);
+    // Replace array to ensure reactivity triggers
+    if (width.value > 0 && height.value > 0) {
+      pixels.value = new Uint8Array(width.value * height.value);
+      triggerRef(pixels); // Explicit trigger just in case
+    }
   };
 
   function init(lobbyName: string) {
@@ -158,7 +169,7 @@ export const useCanvasStore = defineStore('canvas', () => {
       const { width: w, height: h, palette: p, data } = state as any;
       width.value = w;
       height.value = h;
-      palette.value = p || getPalette('default');
+      palette.value = (Array.isArray(p) && p.length > 0) ? p : getPalette('default');
       pixels.value = new Uint8Array(data);
 
       if (selectedColorIndex.value >= palette.value.length) {
@@ -211,6 +222,12 @@ export const useCanvasStore = defineStore('canvas', () => {
         window.location.href = '/lobbies';
       }, 3000);
     });
+
+    socketService.onCanvasCleared(() => {
+      clearCanvas();
+      // Force redraw if needed, but reactivity on pixels should handle it if components watch it
+      triggerRef(pixels);
+    });
   }
 
   const reset = () => {
@@ -243,6 +260,7 @@ export const useCanvasStore = defineStore('canvas', () => {
     continueStroke,
     endStroke,
     clearCanvas,
+    clearLobby,
     init,
     reset
   };
