@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { LobbyService } from '../services/lobby.service.js';
 import { ImageService } from '../services/image.service.js';
+import { disconnectUserFromLobby } from '../utils/socketUtils.js';
 import { AppError } from '../utils/AppError.js';
 
 export class LobbyController {
@@ -150,16 +151,9 @@ export class LobbyController {
         throw new AppError('Socket.io not initialized', 500);
       }
 
-      const sockets = await io.in(lobby.name).fetchSockets();
-      const targetSocket = sockets.find((s: any) => s.data.user?.id === targetUserId);
+      const wasDisconnected = await disconnectUserFromLobby(io, lobby.name, targetUserId, 'kicked');
 
-      if (targetSocket) {
-        // Notify target
-        targetSocket.emit('USER_KICKED', { lobbyName: lobby.name });
-        // Notify others
-        targetSocket.to(lobby.name).emit('USER_LEFT', targetSocket.data.user);
-        // Force leave
-        targetSocket.leave(lobby.name);
+      if (wasDisconnected) {
         return res.status(200).json({ message: 'User kicked successfully' });
       } else {
         throw new AppError('User not found in lobby', 404);
@@ -190,14 +184,7 @@ export class LobbyController {
 
       const io = (req as any).io;
       if (io) {
-        const sockets = await io.in(lobby.name).fetchSockets();
-        const targetSocket = sockets.find((s: any) => s.data.user?.id === targetUserId);
-
-        if (targetSocket) {
-          targetSocket.emit('USER_BANNED', { lobbyName: lobby.name });
-          targetSocket.to(lobby.name).emit('USER_LEFT', targetSocket.data.user);
-          targetSocket.leave(lobby.name);
-        }
+        await disconnectUserFromLobby(io, lobby.name, targetUserId, 'banned');
       }
 
       return res.status(200).json({ message: 'User banned successfully' });

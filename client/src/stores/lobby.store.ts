@@ -11,9 +11,11 @@ export const useLobbyStore = defineStore('lobby', () => {
   const users = ref<User[]>([]);
   const lobbyName = ref<string>('');
   const isConnected = ref(false);
+  const disconnectReason = ref<string | null>(null);
 
   const joinLobby = (name: string) => {
     lobbyName.value = name;
+    disconnectReason.value = null; // Reset on new join
 
     socketService.connect();
 
@@ -42,6 +44,13 @@ export const useLobbyStore = defineStore('lobby', () => {
     socketService.onUserLeft<User>((user) => {
       users.value = users.value.filter(u => u.id !== user.id);
     });
+
+    // Handle forced disconnection (kicked, banned, duplicate session, etc.)
+    socketService.onForceDisconnect((data) => {
+      console.log('[LobbyStore] Force disconnected:', data.reason);
+      disconnectReason.value = data.reason;
+      leaveLobby();
+    });
   };
 
   const leaveLobby = () => {
@@ -55,6 +64,7 @@ export const useLobbyStore = defineStore('lobby', () => {
     users,
     lobbyName,
     isConnected,
+    disconnectReason,
     joinLobby,
     leaveLobby
   };
