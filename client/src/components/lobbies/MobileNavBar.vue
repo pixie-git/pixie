@@ -2,7 +2,7 @@
   <footer class="bottom-nav">
      <!-- Left: Logo -->
     <div class="nav-item">
-       <img src="@/assets/PixieLogo.png" alt="Pixie" class="nav-logo" />
+       <img src="@/assets/PixieLogo.png" alt="Pixie" class="nav-logo" @click="$router.push('/lobbies')" />
     </div>
     
     <!-- Center: FAB (Create) -->
