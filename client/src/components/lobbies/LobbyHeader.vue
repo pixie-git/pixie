@@ -1,7 +1,12 @@
 <template>
   <header class="header">
     <div class="logo-section">
-      <img src="@/assets/PixieLogo.png" alt="Pixie" class="mini-logo" />
+      <img 
+        src="@/assets/PixieLogo.png" 
+        alt="Pixie" 
+        class="mini-logo" 
+        @click="goToLobbies"
+      />
     </div>
     <h1>{{ title }}</h1>
     
@@ -18,12 +23,19 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router';
+
 defineProps({
   title: {
     type: String,
     default: 'Join a Canvas'
   }
 });
+
+const router = useRouter();
+const goToLobbies = () => {
+  router.push('/lobbies');
+};
 </script>
 
 <style scoped>

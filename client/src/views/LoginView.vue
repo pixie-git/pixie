@@ -67,8 +67,7 @@ const handleLogin = async () => {
 		}
 	} catch (error) {
 		console.error("Login failed:", error)
-		message.value = "❌ Errore durante il login. Controlla che il server sia attivo."
-		messageType.value = "error"
+		// Error is handled by global api interceptor
 	}
 }
 </script>

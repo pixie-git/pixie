@@ -11,8 +11,9 @@
       <LobbyGrid 
         :lobbies="filteredLobbies"
         :loading="loading"
-        :error="error"
+        error=""
         @join="handleJoin"
+        @delete="handleDelete"
       />
     </main>
     
@@ -24,8 +25,9 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../stores/user';
-import { getLobbies } from '../services/api';
+import { getLobbies, deleteLobby } from '../services/api';
 import type { ILobby } from '../types';
+import { useNotificationStore } from '../stores/notification';
 
 // Components
 import LobbyHeader from '../components/lobbies/LobbyHeader.vue';
@@ -35,10 +37,10 @@ import MobileNavBar from '../components/lobbies/MobileNavBar.vue';
 
 const router = useRouter();
 const userStore = useUserStore();
+const notificationStore = useNotificationStore();
 
 const lobbies = ref<ILobby[]>([]);
 const loading = ref(true);
-const error = ref('');
 const searchQuery = ref('');
 const filter = ref<'all' | 'mine'>('all');
 
@@ -49,7 +51,7 @@ const fetchLobbies = async () => {
     lobbies.value = response.data;
   } catch (err) {
     console.error(err);
-    error.value = "Failed to load lobbies";
+    // Error handled by global interceptor
   } finally {
     loading.value = false;
   }
@@ -74,6 +76,22 @@ const filteredLobbies = computed(() => {
 
 const handleJoin = (lobbyId: string) => {
     router.push(`/play/${lobbyId}`);
+};
+
+const handleDelete = async (lobbyId: string) => {
+  if (!confirm('Are you sure you want to delete this lobby? This action cannot be undone.')) {
+    return;
+  }
+
+  try {
+    await deleteLobby(lobbyId);
+    notificationStore.add('Lobby deleted successfully', 'success');
+    // Refresh list
+    await fetchLobbies();
+  } catch (err) {
+    console.error("Failed to delete lobby", err);
+    // Error notification is handled by api interceptor mostly, but just in case
+  }
 };
 </script>
 

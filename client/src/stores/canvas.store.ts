@@ -193,6 +193,24 @@ export const useCanvasStore = defineStore('canvas', () => {
         pixelUpdateEvent.value = updates;
       }
     });
+
+    socketService.onLobbyDeleted(({ message }) => {
+      console.log('[Store] Lobby deleted:', message);
+
+      // Use notification store
+      import('../stores/notification').then(({ useNotificationStore }) => {
+        const notificationStore = useNotificationStore();
+        notificationStore.add(`${message} Redirecting...`, 'error', 5000);
+      });
+
+      // Disable canvas to prevent further edits
+      isDrawing.value = false;
+
+      // Redirect after 3 seconds
+      setTimeout(() => {
+        window.location.href = '/lobbies';
+      }, 3000);
+    });
   }
 
   const reset = () => {

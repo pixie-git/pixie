@@ -59,6 +59,10 @@ const handleExport = async () => {
   }
 };
 
+const handleCreateNew = () => {
+  router.push('/create-lobby');
+};
+
 
 onMounted(async () => {
   const lobbyId = route.params.id as string;
@@ -70,7 +74,7 @@ onMounted(async () => {
         const res = await getLobbyById(lobbyId);
         lobbyName = res.data.name;
       } catch (e) {
-        console.error("Failed to load lobby by ID", e);
+        // Error handled globally or ignored (fallback to default name)
       }
     } else {
       lobbyName = lobbyId;
@@ -107,6 +111,12 @@ onUnmounted(() => {
         <button class="export-btn" @click="handleExport">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/></svg>
           Export
+        </button>
+
+        <!-- Create New Button -->
+        <button class="create-btn" @click="handleCreateNew">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          New Canvas
         </button>
 
       </aside>
@@ -191,6 +201,26 @@ onUnmounted(() => {
 
 .export-btn:hover {
   background-color: #9333ea;
+}
+
+.create-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #10b981; /* Emerald 500 */
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  width: 100%;
+  justify-content: center;
+}
+
+.create-btn:hover {
+  background-color: #059669; /* Emerald 600 */
 }
 
 .user-avatar-container {
@@ -303,6 +333,10 @@ onUnmounted(() => {
     padding: 14px;
     font-size: 1rem;
     box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+  }
+  
+  .create-btn {
+    display: none;
   }
 
   .canvas-area {
