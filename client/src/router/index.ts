@@ -2,8 +2,8 @@ import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import LoginView from '../views/LoginView.vue'
 import LobbiesView from '../views/LobbiesView.vue'
 import PlayView from '../views/PlayView.vue'
-import NotFound from '../views/NotFound.vue'
-import { useUserStore } from '../stores/user'
+import NotFoundView from '../views/NotFoundView.vue'
+import { useUserStore } from '../stores/user.store'
 
 import CreateLobbyView from '../views/CreateLobbyView.vue'
 import NotificationsView from '../views/NotificationsView.vue'
@@ -14,7 +14,7 @@ const routes: RouteRecordRaw[] = [
     { path: '/create-lobby', component: CreateLobbyView, meta: { requiresAuth: true } },
     { path: '/notifications', component: NotificationsView, meta: { requiresAuth: true } },
     { path: '/play/:id', component: PlayView, meta: { requiresAuth: true } },
-    { path: '/:pathMatch(.*)*', component: NotFound }
+    { path: '/:pathMatch(.*)*', component: NotFoundView }
 ]
 
 export const router = createRouter({

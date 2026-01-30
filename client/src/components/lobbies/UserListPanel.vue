@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import type { User } from '@/stores/lobby.store';
-import { useUserStore } from '@/stores/user';
+import { useUserStore } from '@/stores/user.store';
 import { useModalStore } from '@/stores/modal.store';
 
 defineProps<{ 

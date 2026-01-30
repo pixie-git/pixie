@@ -28,7 +28,7 @@
 import { ref } from "vue"
 import { router } from "../router"
 import api from "../services/api"
-import { useUserStore } from "../stores/user"
+import { useUserStore } from "../stores/user.store"
 
 const username = ref("")
 const userStore = useUserStore()

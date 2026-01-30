@@ -33,7 +33,7 @@
 
 <script setup lang="ts">
 import type { ILobby } from '../../types';
-import { useUserStore } from '../../stores/user';
+import { useUserStore } from '../../stores/user.store';
 import { computed } from 'vue';
 
 const props = defineProps<{
