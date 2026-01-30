@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { EventSourcePolyfill } from 'event-source-polyfill';
 import { useUserStore } from './user';
-import { useToastStore } from './toast.store';
+
 
 export interface InAppNotification {
     id: string;
@@ -78,10 +78,6 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
 
     const addNotification = (notification: InAppNotification) => {
         notifications.value.unshift(notification);
-
-        // Show toast
-        const toastStore = useToastStore();
-        toastStore.add(notification.title, 'info', 5000);
     };
 
     const disconnectSSE = () => {
