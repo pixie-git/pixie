@@ -51,7 +51,7 @@ const handleLogin = async () => {
 	try {
 		const response = await api.post<LoginResponse>("/login", {
 			username: username.value,
-		})
+		}, { skipGlobalErrorHandler: true })
 
 		// Server returns { username, id, token, isNewUser }
 		if (response.data.isNewUser) {
@@ -65,9 +65,10 @@ const handleLogin = async () => {
 			userStore.login(response.data.username, response.data.token, response.data.id, response.data.isAdmin)
 			router.push("/lobbies")
 		}
-	} catch (error) {
+	} catch (error: any) {
 		console.error("Login failed:", error)
-		// Error is handled by global api interceptor
+		messageType.value = "error"
+		message.value = error.response?.data?.error || "Login fallito. Riprova."
 	}
 }
 </script>

@@ -1,4 +1,11 @@
-import axios, { type AxiosInstance } from "axios"
+import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios"
+
+// Extend Axios Request Config to support custom flags
+declare module 'axios' {
+	export interface AxiosRequestConfig {
+		skipGlobalErrorHandler?: boolean;
+	}
+}
 
 const api: AxiosInstance = axios.create({
 	baseURL: import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : "http://localhost:3000/api",
@@ -19,6 +26,11 @@ import { useToastStore } from "../stores/toast.store";
 api.interceptors.response.use(
 	(response) => response,
 	(error) => {
+		// Check if the request explicitly asked to skip global error handling
+		if (error.config && error.config.skipGlobalErrorHandler) {
+			return Promise.reject(error);
+		}
+
 		const toastStore = useToastStore();
 
 		if (error.response) {
@@ -43,8 +55,8 @@ api.interceptors.response.use(
 
 import { ILobby } from "../types";
 
-export const getLobbies = () => api.get<ILobby[]>("/lobbies");
-export const getLobbyById = (id: string) => api.get<ILobby>(`/lobbies/${id}`);
+export const getLobbies = (config?: AxiosRequestConfig) => api.get<ILobby[]>("/lobbies", config);
+export const getLobbyById = (id: string, config?: AxiosRequestConfig) => api.get<ILobby>(`/lobbies/${id}`, config);
 
 export const createLobby = (data: {
 	name: string;
@@ -54,20 +66,21 @@ export const createLobby = (data: {
 	palette?: string[];
 	width?: number;
 	height?: number;
-}) => api.post<ILobby>("/lobbies", data);
+}, config?: AxiosRequestConfig) => api.post<ILobby>("/lobbies", data, config);
 
-export const deleteLobby = (id: string) => api.delete<{ message: string }>(`/lobbies/${id}`);
+export const deleteLobby = (id: string, config?: AxiosRequestConfig) => api.delete<{ message: string }>(`/lobbies/${id}`, config);
 
-export const exportLobbyImage = (id: string, scale: number = 1) =>
+export const exportLobbyImage = (id: string, scale: number = 1, config?: AxiosRequestConfig) =>
 	api.get(`/lobbies/${id}/image`, {
 		params: { scale },
-		responseType: 'blob'
+		responseType: 'blob',
+		...config
 	});
 
-export const kickUser = (lobbyId: string, userId: string) =>
-	api.post<{ message: string }>(`/lobbies/${lobbyId}/kick`, { targetUserId: userId });
+export const kickUser = (lobbyId: string, userId: string, config?: AxiosRequestConfig) =>
+	api.post<{ message: string }>(`/lobbies/${lobbyId}/kick`, { targetUserId: userId }, config);
 
-export const banUser = (lobbyId: string, userId: string) =>
-	api.post<{ message: string }>(`/lobbies/${lobbyId}/ban`, { targetUserId: userId });
+export const banUser = (lobbyId: string, userId: string, config?: AxiosRequestConfig) =>
+	api.post<{ message: string }>(`/lobbies/${lobbyId}/ban`, { targetUserId: userId }, config);
 
 export default api;
