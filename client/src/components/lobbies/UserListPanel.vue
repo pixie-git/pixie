@@ -81,13 +81,14 @@ const handleBan = async (userId: string) => {
 <style scoped>
 .user-panel {
   width: 250px; /* Increased slightly for buttons */
-  background: white;
-  border-left: 1px solid #ddd;
+  background: var(--color-surface); /* REF */
+  border-left: 1px solid var(--color-border); /* REF */
   display: flex;
   flex-direction: column;
   position: relative;
   transition: width 0.2s;
   height: 100%;
+  color: var(--color-text); /* REF */
 }
 
 .user-panel.closed {
@@ -99,8 +100,9 @@ const handleBan = async (userId: string) => {
   position: absolute;
   top: 10px;
   right: 5px;
-  background: #eee;
-  border: none;
+  background: var(--color-background); /* REF */
+  color: var(--color-text); /* REF */
+  border: 1px solid var(--color-border); /* REF */
   cursor: pointer;
   padding: 5px 10px;
   border-radius: 4px;
@@ -129,7 +131,7 @@ ul {
 
 li.user-item {
   padding: 8px 0;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-border); /* REF */
   font-size: 0.9rem;
   display: flex;
   justify-content: space-between;

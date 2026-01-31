@@ -30,11 +30,11 @@ const selectColor = (index: number) => {
   grid-template-columns: repeat(3, 1fr); /* 3 columns for better density */
   gap: 8px;
   padding: 12px;
-  background: #fff;
+  background: var(--color-surface); /* REF */
   border-radius: 12px;
   width: fit-content;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 8px var(--color-shadow); /* REF */
+  border: 1px solid var(--color-border); /* REF */
   max-height: 60vh; /* Limit height to allow scrolling */
   overflow-y: auto; /* Enable vertical scrolling */
 }
@@ -42,7 +42,7 @@ const selectColor = (index: number) => {
 .color-swatch {
   width: 32px;
   height: 32px;
-  border: 2px solid rgba(0,0,0,0.1);
+  border: 2px solid var(--color-border); /* REF */
   cursor: pointer;
   border-radius: 6px;
   transition: all 0.2s ease;
@@ -51,12 +51,12 @@ const selectColor = (index: number) => {
 
 .color-swatch:hover {
   transform: scale(1.1);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 4px var(--color-shadow-hover); /* REF */
 }
 
 .color-swatch.active {
-  border-color: #333;
-  box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
+  border-color: var(--color-text); /* REF - Use text color for high contrast border */
+  box-shadow: 0 0 0 2px var(--color-shadow);
   transform: scale(1.15);
   z-index: 1;
 }

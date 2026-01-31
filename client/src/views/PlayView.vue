@@ -218,11 +218,13 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+/* Main Styles */
 .editor-layout {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-color: #fff;
+  background-color: var(--color-background); /* REF */
+  color: var(--color-text); /* REF */
   font-family: 'Inter', sans-serif;
 }
 
@@ -242,8 +244,8 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 2rem;
   align-items: center;
-  border-right: 1px solid #eee;
-  background: #fff;
+  border-right: 1px solid var(--color-border); /* REF */
+  background: var(--color-surface); /* REF */
   z-index: 10;
 }
 
@@ -273,7 +275,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  background-color: #a855f7; /* Purple */
+  background-color: #a855f7; /* Purple - Keep brand color */
   color: white;
   border: none;
   padding: 12px;
@@ -337,22 +339,22 @@ onUnmounted(() => {
 .user-avatar {
   width: 40px;
   height: 40px;
-  background: white;
+  background: var(--color-surface); /* REF */
   padding: 8px 12px;
   border-radius: 8px;
   display: flex;
   align-items: center;
   gap: 6px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 8px var(--color-shadow); /* REF */
   font-weight: 600;
-  color: #333;
+  color: var(--color-text); /* REF */
   z-index: 20;
 }
 
 .canvas-area {
   flex: 1;
   position: relative;
-  background-color: #f8f9fa;
+  background-color: var(--color-canvas-bg); /* REF */
   overflow: hidden;
   display: flex; /* NEW: Flex layout for side-by-side */
 }
@@ -369,8 +371,8 @@ onUnmounted(() => {
   left: 20px;
   right: 20px;
   bottom: 20px;
-  box-shadow: 0 0 30px rgba(0,0,0,0.1);
-  background: white;
+  box-shadow: 0 0 30px var(--color-shadow); /* REF */
+  background: transparent; /* Changed from white to transparent to fix dark mode bars */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -488,7 +490,7 @@ onUnmounted(() => {
     max-width: 350px; /* Limit width on mobile */
     max-height: 350px;
     box-shadow: none; /* Cleaner look on mobile or keep it? Design shows simple box */
-    border: 1px solid #eee;
+    border: 1px solid var(--color-border); /* REF */
   }
 
 
