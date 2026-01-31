@@ -1,5 +1,5 @@
 <template>
-  <div v-if="isOpen">
+  <div v-if="isOpen && anchorRect">
     <div class="popover-backdrop" @click="$emit('close')"></div>
     <div class="user-popover" :style="popoverStyle">
       <UserMenuContent @close="$emit('close')" />
