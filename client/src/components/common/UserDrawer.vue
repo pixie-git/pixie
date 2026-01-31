@@ -1,7 +1,7 @@
 <template>
   <div v-if="isOpen">
     <div class="drawer-backdrop" @click="$emit('close')"></div>
-    <div class="user-drawer">
+    <div class="user-drawer" @keydown.escape="$emit('close')" tabindex="-1">
       <button class="close-btn" @click="$emit('close')" aria-label="Close">✕</button>
       <UserMenuContent @close="$emit('close')" />
     </div>
