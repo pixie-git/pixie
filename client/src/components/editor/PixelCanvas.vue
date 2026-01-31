@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, onUnmounted } from 'vue';
+import { ref, onMounted, watch, onUnmounted, computed } from 'vue';
+import { useCanvasRenderer } from '../../composables/canvas/useCanvasRenderer';
+import { useCanvasNavigation } from '../../composables/canvas/useCanvasNavigation';
+import { useCanvasEvents } from '../../composables/canvas/useCanvasEvents';
 
 const props = withDefaults(defineProps<{
   width: number;
@@ -12,7 +15,6 @@ const props = withDefaults(defineProps<{
   initialZoom: 10
 });
 
-
 const emit = defineEmits<{
   (e: 'stroke-start', payload: { x: number, y: number }): void;
   (e: 'stroke-move', payload: { x: number, y: number }): void;
@@ -22,217 +24,48 @@ const emit = defineEmits<{
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const viewportRef = ref<HTMLDivElement | null>(null);
 
-const scale = ref(props.initialZoom);
-const pan = ref({ x: 0, y: 0 });
-const isPanning = ref(false);
-const isAltPressed = ref(false);
+// --- Composables ---
 
-const updatePixel = (x: number, y: number, colorIndex: number) => {
-  const canvas = canvasRef.value;
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
+const propsRef = computed(() => props);
 
-  const colorHex = props.palette[colorIndex] || '#000000';
-  
-  ctx.fillStyle = colorHex;
-  ctx.fillRect(x, y, 1, 1);
-};
+const { renderFullCanvas, updatePixel } = useCanvasRenderer(canvasRef, propsRef);
 
-// Redraw the entire canvas (1:1 scaling)
-const renderFullCanvas = () => {
-  const canvas = canvasRef.value;
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
-  
-  if (props.width === 0 || props.height === 0) {
-    canvas.width = 0;
-    canvas.height = 0;
-    return;
-  }
+const { 
+  scale, 
+  pan, 
+  performZoom, 
+  performPan, 
+  fitToScreen, 
+  handleResize: handleResizeNav 
+} = useCanvasNavigation(viewportRef, propsRef);
 
-  canvas.width = props.width;
-  canvas.height = props.height;
+const { 
+  isPanning, 
+  isAltPressed,
+  handleMouseDown, 
+  handleMouseMove, 
+  handleMouseUp, 
+  handleWheel, 
+  handleKeyDown, 
+  handleKeyUp, 
+  handleTouchStart, 
+  handleTouchMove, 
+  handleTouchEnd 
+} = useCanvasEvents(canvasRef, propsRef, {
+  onStrokeStart: (payload) => emit('stroke-start', payload),
+  onStrokeMove: (payload) => emit('stroke-move', payload),
+  onStrokeEnd: () => emit('stroke-end'),
+  onPan: performPan,
+  onZoom: performZoom
+});
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  for (let y = 0; y < props.height; y++) {
-    for (let x = 0; x < props.width; x++) {
-      const index = y * props.width + x;
-      const colorIndex = props.pixels[index];
-      const colorHex = props.palette[colorIndex] || '#000000';
-      ctx.fillStyle = colorHex;
-      ctx.fillRect(x, y, 1, 1);
-    }
-  }
-};
-
-const getGridCoordinates = (e: MouseEvent) => {
-  const canvas = canvasRef.value;
-  if (!canvas) return null;
-  
-  if (props.width === 0 || props.height === 0) return null;
-
-  const rect = canvas.getBoundingClientRect();
-  
-  const relativeX = e.clientX - rect.left;
-  const relativeY = e.clientY - rect.top;
-  
-  const scaleX = rect.width / props.width;
-  const scaleY = rect.height / props.height;
-
-  const x = Math.floor(relativeX / scaleX);
-  const y = Math.floor(relativeY / scaleY);
-
-  if (x >= 0 && x < props.width && y >= 0 && y < props.height) {
-    return { x, y };
-  }
-  return null;
-};
-
-
-
-const getMinScale = () => {
-  if (!viewportRef.value) return 1;
-  if (props.width === 0 || props.height === 0) return 1;
-  const { width: vw, height: vh } = viewportRef.value.getBoundingClientRect();
-  return Math.min(vw / props.width, vh / props.height);
-};
-
-const clampAxis = (val: number, viewSize: number, contentSize: number) => {
-  if (contentSize < viewSize) return (viewSize - contentSize) / 2;
-  return Math.min(Math.max(val, viewSize - contentSize), 0);
-};
-
-const clampPan = (x: number, y: number, scale: number) => {
-  if (!viewportRef.value) return { x, y };
-  const { width: vw, height: vh } = viewportRef.value.getBoundingClientRect();
-  
-  return {
-    x: clampAxis(x, vw, props.width * scale),
-    y: clampAxis(y, vh, props.height * scale)
-  };
-};
-
-const handleMouseDown = (e: MouseEvent) => {
-  if (e.altKey || isAltPressed.value) {
-    isPanning.value = true;
-    isAltPressed.value = true; // Sync state
-    return;
-  }
-  const coords = getGridCoordinates(e);
-  if (coords) {
-    emit('stroke-start', coords);
-  }
-};
-
-const handleMouseMove = (e: MouseEvent) => {
-  isAltPressed.value = e.altKey;
-
-  if (isPanning.value) {
-    const newX = pan.value.x + e.movementX;
-    const newY = pan.value.y + e.movementY;
-    
-    const clamped = clampPan(newX, newY, scale.value);
-    pan.value.x = clamped.x;
-    pan.value.y = clamped.y;
-    return;
-  }
-
-  if (e.buttons !== 1) return;
-  
-  const coords = getGridCoordinates(e);
-  if (coords) {
-    emit('stroke-move', coords);
-  }
-};
-
-const handleMouseUp = () => {
-  if (isPanning.value) {
-    isPanning.value = false;
-  } else {
-    emit('stroke-end');
-  }
-};
-
-const handleWheel = (e: WheelEvent) => {
-  e.preventDefault();
-
-  const delta = -e.deltaY;
-  const zoomFactor = 1.1;
-  const newScale = delta > 0 ? scale.value * zoomFactor : scale.value / zoomFactor;
-
-  const MIN_SCALE = getMinScale();
-  const MAX_SCALE = 100;
-  const clampedScale = Math.min(Math.max(newScale, MIN_SCALE), MAX_SCALE);
-
-  if (clampedScale === scale.value) return;
-
-  if (viewportRef.value) {
-    const rect = viewportRef.value.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-
-    const worldX = (mouseX - pan.value.x) / scale.value;
-    const worldY = (mouseY - pan.value.y) / scale.value;
-    
-    let targetX = mouseX - worldX * clampedScale;
-    let targetY = mouseY - worldY * clampedScale;
-
-    const clampedPan = clampPan(targetX, targetY, clampedScale);
-    
-    pan.value.x = clampedPan.x;
-    pan.value.y = clampedPan.y;
-  }
-
-  scale.value = clampedScale;
-};
-
-const handleKeyDown = (e: KeyboardEvent) => {
-  if (e.key === 'Alt' && !e.repeat) {
-    e.preventDefault();
-    isAltPressed.value = true;
-  }
-};
-
-const handleKeyUp = (e: KeyboardEvent) => {
-  if (e.key === 'Alt') {
-    isAltPressed.value = false;
-    isPanning.value = false; // Stop dragging if Alt is released
-  }
-};
-
-const fitToScreen = () => {
-   if (!viewportRef.value) return;
-   if (props.width === 0 || props.height === 0) return;
-   
-   const minScale = getMinScale();
-   scale.value = minScale;
-   
-   const clamped = clampPan(0, 0, scale.value);
-   pan.value.x = clamped.x;
-   pan.value.y = clamped.y;
-};
-
-const handleResize = () => {
-  if (!viewportRef.value) return;
-  
-  const minScale = getMinScale();
-  if (scale.value < minScale) {
-    scale.value = minScale;
-  }
-  
-  const clamped = clampPan(pan.value.x, pan.value.y, scale.value);
-  pan.value.x = clamped.x;
-  pan.value.y = clamped.y;
-};
+// --- Lifecycle & Watchers ---
 
 onMounted(() => {
   renderFullCanvas();
   window.addEventListener('keydown', handleKeyDown);
   window.addEventListener('keyup', handleKeyUp);
-  window.addEventListener('resize', handleResize);
+  window.addEventListener('resize', handleResizeNav);
   
   setTimeout(() => {
     fitToScreen();
@@ -242,7 +75,7 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown);
   window.removeEventListener('keyup', handleKeyUp);
-  window.removeEventListener('resize', handleResize);
+  window.removeEventListener('resize', handleResizeNav);
 });
 
 watch(() => [props.width, props.height], () => {
@@ -266,7 +99,6 @@ defineExpose({
   updatePixel,
   renderFullCanvas
 });
-
 </script>
 
 <template>
@@ -278,6 +110,10 @@ defineExpose({
     @mousemove="handleMouseMove"
     @mouseup="handleMouseUp"
     @mouseleave="handleMouseUp"
+    @touchstart.prevent="handleTouchStart"
+    @touchmove.prevent="handleTouchMove"
+    @touchend.prevent="handleTouchEnd"
+    @touchcancel.prevent="handleTouchEnd"
     :class="{ 'panning': isAltPressed, 'dragging': isPanning }"
   >
     <div 
@@ -312,6 +148,7 @@ defineExpose({
   background-color: #222;
   cursor: crosshair;
   user-select: none;
+  touch-action: none;
 }
 
 .viewport.panning {
