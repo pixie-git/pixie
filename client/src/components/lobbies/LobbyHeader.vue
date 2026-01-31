@@ -17,18 +17,31 @@
           <span v-if="unreadCount > 0" class="badge">{{ unreadCount }}</span>
         </div>
       </button>
-      <!-- Profile Icon in Header (Desktop Only) -->
-      <button class="icon-btn profile-header-btn" title="Profile">
+      <button 
+        ref="profileBtnRef"
+        class="icon-btn profile-header-btn" 
+        title="Profile"
+        @click="toggleUserMenu"
+      >
          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
       </button>
     </div>
   </header>
+
+  <UserPopover 
+    :is-open="isUserMenuOpen" 
+    :anchor-rect="profileBtnRect"
+    @close="isUserMenuOpen = false" 
+  />
 </template>
 
+
 <script setup lang="ts">
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useInAppNotificationStore } from '../../stores/inAppNotification.store';
 import { storeToRefs } from 'pinia';
+import UserPopover from '../common/UserPopover.vue';
 
 defineProps({
   title: {
@@ -40,6 +53,17 @@ defineProps({
 const router = useRouter();
 const notificationStore = useInAppNotificationStore();
 const { unreadCount } = storeToRefs(notificationStore);
+
+const isUserMenuOpen = ref(false);
+const profileBtnRef = ref<HTMLButtonElement | null>(null);
+const profileBtnRect = ref<DOMRect | null>(null);
+
+function toggleUserMenu(): void {
+  if (profileBtnRef.value) {
+    profileBtnRect.value = profileBtnRef.value.getBoundingClientRect();
+  }
+  isUserMenuOpen.value = !isUserMenuOpen.value;
+}
 
 const goToLobbies = () => {
   router.push('/lobbies');
