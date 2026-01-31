@@ -113,7 +113,7 @@ onMounted(async () => {
   if (lobbyId) {
     if (/^[0-9a-fA-F]{24}$/.test(lobbyId)) {
       try {
-        const res = await getLobbyById(lobbyId);
+        const res = await getLobbyById(lobbyId, { skipGlobalErrorHandler: true });
         resolvedLobbyName = res.data.name;
         if (res.data.owner && res.data.owner._id) {
            lobbyOwnerId.value = res.data.owner._id;
