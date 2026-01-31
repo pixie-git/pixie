@@ -1,14 +1,14 @@
 <template>
   <div v-if="isOpen">
     <div class="popover-backdrop" @click="$emit('close')"></div>
-    <div class="user-popover" :style="popoverStyle" @keydown.escape="$emit('close')" tabindex="-1">
+    <div class="user-popover" :style="popoverStyle">
       <UserMenuContent @close="$emit('close')" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, watch, onUnmounted } from 'vue';
 import UserMenuContent from './UserMenuContent.vue';
 
 const props = defineProps<{
@@ -16,7 +16,7 @@ const props = defineProps<{
   anchorRect: DOMRect | null;
 }>();
 
-defineEmits<{ close: [] }>();
+const emit = defineEmits<{ close: [] }>();
 
 const popoverStyle = computed(() => {
   if (!props.anchorRect) return {};
@@ -24,6 +24,26 @@ const popoverStyle = computed(() => {
     top: `${props.anchorRect.bottom + 8}px`,
     right: `${window.innerWidth - props.anchorRect.right}px`
   };
+});
+
+// Close on scroll/resize to avoid misalignment
+function closePopover() {
+  emit('close');
+}
+
+watch(() => props.isOpen, (open) => {
+  if (open) {
+    window.addEventListener('scroll', closePopover, true);
+    window.addEventListener('resize', closePopover);
+  } else {
+    window.removeEventListener('scroll', closePopover, true);
+    window.removeEventListener('resize', closePopover);
+  }
+});
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', closePopover, true);
+  window.removeEventListener('resize', closePopover);
 });
 </script>
 
