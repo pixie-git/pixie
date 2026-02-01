@@ -1,5 +1,11 @@
 import { Lobby, ILobby } from '../models/Lobby.js';
 
+/** DTO for banned user data - only expose necessary fields */
+export interface BannedUserDTO {
+  _id: string;
+  username: string;
+}
+
 export class LobbyService {
 
   static async create(name: string, ownerId?: string, options?: any) {
@@ -40,8 +46,10 @@ export class LobbyService {
     );
   }
 
-  static async getBannedUsers(lobbyId: string): Promise<any[]> {
-    const lobby = await Lobby.findById(lobbyId).populate('bannedUsers', 'username');
+  static async getBannedUsers(lobbyId: string): Promise<BannedUserDTO[]> {
+    const lobby = await Lobby.findById(lobbyId)
+      .populate<{ bannedUsers: BannedUserDTO[] }>('bannedUsers', '_id username')
+      .lean();
     return lobby?.bannedUsers || [];
   }
 
