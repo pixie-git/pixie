@@ -84,10 +84,8 @@ export class LobbyController {
         throw new AppError('Socket.io not initialized', 500);
       }
 
-      // 2. Use Lobby Name for Socket Room
-      const lobbyName = lobby.name;
-
-      const sockets = await io.in(lobbyName).fetchSockets();
+      // 2. Use Lobby ID for Socket Room
+      const sockets = await io.in(id).fetchSockets();
       const users = sockets.map((s: any) => s.data.user).filter((u: any) => u);
 
       return res.json(users);
@@ -122,12 +120,11 @@ export class LobbyController {
       // Notify and Disconnect Sockets
       const io = (req as any).io;
       if (io) {
-        const lobbyName = lobby.name;
         // Emit 'LOBBY_DELETED' to all in room
-        io.to(lobbyName).emit('LOBBY_DELETED', { message: 'This lobby has been deleted by the owner.' });
+        io.to(id).emit('LOBBY_DELETED', { message: 'This lobby has been deleted by the owner.' });
 
         // Force disconnect/leave logic could go here, or client handles the event to redirect
-        io.in(lobbyName).disconnectSockets();
+        io.in(id).disconnectSockets();
       }
 
       await LobbyService.delete(id);
@@ -158,7 +155,7 @@ export class LobbyController {
         throw new AppError('Socket.io not initialized', 500);
       }
 
-      const wasDisconnected = await disconnectUserFromLobby(io, lobby.name, targetUserId, 'kicked');
+      const wasDisconnected = await disconnectUserFromLobby(io, id, targetUserId, 'kicked');
 
       if (wasDisconnected) {
         return res.status(200).json({ message: 'User kicked successfully' });
@@ -187,25 +184,21 @@ export class LobbyController {
       }
 
       // Persist Ban
-      await LobbyService.banUser(lobby.name, targetUserId);
-      console.log(`[Lobby] Banning user ${targetUserId} from ${lobby.name}`);
+      await LobbyService.banUser(id, targetUserId);
+      console.log(`[Lobby] Banning user ${targetUserId} from ${id}`);
 
       // Send SSE Notification
-      NotificationService.sendToUser(targetUserId, {
-        type: 'system', // or 'ban'
+      await NotificationService.sendToUser(targetUserId, {
         title: 'Banned from Lobby',
-        description: `You have been banned from lobby "${lobby.name}" by the owner.`,
-        isRead: false,
-        timeAgo: 'Just now', // Ideally calculate this on client
-        id: Date.now().toString() // Simple ID generation
+        message: `You have been banned from lobby "${lobby.name}" by the owner.`
       });
 
       const io = (req as any).io;
       if (io) {
-        await disconnectUserFromLobby(io, lobby.name, targetUserId, 'banned');
+        await disconnectUserFromLobby(io, id, targetUserId, 'banned');
         // Broadcast updated banned users list to all users in lobby
         const bannedUsers = await LobbyService.getBannedUsers(id);
-        broadcastToLobby(io, lobby.name, CONFIG.EVENTS.SERVER.BANNED_USERS_UPDATED, bannedUsers);
+        broadcastToLobby(io, id, CONFIG.EVENTS.SERVER.BANNED_USERS_UPDATED, bannedUsers);
       }
 
       return res.status(200).json({ message: 'User banned successfully' });
@@ -270,7 +263,7 @@ export class LobbyController {
       const scaleStr = req.query.scale as string;
       const scale = scaleStr ? parseInt(scaleStr, 10) : 1;
 
-      const png = await ImageService.generateLobbyPng(lobby.name, scale);
+      const png = await ImageService.generateLobbyPng(id, scale);
 
       res.setHeader('Content-Type', 'image/png');
       png.pack().pipe(res);

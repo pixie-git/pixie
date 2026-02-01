@@ -19,7 +19,7 @@ import { onUnmounted } from 'vue';
 const canvasStore = useCanvasStore();
 const { width, height, pixels, palette, pixelUpdateEvent } = storeToRefs(canvasStore);
 const lobbyStore = useLobbyStore();
-const { users, disconnectReason, lobbyName } = storeToRefs(lobbyStore);
+const { users, disconnectReason, lobbyId } = storeToRefs(lobbyStore);
 const userStore = useUserStore();
 const modalStore = useModalStore();
 
@@ -129,38 +129,43 @@ const fetchBannedUsers = async () => {
 };
 
 
+const lobbyNameDisplay = ref<string>('');
+
 onMounted(async () => {
   const lobbyId = route.params.id as string;
-  let resolvedLobbyName = 'Default Lobby';
+  let resolvedLobbyName = 'Lobby';
 
-  if (lobbyId) {
-    if (/^[0-9a-fA-F]{24}$/.test(lobbyId)) {
-      try {
-        const res = await getLobbyById(lobbyId, { skipGlobalErrorHandler: true });
-        resolvedLobbyName = res.data.name;
-        if (res.data.owner && res.data.owner._id) {
-           lobbyOwnerId.value = res.data.owner._id;
-        }
-      } catch (e: any) {
-        if (e.response && e.response.status === 403) {
-          // Ban detected - Notification is handled globally by api.ts
-          console.warn("User is banned from this lobby.");
-          setTimeout(() => {
-            router.push('/lobbies');
-          }, 1000);
-          return; // Stop initialization
-        }
-        // Other errors ignored (fallback to default name)
-      }
-    } else {
-      resolvedLobbyName = lobbyId;
+  if (!lobbyId) {
+    router.push('/lobbies');
+    return;
+  }
+
+  // 1. Fetch Lobby Details (for name & ownership)
+  try {
+    const res = await getLobbyById(lobbyId, { skipGlobalErrorHandler: true });
+    resolvedLobbyName = res.data.name;
+    // Set for display
+    lobbyNameDisplay.value = resolvedLobbyName;
+    
+    if (res.data.owner && res.data.owner._id) {
+        lobbyOwnerId.value = res.data.owner._id;
     }
+  } catch (e: any) {
+    if (e.response && e.response.status === 403) {
+      // Ban detected - Notification is handled globally by api.ts
+      console.warn("User is banned from this lobby.");
+      setTimeout(() => {
+        router.push('/lobbies');
+      }, 1000);
+      return; // Stop initialization
+    }
+    // If 404/Other, user will likely be redirected anyway or see generic error
   }
   
-  // Initialize stores
+  // Initialize stores with ID
   // Order matters: lobby store connects socket, canvas store listens to events
-  lobbyStore.joinLobby(resolvedLobbyName);
-  canvasStore.init(resolvedLobbyName);
+  lobbyStore.joinLobby(lobbyId);
+  canvasStore.init(lobbyId);
 
   // Fetch banned users if user has permissions
   await fetchBannedUsers();
@@ -180,7 +185,7 @@ onUnmounted(() => {
 <template>
   <div class="editor-layout">
     <!-- Header -->
-    <LobbyHeader :title="lobbyName" />
+    <LobbyHeader :title="lobbyNameDisplay || lobbyId" />
 
     <!-- Main Content -->
     <main class="editor-main">

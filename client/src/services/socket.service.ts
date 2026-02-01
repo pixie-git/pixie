@@ -38,20 +38,20 @@ class SocketService {
     this.socket?.on('LOBBY_DELETED', cb);
   }
 
-  emitDraw(payload: { lobbyName: string; x: number; y: number; color: number }) {
+  emitDraw(payload: { lobbyId: string; x: number; y: number; color: number }) {
     this.socket?.emit('DRAW', payload);
   }
 
-  emitDrawBatch(payload: { lobbyName: string; pixels: { x: number; y: number; color: number }[] }) {
+  emitDrawBatch(payload: { lobbyId: string; pixels: { x: number; y: number; color: number }[] }) {
     this.socket?.emit('DRAW_BATCH', payload);
   }
 
-  emitJoinLobby(lobbyName: string) {
-    this.socket?.emit('JOIN_LOBBY', lobbyName);
+  emitJoinLobby(lobbyId: string) {
+    this.socket?.emit('JOIN_LOBBY', lobbyId);
   }
 
-  emitClearCanvas(lobbyName: string) {
-    this.socket?.emit('CLEAR_CANVAS', lobbyName);
+  emitClearCanvas(lobbyId: string) {
+    this.socket?.emit('CLEAR_CANVAS', lobbyId);
   }
 
   onCanvasCleared(cb: () => void) {
@@ -70,7 +70,7 @@ class SocketService {
     this.socket?.on('USER_LEFT', cb);
   }
 
-  onForceDisconnect(cb: (data: { lobbyName: string; reason: string }) => void) {
+  onForceDisconnect(cb: (data: { lobbyId: string; reason: string }) => void) {
     this.socket?.on('FORCE_DISCONNECT', cb);
   }
 

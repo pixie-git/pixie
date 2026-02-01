@@ -9,21 +9,21 @@ export interface User {
 
 export const useLobbyStore = defineStore('lobby', () => {
   const users = ref<User[]>([]);
-  const lobbyName = ref<string>('');
+  const lobbyId = ref<string>('');
   const isConnected = ref(false);
   const disconnectReason = ref<string | null>(null);
 
-  const joinLobby = (name: string) => {
-    lobbyName.value = name;
+  const joinLobby = (id: string) => {
+    lobbyId.value = id;
     disconnectReason.value = null; // Reset on new join
 
     socketService.connect();
 
     socketService.onConnect(() => {
       isConnected.value = true;
-      if (lobbyName.value) {
-        console.log('[LobbyStore] Socket connected, joining lobby:', lobbyName.value);
-        socketService.emitJoinLobby(lobbyName.value);
+      if (lobbyId.value) {
+        console.log('[LobbyStore] Socket connected, joining lobby:', lobbyId.value);
+        socketService.emitJoinLobby(lobbyId.value);
       }
     });
 
@@ -57,12 +57,12 @@ export const useLobbyStore = defineStore('lobby', () => {
     socketService.disconnect();
     isConnected.value = false;
     users.value = [];
-    lobbyName.value = '';
+    lobbyId.value = '';
   };
 
   return {
     users,
-    lobbyName,
+    lobbyId,
     isConnected,
     disconnectReason,
     joinLobby,
