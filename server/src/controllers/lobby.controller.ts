@@ -241,7 +241,7 @@ export class LobbyController {
       const io = (req as any).io;
       if (io) {
         const bannedUsers = await LobbyService.getBannedUsers(id);
-        broadcastToLobby(io, lobby.name, CONFIG.EVENTS.SERVER.BANNED_USERS_UPDATED, bannedUsers);
+        broadcastToLobby(io, id, CONFIG.EVENTS.SERVER.BANNED_USERS_UPDATED, bannedUsers);
       }
 
       return res.status(200).json({ message: 'User unbanned successfully' });
