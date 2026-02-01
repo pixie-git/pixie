@@ -27,16 +27,25 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
                 await api.markNotificationAsRead(id);
             } catch (error) {
                 console.error("Failed to mark notification as read", error);
+                notification.isRead = false; // Revert on failure
             }
         }
     };
 
     const markAllAsRead = async () => {
+        // Optimistic update
+        const unreadNotifications = notifications.value.filter(n => !n.isRead);
         notifications.value.forEach(n => n.isRead = true);
+
         try {
             await api.markAllNotificationsAsRead();
         } catch (error) {
             console.error("Failed to mark all as read", error);
+            // Revert changes for those that were unread
+            unreadNotifications.forEach(n => {
+                const target = notifications.value.find(curr => curr.id === n.id);
+                if (target) target.isRead = false;
+            });
         }
     };
 
@@ -59,7 +68,7 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
 
     const setupSSE = () => {
         const userStore = useUserStore();
-        const token = userStore.token || localStorage.getItem('token');
+        const token = userStore.token || localStorage.getItem('authToken');
 
         if (!token) return;
 

@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { NotificationService } from '../services/notification.service.js';
 
+import { AppError } from '../utils/AppError.js';
+
 export class NotificationController {
 
     static async stream(req: Request, res: Response, next: NextFunction) {
@@ -39,7 +41,10 @@ export class NotificationController {
     static async getHistory(req: Request, res: Response, next: NextFunction) {
         try {
             const user = (req as any).user;
-            const history = await NotificationService.getHistory(user.id);
+            const limitStr = req.query.limit as string;
+            const limit = limitStr ? parseInt(limitStr, 10) : 50;
+
+            const history = await NotificationService.getHistory(user.id, limit);
             res.json(history);
         } catch (error) {
             next(error);
@@ -50,7 +55,12 @@ export class NotificationController {
         try {
             const user = (req as any).user;
             const notificationId = req.params.id;
-            await NotificationService.markAsRead(user.id, notificationId);
+            const updatedNotification = await NotificationService.markAsRead(user.id, notificationId);
+
+            if (!updatedNotification) {
+                throw new AppError('Notification not found', 404);
+            }
+
             res.status(200).json({ success: true });
         } catch (error) {
             next(error);

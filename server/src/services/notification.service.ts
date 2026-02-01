@@ -44,10 +44,10 @@ export class NotificationService {
         }
     }
 
-    static async getHistory(userId: string) {
+    static async getHistory(userId: string, limit: number = 50) {
         return Notification.find({ recipient: userId })
             .sort({ createdAt: -1 })
-            .limit(50); // Limit to last 50 notifications
+            .limit(limit);
     }
 
     static async markAsRead(userId: string, notificationId: string) {
