@@ -21,7 +21,7 @@ export const setupSocket = (io: Server) => {
   io.on('connection', (socket: Socket) => {
     console.log(`[Socket] New connection: ${socket.id}`);
 
-    socket.on(CONFIG.EVENTS.CLIENT.JOIN_LOBBY, async (lobbyName: string) => {
+    socket.on(CONFIG.EVENTS.CLIENT.JOIN_LOBBY, async (lobbyId: string) => {
       try {
         const user = (socket as AuthenticatedSocket).user;
         if (!user?.id) {
@@ -31,7 +31,7 @@ export const setupSocket = (io: Server) => {
           return;
         }
 
-        const lobby = await LobbyService.getByName(lobbyName);
+        const lobby = await LobbyService.getById(lobbyId);
         if (!lobby) return socket.emit(CONFIG.EVENTS.SERVER.ERROR, { message: "Lobby not found" });
 
         try {
@@ -41,46 +41,46 @@ export const setupSocket = (io: Server) => {
         }
 
         // Disconnect any existing session for this user in the same lobby (last connection wins)
-        await disconnectUserFromLobby(io, lobbyName, user.id, 'duplicate_session');
+        await disconnectUserFromLobby(io, lobbyId, user.id, 'duplicate_session');
 
-        socket.join(lobbyName); // Optimistic Join
+        socket.join(lobbyId); // Optimistic Join
 
-        const currentCount = getLobbyUserCount(io, lobbyName);
+        const currentCount = getLobbyUserCount(io, lobbyId);
         try {
           LobbyService.validateCapacity(lobby, currentCount - 1);
         } catch (e: any) {
-          socket.leave(lobbyName);
+          socket.leave(lobbyId);
           return socket.emit(CONFIG.EVENTS.SERVER.ERROR, { message: "Lobby is full" });
         }
 
-        broadcastToOthers(socket, lobbyName, CONFIG.EVENTS.SERVER.USER_JOINED, user);
-        socket.emit(CONFIG.EVENTS.SERVER.LOBBY_USERS, await getUsersInLobby(io, lobbyName));
-        socket.emit(CONFIG.EVENTS.SERVER.INIT_STATE, await CanvasService.getState(lobbyName));
-        console.log(`[Socket] ${socket.id} joined ${lobbyName}`);
+        broadcastToOthers(socket, lobbyId, CONFIG.EVENTS.SERVER.USER_JOINED, user);
+        socket.emit(CONFIG.EVENTS.SERVER.LOBBY_USERS, await getUsersInLobby(io, lobbyId));
+        socket.emit(CONFIG.EVENTS.SERVER.INIT_STATE, await CanvasService.getState(lobbyId));
+        console.log(`[Socket] ${socket.id} joined ${lobbyId}`);
       } catch (error) {
         console.error(`[Socket] Join Error:`, error);
         socket.emit(CONFIG.EVENTS.SERVER.ERROR, { message: "Failed to join lobby" });
       }
     });
 
-    socket.on(CONFIG.EVENTS.CLIENT.DRAW, ({ lobbyName, x, y, color }: DrawPayload) => {
-      if (lobbyName && CanvasService.draw(lobbyName, x, y, color)) {
-        broadcastToLobby(io, lobbyName, CONFIG.EVENTS.SERVER.PIXEL_UPDATE, { x, y, color });
+    socket.on(CONFIG.EVENTS.CLIENT.DRAW, ({ lobbyId, x, y, color }: DrawPayload) => {
+      if (lobbyId && CanvasService.draw(lobbyId, x, y, color)) {
+        broadcastToLobby(io, lobbyId, CONFIG.EVENTS.SERVER.PIXEL_UPDATE, { x, y, color });
       }
     });
 
-    socket.on(CONFIG.EVENTS.CLIENT.DRAW_BATCH, ({ lobbyName, pixels }: DrawBatchPayload) => {
-      if (!lobbyName || !Array.isArray(pixels)) return;
-      const updates = CanvasService.drawBatch(lobbyName, pixels);
-      if (updates.length) broadcastToLobby(io, lobbyName, CONFIG.EVENTS.SERVER.PIXEL_UPDATE_BATCH, { pixels: updates });
+    socket.on(CONFIG.EVENTS.CLIENT.DRAW_BATCH, ({ lobbyId, pixels }: DrawBatchPayload) => {
+      if (!lobbyId || !Array.isArray(pixels)) return;
+      const updates = CanvasService.drawBatch(lobbyId, pixels);
+      if (updates.length) broadcastToLobby(io, lobbyId, CONFIG.EVENTS.SERVER.PIXEL_UPDATE_BATCH, { pixels: updates });
     });
 
-    socket.on(CONFIG.EVENTS.CLIENT.CLEAR_CANVAS, async (lobbyName: string) => {
+    socket.on(CONFIG.EVENTS.CLIENT.CLEAR_CANVAS, async (lobbyId: string) => {
       try {
         const user = (socket as AuthenticatedSocket).user;
         if (!user || !user.id) return;
 
-        const lobby = await LobbyService.getByName(lobbyName);
+        const lobby = await LobbyService.getById(lobbyId);
         if (!lobby || !lobby.owner) return;
 
         const ownerId = (lobby.owner as any)._id ? (lobby.owner as any)._id.toString() : lobby.owner.toString();
@@ -90,10 +90,10 @@ export const setupSocket = (io: Server) => {
           return;
         }
 
-        if (CanvasService.clearCanvas(lobbyName)) {
+        if (CanvasService.clearCanvas(lobbyId)) {
           // Broadcast to EVERYONE in lobby (including sender)
-          broadcastToLobby(io, lobbyName, CONFIG.EVENTS.SERVER.CANVAS_CLEARED, {});
-          console.log(`[Socket] Lobby '${lobbyName}' cleared by ${user.username}`);
+          broadcastToLobby(io, lobbyId, CONFIG.EVENTS.SERVER.CANVAS_CLEARED, {});
+          console.log(`[Socket] Lobby '${lobbyId}' cleared by ${user.username}`);
         }
 
       } catch (error) {

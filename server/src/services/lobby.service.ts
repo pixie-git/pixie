@@ -23,9 +23,9 @@ export class LobbyService {
     return await Lobby.findById(id).populate('owner', 'username');
   }
 
-  static async banUser(lobbyName: string, userId: string): Promise<ILobby | null> {
-    const lobby = await Lobby.findOneAndUpdate(
-      { name: lobbyName },
+  static async banUser(lobbyId: string, userId: string): Promise<ILobby | null> {
+    const lobby = await Lobby.findByIdAndUpdate(
+      lobbyId,
       { $addToSet: { bannedUsers: userId } },
       { new: true }
     );
