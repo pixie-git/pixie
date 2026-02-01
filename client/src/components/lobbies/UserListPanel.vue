@@ -1,20 +1,24 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import type { User } from '@/stores/lobby.store';
+import type { BannedUser } from '@/services/api';
 import { useUserStore } from '@/stores/user.store';
 import { useModalStore } from '@/stores/modal.store';
 
 defineProps<{ 
   users: User[];
+  bannedUsers?: BannedUser[];
   canModerate?: boolean; 
 }>();
 
 const emit = defineEmits<{
   (e: 'kick', userId: string): void;
   (e: 'ban', userId: string): void;
+  (e: 'unban', userId: string): void;
 }>();
 
 const isOpen = ref(true);
+const isBannedOpen = ref(false);
 const userStore = useUserStore();
 const modalStore = useModalStore();
 
@@ -41,6 +45,19 @@ const handleBan = async (userId: string) => {
 
   if (confirmed) {
     emit('ban', userId);
+  }
+};
+
+const handleUnban = async (userId: string) => {
+  const confirmed = await modalStore.confirm({
+    title: 'Unban User',
+    message: 'Are you sure you want to unban this user? They will be able to rejoin the lobby.',
+    confirmText: 'Unban',
+    type: 'warning'
+  });
+
+  if (confirmed) {
+    emit('unban', userId);
   }
 };
 </script>
@@ -70,6 +87,26 @@ const handleBan = async (userId: string) => {
           </div>
         </li>
       </ul>
+
+      <!-- Banned Users Section (Collapsible, only for moderators) -->
+      <div v-if="canModerate && bannedUsers && bannedUsers.length > 0" class="banned-section">
+        <button 
+          class="banned-toggle" 
+          @click="isBannedOpen = !isBannedOpen"
+          type="button"
+        >
+          <span class="banned-icon">🚫</span>
+          Banned Users ({{ bannedUsers.length }})
+          <span class="caret">{{ isBannedOpen ? '▼' : '▶' }}</span>
+        </button>
+        
+        <ul v-show="isBannedOpen" class="banned-list">
+          <li v-for="user in bannedUsers" :key="user._id" class="user-item banned">
+            <span class="username">{{ user.username }}</span>
+            <button class="mod-btn unban" @click="handleUnban(user._id)" title="Unban User">Unban</button>
+          </li>
+        </ul>
+      </div>
     </div>
     
     <div class="mini-badge" v-show="!isOpen">
@@ -80,13 +117,12 @@ const handleBan = async (userId: string) => {
 
 <style scoped>
 .user-panel {
-  width: 250px; /* Increased slightly for buttons */
+  width: 250px;
   background: white;
   border-left: 1px solid #ddd;
   display: flex;
   flex-direction: column;
   position: relative;
-  transition: width 0.2s;
   height: 100%;
 }
 
@@ -102,10 +138,9 @@ const handleBan = async (userId: string) => {
   background: #eee;
   border: none;
   cursor: pointer;
-  padding: 5px 10px;
-  border-radius: 4px;
+  padding: 5px;
 }
-/* Adjust toggle for closed state */
+
 .user-panel.closed .toggle-btn {
   right: auto;
   left: 5px;
@@ -114,6 +149,9 @@ const handleBan = async (userId: string) => {
 .content {
   padding: 10px;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 h3 {
@@ -134,6 +172,14 @@ li.user-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+ul > li.user-item:last-child {
+  border-bottom: none;
+}
+
+li.user-item.banned {
+  opacity: 0.6;
 }
 
 .username {
@@ -161,33 +207,48 @@ li.user-item {
   justify-content: center;
 }
 
-.mod-btn.kick {
-  background-color: #f59e0b; /* Amber */
+.mod-btn.kick { background-color: #f59e0b; }
+.mod-btn.ban { background-color: #ef4444; }
+.mod-btn.unban { 
+  background-color: #10b981;
+  width: auto;
+  padding: 0 5px;
 }
 
-.mod-btn.kick:hover {
-  background-color: #d97706;
+/* Banned Section */
+.banned-section {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 2px solid #ddd; /* Clearly visible separator based on feedback */
 }
 
-.mod-btn.ban {
-  background-color: #ef4444; /* Red */
+.banned-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 5px 0;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: bold;
 }
 
-.mod-btn.ban:hover {
-  background-color: #dc2626;
+.banned-list {
+  margin-top: 5px;
 }
 
 .mini-badge {
-  margin-top: 50px;
+  margin-top: 10px;
   background: #a855f7;
   color: white;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8rem;
-  font-weight: bold;
+  font-size: 0.7rem;
 }
 </style>

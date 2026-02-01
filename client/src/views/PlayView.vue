@@ -11,7 +11,8 @@ import MobileNavBar from '@/components/lobbies/MobileNavBar.vue';
 import LobbyHeader from '@/components/lobbies/LobbyHeader.vue';
 import UserListPanel from '@/components/lobbies/UserListPanel.vue';
 import { useRoute, useRouter } from 'vue-router';
-import { getLobbyById, exportLobbyImage, kickUser, banUser } from '../services/api';
+import { getLobbyById, exportLobbyImage, kickUser, banUser, getBannedUsers, unbanUser, type BannedUser } from '../services/api';
+import { socketService } from '@/services/socket.service';
 import { onUnmounted } from 'vue';
 
 // Setup Store
@@ -26,6 +27,7 @@ const route = useRoute();
 const router = useRouter();
 
 const lobbyOwnerId = ref<string>('');
+const bannedUsers = ref<BannedUser[]>([]);
 const hasLobbyPermissions = computed(() => {
   return !!(userStore.isAdmin || (userStore.id && lobbyOwnerId.value === userStore.id));
 });
@@ -99,9 +101,30 @@ const handleBanUser = async (userId: string) => {
   const lobbyId = route.params.id as string;
   try {
     await banUser(lobbyId, userId);
-    // Socket will handle list update
+    // Socket will handle banned users list update
   } catch (e) {
     console.error("Failed to ban user:", e);
+  }
+};
+
+const handleUnbanUser = async (userId: string) => {
+  const lobbyId = route.params.id as string;
+  try {
+    await unbanUser(lobbyId, userId);
+    // Socket will handle banned users list update
+  } catch (e) {
+    console.error("Failed to unban user:", e);
+  }
+};
+
+const fetchBannedUsers = async () => {
+  const lobbyId = route.params.id as string;
+  if (!lobbyId || !hasLobbyPermissions.value) return;
+  try {
+    const res = await getBannedUsers(lobbyId, { skipGlobalErrorHandler: true });
+    bannedUsers.value = res.data;
+  } catch (e) {
+    // Silently fail - user might not have permissions yet
   }
 };
 
@@ -143,6 +166,19 @@ onMounted(async () => {
   // Order matters: lobby store connects socket, canvas store listens to events
   lobbyStore.joinLobby(lobbyId);
   canvasStore.init(lobbyId);
+
+  // Fetch banned users if user has permissions
+  await fetchBannedUsers();
+
+  // Listen for real-time banned users updates only when user has lobby permissions
+  if (hasLobbyPermissions.value) {
+    socketService.onBannedUsersUpdated(() => {
+      fetchBannedUsers();
+    });
+  } else {
+    // Ensure non-moderator clients do not retain banned users data
+    bannedUsers.value = [];
+  }
 });
 
 onUnmounted(() => {
@@ -158,7 +194,6 @@ onUnmounted(() => {
 
     <!-- Main Content -->
     <main class="editor-main">
-      <!-- Left Sidebar (Desktop) / Bottom Content (Mobile) -->
       <!-- Left Sidebar (Desktop) / Bottom Content (Mobile) -->
       <aside class="editor-sidebar">
         <div class="sidebar-controls">
@@ -211,9 +246,11 @@ onUnmounted(() => {
         </div>
         <UserListPanel 
           :users="users" 
+          :banned-users="bannedUsers"
           :can-moderate="hasLobbyPermissions"
           @kick="handleKickUser"
           @ban="handleBanUser"
+          @unban="handleUnbanUser"
         />
       </section>
     </main>

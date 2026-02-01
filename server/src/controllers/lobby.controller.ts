@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { LobbyService } from '../services/lobby.service.js';
 import { ImageService } from '../services/image.service.js';
-import { disconnectUserFromLobby } from '../utils/socketUtils.js';
+import { disconnectUserFromLobby, broadcastToLobby } from '../utils/socketUtils.js';
 import { AppError } from '../utils/AppError.js';
 import { CONFIG } from '../config.js';
 import { NotificationService } from '../services/notification.service.js';
@@ -196,10 +196,53 @@ export class LobbyController {
       const io = (req as any).io;
       if (io) {
         await disconnectUserFromLobby(io, id, targetUserId, 'banned');
+        // Broadcast non-sensitive signal - clients with permission will refetch via REST
+        broadcastToLobby(io, id, CONFIG.EVENTS.SERVER.BANNED_USERS_UPDATED, { updated: true });
       }
 
       return res.status(200).json({ message: 'User banned successfully' });
 
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // GET /api/lobbies/:id/banned
+  static async getBannedUsers(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const bannedUsers = await LobbyService.getBannedUsers(id);
+      return res.json(bannedUsers);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // POST /api/lobbies/:id/unban
+  static async unbanUser(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const { targetUserId } = req.body;
+
+      if (!targetUserId) {
+        throw new AppError('Target user ID is required', 400);
+      }
+
+      const lobby = await LobbyService.getById(id);
+      if (!lobby) {
+        throw new AppError('Lobby not found', 404);
+      }
+
+      await LobbyService.unbanUser(id, targetUserId);
+      console.log(`[Lobby] Unbanning user ${targetUserId} from ${lobby.name}`);
+
+      // Broadcast non-sensitive signal - clients with permission will refetch via REST
+      const io = (req as any).io;
+      if (io) {
+        broadcastToLobby(io, id, CONFIG.EVENTS.SERVER.BANNED_USERS_UPDATED, { updated: true });
+      }
+
+      return res.status(200).json({ message: 'User unbanned successfully' });
     } catch (error) {
       next(error);
     }
