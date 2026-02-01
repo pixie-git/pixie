@@ -30,11 +30,11 @@ const selectColor = (index: number) => {
   grid-template-columns: repeat(3, 1fr); /* 3 columns for better density */
   gap: 8px;
   padding: 12px;
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 12px;
   width: fit-content;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 8px var(--color-shadow);
+  border: 1px solid var(--color-border);
   max-height: 60vh; /* Limit height to allow scrolling */
   overflow-y: auto; /* Enable vertical scrolling */
 }
@@ -55,7 +55,7 @@ const selectColor = (index: number) => {
 }
 
 .color-swatch.active {
-  border-color: #333;
+  border-color: var(--color-text);
   box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
   transform: scale(1.15);
   z-index: 1;
