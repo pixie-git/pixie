@@ -14,6 +14,8 @@ export const CONFIG = {
     HEIGHT: parseInt(process.env.CANVAS_HEIGHT || '64', 10),
     MIN_WIDTH: 16,
     MIN_HEIGHT: 16,
+    MAX_WIDTH: 1024,
+    MAX_HEIGHT: 1024,
   },
 
   // Validation

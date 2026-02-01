@@ -22,8 +22,9 @@ export class LobbyController {
         throw new AppError('Unauthorized', 401);
       }
 
-      if (width < CONFIG.CANVAS.MIN_WIDTH || height < CONFIG.CANVAS.MIN_HEIGHT) {
-        throw new AppError(`Canvas dimensions must be at least ${CONFIG.CANVAS.MIN_WIDTH}x${CONFIG.CANVAS.MIN_HEIGHT}`, 400);
+      const { MIN_WIDTH, MIN_HEIGHT, MAX_WIDTH, MAX_HEIGHT } = CONFIG.CANVAS;
+      if (width < MIN_WIDTH || height < MIN_HEIGHT || width > MAX_WIDTH || height > MAX_HEIGHT) {
+        throw new AppError(`Canvas dimensions must be between ${MIN_WIDTH}x${MIN_HEIGHT} and ${MAX_WIDTH}x${MAX_HEIGHT}`, 400);
       }
 
       const options = { description, maxCollaborators, palette, width, height };
