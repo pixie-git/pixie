@@ -22,10 +22,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../stores/user.store';
 import { getLobbies, deleteLobby } from '../services/api';
+import { socketService } from '../services/socket.service';
 import type { ILobby } from '../types';
 import { useToastStore } from '../stores/toast.store';
 import { useModalStore } from '../stores/modal.store';
@@ -59,7 +60,22 @@ const fetchLobbies = async () => {
   }
 };
 
-onMounted(fetchLobbies);
+onMounted(() => {
+  fetchLobbies();
+  socketService.connect();
+  
+  socketService.onLobbyCreated<ILobby>((lobby) => {
+    lobbies.value.unshift(lobby);
+  });
+
+  socketService.onGlobalLobbyDeleted((data) => {
+    lobbies.value = lobbies.value.filter(l => l._id !== data.id);
+  });
+});
+
+onUnmounted(() => {
+  socketService.disconnect();
+});
 
 const filteredLobbies = computed(() => {
   let result = lobbies.value;

@@ -38,6 +38,14 @@ class SocketService {
     this.socket?.on('LOBBY_DELETED', cb);
   }
 
+  onGlobalLobbyDeleted(cb: (data: { id: string }) => void) {
+    this.socket?.on('LOBBY_DELETED', cb);
+  }
+
+  onLobbyCreated<T>(cb: (lobby: T) => void) {
+    this.socket?.on('LOBBY_CREATED', cb);
+  }
+
   emitDraw(payload: { lobbyId: string; x: number; y: number; color: number }) {
     this.socket?.emit('DRAW', payload);
   }

@@ -31,6 +31,11 @@ export class LobbyController {
       const options = { description, maxCollaborators, palette, width, height };
       const lobby = await LobbyService.create(name, ownerId, options);
 
+      const io = (req as any).io;
+      if (io) {
+        io.emit(CONFIG.EVENTS.SERVER.LOBBY_CREATED, lobby);
+      }
+
       return res.status(201).json(lobby);
 
     } catch (error: any) {
@@ -123,6 +128,9 @@ export class LobbyController {
       if (io) {
         // Emit 'LOBBY_DELETED' to all in room
         io.to(id).emit('LOBBY_DELETED', { message: 'This lobby has been deleted by the owner.' });
+
+        // Emit Global Deletion event to update lists
+        io.emit(CONFIG.EVENTS.SERVER.LOBBY_DELETED, { id });
 
         // Force disconnect/leave logic could go here, or client handles the event to redirect
         io.in(id).disconnectSockets();
