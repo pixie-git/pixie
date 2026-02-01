@@ -74,6 +74,10 @@ class SocketService {
     this.socket?.on('FORCE_DISCONNECT', cb);
   }
 
+  onError(cb: (data: { message: string }) => void) {
+    this.socket?.on('ERROR', cb);
+  }
+
   onBannedUsersUpdated(cb: (signal: { updated: boolean }) => void) {
     this.socket?.on('BANNED_USERS_UPDATED', cb);
   }

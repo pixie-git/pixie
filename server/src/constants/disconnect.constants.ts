@@ -1,0 +1,4 @@
+export const DISCONNECT_REASONS = {
+    KICKED: 'ERR_LOBBY_KICKED',
+    BANNED: 'ERR_LOBBY_BANNED',
+} as const;

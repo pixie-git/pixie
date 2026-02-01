@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { socketService } from '@/services/socket.service';
+import { DISCONNECT_REASONS } from '../constants/disconnect.constants';
 
 export interface User {
   id: string;
@@ -50,6 +51,17 @@ export const useLobbyStore = defineStore('lobby', () => {
       console.log('[LobbyStore] Force disconnected:', data.reason);
       disconnectReason.value = data.reason;
       leaveLobby();
+    });
+
+    // Handle generic socket errors (e.g. join failed)
+    socketService.onError((data) => {
+      console.error('[LobbyStore] Socket error:', data.message);
+      if (data.message === DISCONNECT_REASONS.BANNED || data.message.includes('Access denied')) {
+        disconnectReason.value = DISCONNECT_REASONS.BANNED;
+        leaveLobby();
+      } else if (data.message.includes('Lobby is full')) {
+        // Could handle full lobby specifically if needed, likely handled by UI error toast
+      }
     });
   };
 

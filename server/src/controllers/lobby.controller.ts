@@ -5,6 +5,7 @@ import { disconnectUserFromLobby, broadcastToLobby } from '../utils/socketUtils.
 import { AppError } from '../utils/AppError.js';
 import { CONFIG } from '../config.js';
 import { NotificationService } from '../services/notification.service.js';
+import { DISCONNECT_REASONS } from '../constants/disconnect.constants.js';
 
 export class LobbyController {
 
@@ -155,7 +156,7 @@ export class LobbyController {
         throw new AppError('Socket.io not initialized', 500);
       }
 
-      const wasDisconnected = await disconnectUserFromLobby(io, id, targetUserId, 'kicked');
+      const wasDisconnected = await disconnectUserFromLobby(io, id, targetUserId, DISCONNECT_REASONS.KICKED);
 
       if (wasDisconnected) {
         return res.status(200).json({ message: 'User kicked successfully' });
@@ -195,7 +196,7 @@ export class LobbyController {
 
       const io = (req as any).io;
       if (io) {
-        await disconnectUserFromLobby(io, id, targetUserId, 'banned');
+        await disconnectUserFromLobby(io, id, targetUserId, DISCONNECT_REASONS.BANNED);
         // Broadcast non-sensitive signal - clients with permission will refetch via REST
         broadcastToLobby(io, id, CONFIG.EVENTS.SERVER.BANNED_USERS_UPDATED, { updated: true });
       }

@@ -1,5 +1,5 @@
 <template>
-  <div v-if="isOpen" class="modal-overlay" @click.self="handleCancel">
+  <div v-if="isOpen" class="modal-overlay" @click.self="hideCancel ? undefined : handleCancel">
     <div class="modal-content">
       <div class="modal-header" :class="`header-${type}`">
         <h3>{{ title }}</h3>
@@ -10,7 +10,7 @@
       </div>
 
       <div class="modal-footer">
-        <button class="btn-cancel" @click="handleCancel">
+        <button v-if="!hideCancel" class="btn-cancel" @click="handleCancel">
           {{ cancelText }}
         </button>
         <button class="btn-confirm" :class="`btn-${type}`" @click="handleConfirm">
@@ -26,7 +26,7 @@ import { storeToRefs } from 'pinia';
 import { useModalStore } from '../../stores/modal.store';
 
 const store = useModalStore();
-const { isOpen, title, message, confirmText, cancelText, type } = storeToRefs(store);
+const { isOpen, title, message, confirmText, cancelText, type, hideCancel } = storeToRefs(store);
 const { handleConfirm, handleCancel } = store;
 </script>
 
