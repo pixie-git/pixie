@@ -118,8 +118,8 @@ const handleUnban = async (userId: string) => {
 <style scoped>
 .user-panel {
   width: 250px;
-  background: white;
-  border-left: 1px solid #ddd;
+  background: var(--color-surface);
+  border-left: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   position: relative;
@@ -135,7 +135,8 @@ const handleUnban = async (userId: string) => {
   position: absolute;
   top: 10px;
   right: 5px;
-  background: #eee;
+  background: var(--color-card-header-bg);
+  color: var(--color-icon);
   border: none;
   cursor: pointer;
   padding: 5px;
@@ -167,7 +168,7 @@ ul {
 
 li.user-item {
   padding: 8px 0;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-border);
   font-size: 0.9rem;
   display: flex;
   justify-content: space-between;
@@ -219,7 +220,7 @@ li.user-item.banned {
 .banned-section {
   margin-top: auto;
   padding-top: 10px;
-  border-top: 2px solid #ddd; /* Clearly visible separator based on feedback */
+  border-top: 2px solid var(--color-border); /* Clearly visible separator based on feedback */
 }
 
 .banned-toggle {

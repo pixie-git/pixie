@@ -296,7 +296,8 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-color: #fff;
+  background-color: var(--color-background);
+  color: var(--color-text);
   font-family: 'Inter', sans-serif;
 }
 
@@ -316,8 +317,8 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 2rem;
   align-items: center;
-  border-right: 1px solid #eee;
-  background: #fff;
+  border-right: 1px solid var(--color-border);
+  background: var(--color-surface);
   z-index: 10;
 }
 
@@ -427,7 +428,7 @@ onUnmounted(() => {
 .canvas-area {
   flex: 1;
   position: relative;
-  background-color: #f8f9fa;
+  background-color: var(--color-canvas-bg);
   overflow: hidden;
   display: flex; /* NEW: Flex layout for side-by-side */
 }
@@ -444,8 +445,8 @@ onUnmounted(() => {
   left: 20px;
   right: 20px;
   bottom: 20px;
-  box-shadow: 0 0 30px rgba(0,0,0,0.1);
-  background: white;
+  box-shadow: 0 0 30px var(--color-shadow);
+  background: var(--color-surface);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -563,7 +564,7 @@ onUnmounted(() => {
     max-width: 350px; /* Limit width on mobile */
     max-height: 350px;
     box-shadow: none; /* Cleaner look on mobile or keep it? Design shows simple box */
-    border: 1px solid #eee;
+    border: 1px solid var(--color-border);
   }
 
 
