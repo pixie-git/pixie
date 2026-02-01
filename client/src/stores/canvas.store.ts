@@ -119,7 +119,7 @@ export const useCanvasStore = defineStore('canvas', () => {
     lastY.value = y;
   };
 
-  const currentLobbyName = ref<string>('');
+  const currentLobbyId = ref<string>('');
 
   const endStroke = () => {
     if (!isDrawing.value) return;
@@ -128,9 +128,9 @@ export const useCanvasStore = defineStore('canvas', () => {
     lastX.value = null;
     lastY.value = null;
 
-    if (pendingDrawBuffer.value.length > 0 && currentLobbyName.value) {
+    if (pendingDrawBuffer.value.length > 0 && currentLobbyId.value) {
       socketService.emitDrawBatch({
-        lobbyName: currentLobbyName.value,
+        lobbyId: currentLobbyId.value,
         pixels: pendingDrawBuffer.value
       });
       pendingDrawBuffer.value = [];
@@ -144,8 +144,8 @@ export const useCanvasStore = defineStore('canvas', () => {
 
   // Emits clear request to server
   const clearLobby = () => {
-    if (currentLobbyName.value) {
-      socketService.emitClearCanvas(currentLobbyName.value);
+    if (currentLobbyId.value) {
+      socketService.emitClearCanvas(currentLobbyId.value);
     }
   };
 
@@ -157,9 +157,9 @@ export const useCanvasStore = defineStore('canvas', () => {
     }
   };
 
-  function init(lobbyName: string) {
-    if (!lobbyName) return;
-    currentLobbyName.value = lobbyName;
+  function init(lobbyId: string) {
+    if (!lobbyId) return;
+    currentLobbyId.value = lobbyId;
 
     // We assume socket is connected by lobby store
     // Subscribing to canvas events
@@ -232,7 +232,7 @@ export const useCanvasStore = defineStore('canvas', () => {
 
   const reset = () => {
     // socketService.disconnect(); // Handled by lobby store
-    currentLobbyName.value = '';
+    currentLobbyId.value = '';
     pendingDrawBuffer.value = [];
     isDrawing.value = false;
 
