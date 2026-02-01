@@ -2,8 +2,8 @@ import { PNG } from 'pngjs';
 import { CanvasService } from './canvas.service.js';
 
 export class ImageService {
-  static async generateLobbyPng(lobbyName: string, scale: number = 1): Promise<PNG> {
-    const { width, height, palette, data } = await CanvasService.getState(lobbyName);
+  static async generateLobbyPng(lobbyId: string, scale: number = 1): Promise<PNG> {
+    const { width, height, palette, data } = await CanvasService.getState(lobbyId);
 
     // Validate scale to prevent memory issues
     const validScale = Math.max(1, Math.min(Math.floor(scale), 10)); // Clamp between 1 and 10

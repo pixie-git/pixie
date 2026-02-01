@@ -222,7 +222,7 @@ export class LobbyController {
       const scaleStr = req.query.scale as string;
       const scale = scaleStr ? parseInt(scaleStr, 10) : 1;
 
-      const png = await ImageService.generateLobbyPng(lobby.name, scale);
+      const png = await ImageService.generateLobbyPng(id, scale);
 
       res.setHeader('Content-Type', 'image/png');
       png.pack().pipe(res);
