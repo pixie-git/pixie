@@ -1,7 +1,7 @@
 <template>
   <div class="notifications-container">
     <div class="header">
-        <button class="back-btn" @click="$router.push('/lobbies')">
+        <button class="back-btn" @click="$router.back()">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg>
         </button>
         <h1>Notifications</h1>
