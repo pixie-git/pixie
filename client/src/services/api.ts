@@ -83,4 +83,8 @@ export const kickUser = (lobbyId: string, userId: string, config?: AxiosRequestC
 export const banUser = (lobbyId: string, userId: string, config?: AxiosRequestConfig) =>
 	api.post<{ message: string }>(`/lobbies/${lobbyId}/ban`, { targetUserId: userId }, config);
 
+export const getNotifications = (config?: AxiosRequestConfig) => api.get<any[]>("/notifications", config);
+export const markNotificationAsRead = (id: string, config?: AxiosRequestConfig) => api.put(`/notifications/${id}/read`, {}, config);
+export const markAllNotificationsAsRead = (config?: AxiosRequestConfig) => api.put("/notifications/read-all", {}, config);
+
 export default api;

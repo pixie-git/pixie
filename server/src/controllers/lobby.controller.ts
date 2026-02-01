@@ -191,13 +191,9 @@ export class LobbyController {
       console.log(`[Lobby] Banning user ${targetUserId} from ${lobby.name}`);
 
       // Send SSE Notification
-      NotificationService.sendToUser(targetUserId, {
-        type: 'system', // or 'ban'
+      await NotificationService.sendToUser(targetUserId, {
         title: 'Banned from Lobby',
-        description: `You have been banned from lobby "${lobby.name}" by the owner.`,
-        isRead: false,
-        timeAgo: 'Just now', // Ideally calculate this on client
-        id: Date.now().toString() // Simple ID generation
+        message: `You have been banned from lobby "${lobby.name}" by the owner.`
       });
 
       const io = (req as any).io;
