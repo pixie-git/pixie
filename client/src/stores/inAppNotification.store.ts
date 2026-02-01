@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { EventSourcePolyfill } from 'event-source-polyfill';
 import { useUserStore } from './user.store';
+import * as api from '../services/api';
 
 
 export interface InAppNotification {
@@ -18,27 +19,61 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
     const unreadCount = computed(() => notifications.value.filter(n => !n.isRead).length);
     let eventSource: any = null;
 
-    const markAsRead = (id: string) => {
+    const markAsRead = async (id: string) => {
         const notification = notifications.value.find(n => n.id === id);
-        if (notification) {
+        if (notification && !notification.isRead) {
             notification.isRead = true;
+            try {
+                await api.markNotificationAsRead(id);
+            } catch (error) {
+                console.error("Failed to mark notification as read", error);
+                notification.isRead = false; // Revert on failure
+            }
         }
     };
 
-    const markAllAsRead = () => {
+    const markAllAsRead = async () => {
+        // Optimistic update
+        const unreadNotifications = notifications.value.filter(n => !n.isRead);
         notifications.value.forEach(n => n.isRead = true);
+
+        try {
+            await api.markAllNotificationsAsRead();
+        } catch (error) {
+            console.error("Failed to mark all as read", error);
+            // Revert changes for those that were unread
+            unreadNotifications.forEach(n => {
+                const target = notifications.value.find(curr => curr.id === n.id);
+                if (target) target.isRead = false;
+            });
+        }
     };
 
     const fetchNotifications = async () => {
-        // actionable: simulate API call
-        return Promise.resolve();
+        try {
+            const response = await api.getNotifications();
+            // Map backend naming to frontend naming if necessary, or ensure backend matches
+            // Backend sends: _id, title, message, isRead, createdAt
+            notifications.value = response.data.map((n: any) => ({
+                id: n._id,
+                title: n.title,
+                description: n.message, // Map message to description
+                timeAgo: new Date(n.createdAt).toLocaleTimeString(), // Simple formatting for now
+                isRead: n.isRead
+            }));
+        } catch (error) {
+            console.error("Failed to fetch notifications history", error);
+        }
     };
 
     const setupSSE = () => {
         const userStore = useUserStore();
-        const token = userStore.token || localStorage.getItem('token');
+        const token = userStore.token || localStorage.getItem('authToken');
 
         if (!token) return;
+
+        // Fetch history immediately
+        fetchNotifications();
 
         if (eventSource) {
             eventSource.close();
@@ -64,7 +99,17 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
             try {
                 const payload = JSON.parse(event.data);
                 console.log('[SSE] Parsed payload:', payload);
-                addNotification(payload);
+
+                // Map payload to frontend structure
+                const newNotification: InAppNotification = {
+                    id: payload._id,
+                    title: payload.title,
+                    description: payload.message,
+                    timeAgo: 'Just now',
+                    isRead: payload.isRead
+                };
+
+                addNotification(newNotification);
             } catch (e) {
                 console.error('[SSE] Failed to parse message', e);
             }
@@ -77,7 +122,10 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
     };
 
     const addNotification = (notification: InAppNotification) => {
-        notifications.value.unshift(notification);
+        // Prevent duplicates if history fetch and SSE overlap
+        if (!notifications.value.find(n => n.id === notification.id)) {
+            notifications.value.unshift(notification);
+        }
     };
 
     const disconnectSSE = () => {
@@ -86,6 +134,7 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
             eventSource = null;
             console.log('[SSE] Disconnected');
         }
+        notifications.value = []; // Clear on disconnect/logout
     };
 
     return {

@@ -53,7 +53,7 @@ api.interceptors.response.use(
 )
 
 
-import { ILobby } from "../types";
+import { ILobby, INotification } from "../types";
 
 export const getLobbies = (config?: AxiosRequestConfig) => api.get<ILobby[]>("/lobbies", config);
 export const getLobbyById = (id: string, config?: AxiosRequestConfig) => api.get<ILobby>(`/lobbies/${id}`, config);
@@ -82,5 +82,9 @@ export const kickUser = (lobbyId: string, userId: string, config?: AxiosRequestC
 
 export const banUser = (lobbyId: string, userId: string, config?: AxiosRequestConfig) =>
 	api.post<{ message: string }>(`/lobbies/${lobbyId}/ban`, { targetUserId: userId }, config);
+
+export const getNotifications = (config?: AxiosRequestConfig) => api.get<INotification[]>("/notifications", config);
+export const markNotificationAsRead = (id: string, config?: AxiosRequestConfig) => api.put(`/notifications/${id}/read`, {}, config);
+export const markAllNotificationsAsRead = (config?: AxiosRequestConfig) => api.put("/notifications/read-all", {}, config);
 
 export default api;

@@ -17,7 +17,11 @@ router.get("/users", authenticateToken, UserController.getAll)
 // Test Error
 
 // Notifications
+// Notifications
 router.get("/notifications/stream", authenticateToken, NotificationController.stream)
+router.get("/notifications", authenticateToken, NotificationController.getHistory)
+router.put("/notifications/:id/read", authenticateToken, NotificationController.markAsRead)
+router.put("/notifications/read-all", authenticateToken, NotificationController.markAllAsRead)
 
 // Lobbies
 router.post("/lobbies", authenticateToken, LobbyController.create)
