@@ -37,7 +37,7 @@
         <!-- Row 2: Size and Description -->
         <div class="form-wrapper">
             <div class="left-col">
-                 <!-- Canvas Size -->
+                <!-- Canvas Size -->
                 <div class="form-group">
                     <label>Canvas Size</label>
                     <div class="size-inputs">
@@ -45,16 +45,16 @@
                         v-model.number="form.width" 
                         type="number" 
                         placeholder="Width" 
-                        :min="MIN_WIDTH" 
-                        max="128"
+                        :min="CANVAS_LIMITS.MIN_WIDTH" 
+                        :max="CANVAS_LIMITS.MAX_WIDTH"
                         />
                         <span class="x-separator">x</span>
                         <input 
                         v-model.number="form.height" 
                         type="number" 
                         placeholder="Height" 
-                        :min="MIN_HEIGHT" 
-                        max="128"
+                        :min="CANVAS_LIMITS.MIN_HEIGHT" 
+                        :max="CANVAS_LIMITS.MAX_HEIGHT"
                         />
                     </div>
                 </div>
@@ -112,14 +112,12 @@ import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import { createLobby } from '../services/api';
 import { PALETTES } from '../config/palettes';
+import { CANVAS_LIMITS } from '../config/canvasLimits';
 
 import { useToastStore } from '../stores/toast.store';
 
 const router = useRouter();
 const toastStore = useToastStore();
-
-const MIN_WIDTH = 16;
-const MIN_HEIGHT = 16;
 
 const isLoading = ref(false);
 
@@ -165,8 +163,9 @@ const handleSubmit = async () => {
       return;
   }
 
-  if (form.width < MIN_WIDTH || form.height < MIN_HEIGHT) {
-      toastStore.add(`Canvas dimensions must be at least ${MIN_WIDTH}x${MIN_HEIGHT}`, 'error');
+  const { MIN_WIDTH, MIN_HEIGHT, MAX_WIDTH, MAX_HEIGHT } = CANVAS_LIMITS;
+  if (form.width < MIN_WIDTH || form.height < MIN_HEIGHT || form.width > MAX_WIDTH || form.height > MAX_HEIGHT) {
+      toastStore.add(`Canvas dimensions must be between ${MIN_WIDTH}x${MIN_HEIGHT} and ${MAX_WIDTH}x${MAX_HEIGHT}`, 'error');
       return;
   }
   
