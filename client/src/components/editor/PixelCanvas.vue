@@ -187,8 +187,7 @@ defineExpose({
   display: block;
   image-rendering: pixelated;
   background-color: #fff;
-  /* No border here, viewport has background */
+  /* No border - it causes coordinate misalignment since getBoundingClientRect includes border */
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 </style>
