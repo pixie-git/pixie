@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, computed, ref, watch } from 'vue';
+import { onMounted, computed, ref, watch, onUnmounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useCanvasStore } from '@/stores/canvas.store';
 import { useLobbyStore } from '@/stores/lobby.store';
@@ -12,7 +12,6 @@ import LobbyHeader from '@/components/lobbies/LobbyHeader.vue';
 import UserListPanel from '@/components/lobbies/UserListPanel.vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getLobbyById, exportLobbyImage, kickUser, banUser } from '../services/api';
-import { onUnmounted } from 'vue';
 
 // Setup Store
 const canvasStore = useCanvasStore();
@@ -31,9 +30,34 @@ const hasLobbyPermissions = computed(() => {
 });
 
 // Watch for force disconnect and navigate to lobbies
-watch(disconnectReason, (reason) => {
+// Watch for force disconnect and navigate to lobbies
+watch(disconnectReason, async (reason) => {
   if (reason) {
-    console.log('[PlayView] Force disconnected, redirecting. Reason:', reason);
+    console.log('[PlayView] Force disconnected. Reason:', reason);
+    
+    let title = 'Disconnected';
+    let message = 'You have been disconnected from the lobby.';
+    let type: 'info' | 'warning' | 'danger' = 'info';
+
+    if (reason === 'banned') {
+      title = 'Banned';
+      message = 'You have been banned from this lobby.';
+      type = 'danger';
+    } else if (reason === 'kicked') {
+      title = 'Kicked';
+      message = 'You have been kicked from this lobby.';
+      type = 'warning';
+    }
+
+    // Wait for user to acknowledge
+    await modalStore.confirm({
+      title,
+      message,
+      confirmText: 'OK',
+      type,
+      hideCancel: true
+    });
+
     router.push('/lobbies');
   }
 });
@@ -131,9 +155,17 @@ onMounted(async () => {
     if (e.response && e.response.status === 403) {
       // Ban detected - Notification is handled globally by api.ts
       console.warn("User is banned from this lobby.");
-      setTimeout(() => {
-        router.push('/lobbies');
-      }, 1000);
+      console.warn("User is banned from this lobby.");
+      
+      await modalStore.confirm({
+        title: 'Access Denied',
+        message: 'You are banned from this lobby.',
+        confirmText: 'OK',
+        type: 'danger',
+        hideCancel: true
+      });
+      
+      router.push('/lobbies');
       return; // Stop initialization
     }
     // If 404/Other, user will likely be redirected anyway or see generic error

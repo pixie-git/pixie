@@ -7,7 +7,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, watch } from 'vue';
+import { onUnmounted, watch } from 'vue';
 import GlobalErrorPopup from './components/common/GlobalErrorPopup.vue';
 import ConfirmationModal from './components/common/ConfirmationModal.vue';
 import { useInAppNotificationStore } from './stores/inAppNotification.store';

@@ -9,6 +9,7 @@ interface ConfirmOptions {
     confirmText?: string;
     cancelText?: string;
     type?: ModalType;
+    hideCancel?: boolean;
 }
 
 export const useModalStore = defineStore('modal', () => {
@@ -18,6 +19,7 @@ export const useModalStore = defineStore('modal', () => {
     const confirmText = ref('Confirm');
     const cancelText = ref('Cancel');
     const type = ref<ModalType>('info');
+    const hideCancel = ref(false);
 
     // Holds the resolve function of the active promise
     let resolvePromise: ((value: boolean) => void) | null = null;
@@ -28,6 +30,7 @@ export const useModalStore = defineStore('modal', () => {
         confirmText.value = options.confirmText || 'Confirm';
         cancelText.value = options.cancelText || 'Cancel';
         type.value = options.type || 'info';
+        hideCancel.value = options.hideCancel || false;
         isOpen.value = true;
 
         return new Promise((resolve) => {
@@ -58,6 +61,7 @@ export const useModalStore = defineStore('modal', () => {
         confirmText,
         cancelText,
         type,
+        hideCancel,
         confirm,
         handleConfirm,
         handleCancel

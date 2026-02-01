@@ -74,6 +74,10 @@ class SocketService {
     this.socket?.on('FORCE_DISCONNECT', cb);
   }
 
+  onError(cb: (data: { message: string }) => void) {
+    this.socket?.on('error', cb);
+  }
+
   disconnect() {
     if (this.socket) {
       this.socket.removeAllListeners();

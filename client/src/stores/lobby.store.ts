@@ -51,6 +51,17 @@ export const useLobbyStore = defineStore('lobby', () => {
       disconnectReason.value = data.reason;
       leaveLobby();
     });
+
+    // Handle generic socket errors (e.g. join failed)
+    socketService.onError((data) => {
+      console.error('[LobbyStore] Socket error:', data.message);
+      if (data.message.includes('banned') || data.message.includes('Access denied')) {
+        disconnectReason.value = 'banned';
+        leaveLobby();
+      } else if (data.message.includes('Lobby is full')) {
+        // Could handle full lobby specifically if needed, likely handled by UI error toast
+      }
+    });
   };
 
   const leaveLobby = () => {
