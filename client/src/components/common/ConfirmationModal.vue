@@ -1,5 +1,5 @@
 <template>
-  <div v-if="isOpen" class="modal-overlay" @click.self="!hideCancel && handleCancel()">
+  <div v-if="isOpen" class="modal-overlay" @click.self="hideCancel ? undefined : handleCancel">
     <div class="modal-content">
       <div class="modal-header" :class="`header-${type}`">
         <h3>{{ title }}</h3>

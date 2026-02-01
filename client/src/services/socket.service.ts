@@ -75,7 +75,7 @@ class SocketService {
   }
 
   onError(cb: (data: { message: string }) => void) {
-    this.socket?.on('error', cb);
+    this.socket?.on('ERROR', cb);
   }
 
   onBannedUsersUpdated(cb: (signal: { updated: boolean }) => void) {
