@@ -39,7 +39,7 @@ export const broadcastToOthers = (socket: Socket, lobbyId: string, event: string
  * @param io - Socket.IO server instance
  * @param lobbyId - The lobby room ID
  * @param userId - The user ID to disconnect
- * @param reason - Reason for disconnect (e.g., 'duplicate_session', 'kicked', 'banned')
+ * @param reason - Reason for disconnect (e.g., DISCONNECT_REASONS.KICKED, 'duplicate_session')
  * @returns true if user was found and disconnected, false otherwise
  */
 export const disconnectUserFromLobby = async (

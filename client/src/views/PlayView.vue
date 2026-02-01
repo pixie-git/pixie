@@ -13,6 +13,7 @@ import UserListPanel from '@/components/lobbies/UserListPanel.vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getLobbyById, exportLobbyImage, kickUser, banUser, getBannedUsers, unbanUser, type BannedUser } from '../services/api';
 import { socketService } from '@/services/socket.service';
+import { DISCONNECT_REASONS } from '../constants/disconnect.constants';
 
 // Setup Store
 const canvasStore = useCanvasStore();
@@ -32,7 +33,6 @@ const hasLobbyPermissions = computed(() => {
 });
 
 // Watch for force disconnect and navigate to lobbies
-// Watch for force disconnect and navigate to lobbies
 watch(disconnectReason, async (reason) => {
   if (reason) {
     console.log('[PlayView] Force disconnected. Reason:', reason);
@@ -41,11 +41,11 @@ watch(disconnectReason, async (reason) => {
     let message = 'You have been disconnected from the lobby.';
     let type: 'info' | 'warning' | 'danger' = 'info';
 
-    if (reason === 'banned') {
+    if (reason === DISCONNECT_REASONS.BANNED) {
       title = 'Banned';
       message = 'You have been banned from this lobby.';
       type = 'danger';
-    } else if (reason === 'kicked') {
+    } else if (reason === DISCONNECT_REASONS.KICKED) {
       title = 'Kicked';
       message = 'You have been kicked from this lobby.';
       type = 'warning';
@@ -177,7 +177,6 @@ onMounted(async () => {
   } catch (e: any) {
     if (e.response && e.response.status === 403) {
       // Ban detected - Notification is handled globally by api.ts
-      console.warn("User is banned from this lobby.");
       console.warn("User is banned from this lobby.");
       
       await modalStore.confirm({

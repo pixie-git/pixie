@@ -1,4 +1,5 @@
 import { Lobby, ILobby } from '../models/Lobby.js';
+import { DISCONNECT_REASONS } from '../constants/disconnect.constants.js';
 
 /** DTO for banned user data - only expose necessary fields */
 export interface BannedUserDTO {
@@ -70,7 +71,7 @@ export class LobbyService {
   // Common validation logic for joining/accessing a lobby
   static validateJoinAccess(lobby: ILobby, userId: string): void {
     if (lobby.bannedUsers.some((id: any) => id.toString() === userId)) {
-      throw new Error("Access denied. You are banned from this lobby.");
+      throw new Error(DISCONNECT_REASONS.BANNED);
     }
   }
 
