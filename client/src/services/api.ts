@@ -83,4 +83,15 @@ export const kickUser = (lobbyId: string, userId: string, config?: AxiosRequestC
 export const banUser = (lobbyId: string, userId: string, config?: AxiosRequestConfig) =>
 	api.post<{ message: string }>(`/lobbies/${lobbyId}/ban`, { targetUserId: userId }, config);
 
+export interface BannedUser {
+	_id: string;
+	username: string;
+}
+
+export const getBannedUsers = (lobbyId: string, config?: AxiosRequestConfig) =>
+	api.get<BannedUser[]>(`/lobbies/${lobbyId}/banned`, config);
+
+export const unbanUser = (lobbyId: string, userId: string, config?: AxiosRequestConfig) =>
+	api.post<{ message: string }>(`/lobbies/${lobbyId}/unban`, { targetUserId: userId }, config);
+
 export default api;

@@ -32,6 +32,19 @@ export class LobbyService {
     return lobby;
   }
 
+  static async unbanUser(lobbyId: string, userId: string): Promise<ILobby | null> {
+    return await Lobby.findByIdAndUpdate(
+      lobbyId,
+      { $pull: { bannedUsers: userId } },
+      { new: true }
+    );
+  }
+
+  static async getBannedUsers(lobbyId: string): Promise<any[]> {
+    const lobby = await Lobby.findById(lobbyId).populate('bannedUsers', 'username');
+    return lobby?.bannedUsers || [];
+  }
+
   static async delete(id: string) {
     const lobby = await Lobby.findById(id);
     if (!lobby) return null;

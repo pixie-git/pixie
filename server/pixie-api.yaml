@@ -285,6 +285,73 @@ paths:
           description: Forbidden (Not the owner)
         '404':
           description: Lobby not found
+  /lobbies/{id}/banned:
+    get:
+      summary: Get banned users in a lobby
+      description: Get list of banned users in a lobby. Only available to lobby owner or admin.
+      tags:
+        - Lobbies
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Lobby ID
+      responses:
+        '200':
+          description: List of banned users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserSummary'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden (Not the owner)
+        '404':
+          description: Lobby not found
+  /lobbies/{id}/unban:
+    post:
+      summary: Unban a user from the lobby
+      description: Unban a user from the lobby. Only the owner or admin can unban users.
+      tags:
+        - Lobbies
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Lobby ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                targetUserId:
+                  type: string
+              required:
+                - targetUserId
+      responses:
+        '200':
+          description: User unbanned successfully
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden (Not the owner)
+        '404':
+          description: Lobby not found
 components:
   securitySchemes:
     bearerAuth:

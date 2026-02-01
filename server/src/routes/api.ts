@@ -28,5 +28,7 @@ router.delete("/lobbies/:id", authenticateToken, requireLobbyOwner, LobbyControl
 router.post("/lobbies/:id/kick", authenticateToken, requireLobbyOwner, LobbyController.kickUser)
 router.get("/lobbies/:id/image", authenticateToken, requireLobbyAccess, LobbyController.getLobbyImage)
 router.post("/lobbies/:id/ban", authenticateToken, requireLobbyOwner, LobbyController.banUser)
+router.get("/lobbies/:id/banned", authenticateToken, requireLobbyOwner, LobbyController.getBannedUsers)
+router.post("/lobbies/:id/unban", authenticateToken, requireLobbyOwner, LobbyController.unbanUser)
 
 export default router

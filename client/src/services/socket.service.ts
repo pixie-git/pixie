@@ -74,6 +74,10 @@ class SocketService {
     this.socket?.on('FORCE_DISCONNECT', cb);
   }
 
+  onBannedUsersUpdated<T>(cb: (users: T[]) => void) {
+    this.socket?.on('BANNED_USERS_UPDATED', cb);
+  }
+
   disconnect() {
     if (this.socket) {
       this.socket.removeAllListeners();
