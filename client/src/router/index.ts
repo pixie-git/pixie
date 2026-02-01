@@ -22,8 +22,27 @@ export const router = createRouter({
     routes
 })
 
+/**
+ * Checks if user store state is corrupted (has token but missing required fields)
+ */
+function isUserStoreCorrupted(userStore: ReturnType<typeof useUserStore>): boolean {
+    if (!userStore.token) return false
+    return !userStore.username || !userStore.id
+}
+
 router.beforeEach((to, _from, next) => {
     const userStore = useUserStore()
+
+    // Handle corrupted user store: logout and redirect to login
+    if (isUserStoreCorrupted(userStore)) {
+        userStore.logout()
+        return next('/')
+    }
+
+    // Redirect authenticated users away from login page
+    if (to.path === '/' && userStore.isAuthenticated) {
+        return next('/lobbies')
+    }
 
     if (to.meta.requiresAuth && !userStore.token) {
         return next('/')
