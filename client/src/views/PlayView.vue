@@ -172,8 +172,8 @@ onMounted(async () => {
 
   // Listen for real-time banned users updates only when user has lobby permissions
   if (hasLobbyPermissions.value) {
-    socketService.onBannedUsersUpdated<BannedUser>((users) => {
-      bannedUsers.value = users;
+    socketService.onBannedUsersUpdated(() => {
+      fetchBannedUsers();
     });
   } else {
     // Ensure non-moderator clients do not retain banned users data

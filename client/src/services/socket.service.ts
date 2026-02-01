@@ -74,7 +74,7 @@ class SocketService {
     this.socket?.on('FORCE_DISCONNECT', cb);
   }
 
-  onBannedUsersUpdated<T>(cb: (users: T[]) => void) {
+  onBannedUsersUpdated(cb: (signal: { updated: boolean }) => void) {
     this.socket?.on('BANNED_USERS_UPDATED', cb);
   }
 

@@ -196,9 +196,8 @@ export class LobbyController {
       const io = (req as any).io;
       if (io) {
         await disconnectUserFromLobby(io, id, targetUserId, 'banned');
-        // Broadcast updated banned users list to all users in lobby
-        const bannedUsers = await LobbyService.getBannedUsers(id);
-        broadcastToLobby(io, id, CONFIG.EVENTS.SERVER.BANNED_USERS_UPDATED, bannedUsers);
+        // Broadcast non-sensitive signal - clients with permission will refetch via REST
+        broadcastToLobby(io, id, CONFIG.EVENTS.SERVER.BANNED_USERS_UPDATED, { updated: true });
       }
 
       return res.status(200).json({ message: 'User banned successfully' });
@@ -237,11 +236,10 @@ export class LobbyController {
       await LobbyService.unbanUser(id, targetUserId);
       console.log(`[Lobby] Unbanning user ${targetUserId} from ${lobby.name}`);
 
-      // Broadcast updated banned users list
+      // Broadcast non-sensitive signal - clients with permission will refetch via REST
       const io = (req as any).io;
       if (io) {
-        const bannedUsers = await LobbyService.getBannedUsers(id);
-        broadcastToLobby(io, id, CONFIG.EVENTS.SERVER.BANNED_USERS_UPDATED, bannedUsers);
+        broadcastToLobby(io, id, CONFIG.EVENTS.SERVER.BANNED_USERS_UPDATED, { updated: true });
       }
 
       return res.status(200).json({ message: 'User unbanned successfully' });
