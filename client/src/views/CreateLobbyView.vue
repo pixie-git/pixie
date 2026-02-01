@@ -5,7 +5,7 @@
       <button class="back-btn" @click="goBack" title="Back">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg>
       </button>
-      <h1>Create Your Canvas</h1>
+      <h1>Create Your Lobby</h1>
     </div>
 
     <div class="form-card">
@@ -14,11 +14,11 @@
         <!-- Row 1: Name and Max Collaborators -->
         <div class="form-row">
           <div class="form-group flex-2">
-            <label>Canvas Name</label>
+            <label>Lobby Name</label>
             <input 
               v-model="form.name" 
               type="text" 
-              placeholder="Enter canvas name" 
+              placeholder="Enter lobby name" 
               required 
             />
           </div>
@@ -88,7 +88,7 @@
                     <label>Description (Optional)</label>
                     <textarea 
                     v-model="form.description" 
-                    placeholder="Describe your canvas"
+                    placeholder="Describe your lobby"
                     class="desc-textarea"
                     ></textarea>
                 </div>
@@ -97,7 +97,7 @@
       
         <!-- Submit Button -->
         <button type="submit" class="submit-btn" :disabled="isLoading">
-          {{ isLoading ? 'Creating...' : 'Create Canvas' }}
+          {{ isLoading ? 'Creating...' : 'Create Lobby' }}
         </button>
 
 
@@ -159,7 +159,7 @@ const validateHexArray = (input: string): string[] | null => {
 
 const handleSubmit = async () => {
   if (!form.name.trim()) {
-      toastStore.add("Canvas Name is required", 'error');
+      toastStore.add("Lobby Name is required", 'error');
       return;
   }
 
