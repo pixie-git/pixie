@@ -145,7 +145,7 @@ defineExpose({
   width: 100%; 
   height: 80vh; 
   overflow: hidden;
-  background-color: #222;
+
   cursor: crosshair;
   user-select: none;
   touch-action: none;
@@ -188,6 +188,7 @@ defineExpose({
   image-rendering: pixelated;
   background-color: #fff;
   /* No border here, viewport has background */
-  box-shadow: 0 0 20px rgba(0,0,0,0.5); /* Shadow to separate canvas from void */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 </style>
