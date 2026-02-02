@@ -30,7 +30,7 @@ function goToProfile() {
   // Placeholder for future profile page implementation
   console.log('Go to profile');
   emit('close');
-  // router.push('/profile'); // Future implementation
+  router.push('/profile');
 }
 
 function handleLogout(): void {
