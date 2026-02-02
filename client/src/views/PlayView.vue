@@ -49,6 +49,10 @@ watch(disconnectReason, async (reason) => {
       title = 'Kicked';
       message = 'You have been kicked from this lobby.';
       type = 'warning';
+    } else if (reason === DISCONNECT_REASONS.LOBBY_FULL) {
+      title = 'Lobby Full';
+      message = 'This lobby has reached its maximum capacity.';
+      type = 'warning';
     }
 
     // Wait for user to acknowledge

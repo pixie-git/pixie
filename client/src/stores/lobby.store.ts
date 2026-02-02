@@ -61,7 +61,8 @@ export const useLobbyStore = defineStore('lobby', () => {
         disconnectReason.value = DISCONNECT_REASONS.BANNED;
         leaveLobby();
       } else if (data.message.includes('Lobby is full')) {
-        // Could handle full lobby specifically if needed, likely handled by UI error toast
+        disconnectReason.value = DISCONNECT_REASONS.LOBBY_FULL;
+        leaveLobby();
       }
     });
   };
