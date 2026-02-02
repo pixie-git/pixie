@@ -108,13 +108,15 @@ watch(() => props.pixelUpdateEvent, (event) => {
 // --- Lifecycle ---
 
 onMounted(() => {
-  updateBuffer();
   window.addEventListener('keydown', handleKeyDown);
   window.addEventListener('keyup', handleKeyUp);
   window.addEventListener('resize', handleResize);
   
-  // Initial render after a tick to ensure viewport size is correct
-  setTimeout(fitToScreen, 0);
+  // Initial buffer update and render after a tick to ensure viewport size is correct
+  setTimeout(() => {
+    updateBuffer();
+    fitToScreen();
+  }, 0);
 });
 
 onUnmounted(() => {
