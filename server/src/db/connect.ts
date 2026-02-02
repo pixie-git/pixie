@@ -16,8 +16,12 @@ export const connectDB = async (): Promise<void> => {
 		await mongoose.connection.db?.admin().ping()
 		console.log("[INFO] MongoDB is ready")
 
-		await seedUsers()
-		await seedLobbies()
+		if (process.env.SKIP_SEED !== "true") {
+			await seedUsers()
+			await seedLobbies()
+		} else {
+			console.log("[INFO] Skipping database seed")
+		}
 	} catch (err) {
 		const error = err as Error
 		console.error("[ERROR] MongoDB Connection Error:", error.message)
