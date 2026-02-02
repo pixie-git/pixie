@@ -13,12 +13,15 @@ export const seedUsers = async (): Promise<void> => {
 	]
 
 	try {
-		console.log("Cleaning user user...")
-		await User.deleteMany({})
-
 		console.log("Seeding users...")
 		for (const u of users) {
-			await User.create(u)
+			const existing = await User.findOne({ username: u.username })
+			if (!existing) {
+				await User.create(u)
+				console.log(`Created user: ${u.username}`)
+			} else {
+				console.log(`User already exists: ${u.username}`)
+			}
 		}
 		console.log("Users seeded")
 	} catch (error) {
@@ -28,10 +31,6 @@ export const seedUsers = async (): Promise<void> => {
 
 export const seedLobbies = async (): Promise<void> => {
 	try {
-		console.log("Cleaning lobbies and canvases...")
-		await Lobby.deleteMany({})
-		await Canvas.deleteMany({})
-
 		console.log("Seeding lobbies...")
 
 		// Fetch Users to assign ownership
@@ -84,6 +83,12 @@ export const seedLobbies = async (): Promise<void> => {
 		}
 
 		for (const config of lobbyConfigs) {
+			// Check if lobby already exists
+			const existingLobby = await Lobby.findOne({ name: config.name })
+			if (existingLobby) {
+				console.log(`Lobby already exists: ${config.name}`)
+				continue
+			}
 
 			// Determine palette
 			let palette = PALETTES.default;
@@ -95,6 +100,7 @@ export const seedLobbies = async (): Promise<void> => {
 				height: config.height,
 				palette: palette
 			})
+			console.log(`Created lobby: ${config.name}`)
 
 			// Draw something unique on this new canvas
 			const canvas = await Canvas.findById(lobby.canvas);
