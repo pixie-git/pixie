@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { Types } from 'mongoose';
 import { LobbyService } from '../services/lobby.service.js';
 import { ImageService } from '../services/image.service.js';
 import { disconnectUserFromLobby, broadcastToLobby } from '../utils/socketUtils.js';
@@ -177,6 +178,10 @@ export class LobbyController {
 
       if (!targetUserId) {
         throw new AppError('Target user ID is required', 400);
+      }
+
+      if (!Types.ObjectId.isValid(targetUserId)) {
+        throw new AppError('Invalid target user ID format', 400);
       }
 
       const lobby = await LobbyService.getById(id);
