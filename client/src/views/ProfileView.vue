@@ -68,9 +68,11 @@ const { isMuted } = storeToRefs(notificationStore);
 const currentTheme = ref('light');
 
 onMounted(() => {
-  const savedTheme = document.body.getAttribute('data-theme');
+  const savedTheme = localStorage.getItem('theme') || document.body.getAttribute('data-theme');
   if (savedTheme) {
     currentTheme.value = savedTheme;
+    // Ensure body matches if loaded from storage
+    document.body.setAttribute('data-theme', savedTheme);
   }
 });
 
@@ -79,7 +81,7 @@ const handleLogout = async () => {
   router.push('/');
 };
 
-const handleThemeChange = () => {
+const handleThemeChange = () => {  
   document.body.setAttribute('data-theme', currentTheme.value);
   localStorage.setItem('theme', currentTheme.value);
 };
@@ -237,7 +239,6 @@ const toggleNotifications = () => {
 }
 
 .toggle-switch.active {
-  background-color: #fff;
   background-color: #10b981;
   border-color: #10b981;
 }

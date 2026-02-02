@@ -82,10 +82,13 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
         const userStore = useUserStore();
         const token = userStore.token || localStorage.getItem('authToken');
 
-        if (!token || isMuted.value) return;
+        if (!token) return;
 
-        // Fetch history immediately
+        // Fetch history immediately, regardless of mute state
         fetchNotifications();
+
+        // If muted, do not establish SSE connection
+        if (isMuted.value) return;
 
         if (eventSource) {
             eventSource.close();
@@ -128,7 +131,6 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
         };
 
         eventSource.onerror = () => {
-            // console.error('[SSE] Error:', error);
             // Polyfill might error on re-connect attempts, usually safe to ignore or just log
         };
     };
@@ -146,7 +148,6 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
             eventSource = null;
             console.log('[SSE] Disconnected');
         }
-        notifications.value = []; // Clear on disconnect/logout
     };
 
     return {
