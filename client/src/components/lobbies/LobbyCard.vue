@@ -1,10 +1,6 @@
 <template>
   <div class="lobby-card">
-    <div class="card-header">
-      <!-- Placeholder for preview image/pattern -->
-      <div class="canvas-preview">
-      </div>
-    </div>
+
     
     <div class="card-content">
       <h3>{{ lobby.name }}</h3>
@@ -69,88 +65,77 @@ const formatDate = (dateString: string) => {
   box-shadow: 0 10px 15px var(--color-shadow-hover);
 }
 
-.card-header {
-  height: 120px;
-  background: var(--color-card-header-bg);
-  position: relative;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.canvas-preview {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-
 .card-content {
-  padding: 1rem;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.8rem;
 }
 
 h3 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.25rem;
   color: var(--color-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-weight: 600;
 }
 
 .owner {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: var(--color-text-muted);
 }
 
 .stats {
   display: flex;
   gap: 1rem;
-  margin: 0.5rem 0;
-  font-size: 0.8rem;
+  margin: 0.2rem 0 0.8rem 0;
+  font-size: 0.85rem;
   color: var(--color-text-muted);
 }
 
 .stat-item {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .join-btn {
   width: 100%;
-  padding: 8px;
+  padding: 10px;
   background-color: var(--color-btn-primary); /* Use centralized variable */
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  font-weight: 500;
-  transition: background-color 0.2s;
+  font-weight: 600;
+  transition: background-color 0.2s, transform 0.1s;
 }
 
 .join-btn:hover {
   background-color: var(--color-btn-primary-hover);
 }
 
+.join-btn:active {
+  transform: scale(0.98);
+}
+
 .delete-btn {
   width: 100%;
-  padding: 8px;
-  background-color: #ef4444; /* Red-500 */
-  color: white;
-  border: none;
-  border-radius: 6px;
+  padding: 10px;
+  background-color: transparent;
+  color: #ef4444; /* Red-500 */
+  border: 1px solid #ef4444;
+  border-radius: 8px;
   cursor: pointer;
   font-weight: 500;
   margin-bottom: 0.5rem;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
 }
 
 .delete-btn:hover {
-  background-color: #dc2626; /* Red-600 */
+  background-color: rgba(239, 68, 68, 0.1);
 }
 </style>
