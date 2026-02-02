@@ -261,7 +261,6 @@ onUnmounted(() => {
       <!-- Center Canvas Area -->
       <section class="canvas-area">
         <div class="canvas-container">
-          <div class="canvas-wrapper">
             <PixelCanvas
               :width="width"
               :height="height"
@@ -273,7 +272,6 @@ onUnmounted(() => {
               @stroke-move="({x, y}) => canvasStore.continueStroke(x, y)"
               @stroke-end="canvasStore.endStroke()"
             />
-          </div>
         </div>
         <UserListPanel 
           :users="users" 
@@ -432,6 +430,8 @@ onUnmounted(() => {
   overflow: hidden;
   display: flex; /* NEW: Flex layout for side-by-side */
 }
+
+
 
 .canvas-container {
   flex: 1;
