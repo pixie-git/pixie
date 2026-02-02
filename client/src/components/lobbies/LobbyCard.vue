@@ -11,10 +11,7 @@
       <p class="owner">by {{ lobby.owner?.username || 'Unknown' }}</p>
       
       <div class="stats">
-        <div class="stat-item">
-          <span class="icon">👤</span>
-          <span>{{ lobby.allowedUsers?.length || 0 }}/50</span>
-        </div>
+
         <div class="stat-item">
           <span class="icon">🕒</span>
           <span>{{ formatDate(lobby.createdAt) }}</span>
