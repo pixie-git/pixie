@@ -11,7 +11,24 @@
           
           <div class="form-group">
             <label>Username:</label>
-            <input type="text" :value="userStore.username" disabled class="input-field" />
+            <div class="username-edit-group">
+              <input 
+                type="text" 
+                v-model="editUsername" 
+                :disabled="!isEditing" 
+                class="input-field" 
+                :class="{ 'editing': isEditing }"
+              />
+              <div class="edit-actions">
+                <button v-if="!isEditing" @click="startEditing" class="edit-btn">Edit</button>
+                <div v-else class="action-buttons">
+                  <button @click="saveUsername" class="save-btn" :disabled="isSaving">
+                     {{ isSaving ? 'Saving...' : 'Save' }}
+                  </button>
+                  <button @click="cancelEditing" class="cancel-btn" :disabled="isSaving">Cancel</button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <button class="logout-btn" @click="handleLogout">
@@ -64,6 +81,43 @@ const router = useRouter();
 const userStore = useUserStore();
 const notificationStore = useInAppNotificationStore();
 const { isMuted } = storeToRefs(notificationStore);
+import { useToastStore } from '../stores/toast.store';
+
+const toastStore = useToastStore();
+const isEditing = ref(false);
+const isSaving = ref(false);
+const editUsername = ref(userStore.username);
+
+const startEditing = () => {
+    editUsername.value = userStore.username;
+    isEditing.value = true;
+};
+
+const cancelEditing = () => {
+    isEditing.value = false;
+    editUsername.value = userStore.username;
+};
+
+const saveUsername = async () => {
+    if (!editUsername.value.trim() || editUsername.value === userStore.username) {
+        isEditing.value = false;
+        return;
+    }
+    
+    try {
+        isSaving.value = true;
+        await userStore.updateProfile(editUsername.value);
+        toastStore.add('Username updated successfully', 'success');
+        isEditing.value = false;
+    } catch (error: any) {
+        // Show specific error feedback
+        const errorMessage = error.response?.data?.error || "Failed to update username";
+        toastStore.add(errorMessage, 'error');
+        console.error("Failed to update username", error);
+    } finally {
+        isSaving.value = false;
+    }
+};
 
 const currentTheme = ref('light');
 
@@ -267,4 +321,47 @@ const toggleNotifications = () => {
     padding: 1.5rem;
   }
 }
+
+/* Edit Styles */
+.username-edit-group {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.edit-actions {
+    display: flex;
+    align-items: center;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.edit-btn, .cancel-btn {
+    padding: 0.5rem 1rem;
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    color: var(--color-text);
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.save-btn {
+    padding: 0.5rem 1rem;
+    background: #10b981;
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.save-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
 </style>

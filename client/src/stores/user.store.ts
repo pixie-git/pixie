@@ -16,6 +16,21 @@ export const useUserStore = defineStore("user", () => {
 		localStorage.setItem("authToken", authToken)
 		localStorage.setItem("userId", userId)
 		localStorage.setItem("isAdmin", String(admin))
+
+	}
+
+	async function updateProfile(newUsername: string) {
+		if (!id.value) return;
+		// Import dynamically to avoid circular dependency if any, or move import to top if safe
+		const api = await import('../services/api');
+
+		const response = await api.updateUser(id.value, newUsername);
+		const { username: name, token: newToken } = response.data;
+
+		username.value = name;
+		token.value = newToken;
+		localStorage.setItem("username", name);
+		localStorage.setItem("authToken", newToken);
 	}
 
 	function logout(): void {
@@ -31,5 +46,5 @@ export const useUserStore = defineStore("user", () => {
 
 	const isAuthenticated = computed(() => !!token.value)
 
-	return { username, token, id, isAdmin, isAuthenticated, login, logout }
+	return { username, token, id, isAdmin, isAuthenticated, login, logout, updateProfile }
 })

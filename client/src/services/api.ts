@@ -20,6 +20,9 @@ api.interceptors.request.use((config) => {
 	return config
 })
 
+export const updateUser = (userId: string, username: string, config?: AxiosRequestConfig) =>
+	api.put<{ username: string, token: string }>(`/users/${userId}`, { username }, config);
+
 import { useToastStore } from "../stores/toast.store";
 
 // Global Error Handling

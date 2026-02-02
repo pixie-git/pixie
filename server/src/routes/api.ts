@@ -13,6 +13,7 @@ router.post("/login", LoginController.login)
 
 // Users
 router.get("/users", authenticateToken, UserController.getAll)
+router.put("/users/:id", authenticateToken, UserController.update)
 
 // Test Error
 
