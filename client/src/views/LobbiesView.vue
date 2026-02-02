@@ -22,13 +22,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../stores/user.store';
 import { getLobbies, deleteLobby } from '../services/api';
 import type { ILobby } from '../types';
 import { useToastStore } from '../stores/toast.store';
 import { useModalStore } from '../stores/modal.store';
+import { useInAppNotificationStore } from '../stores/inAppNotification.store'; // Import store
 
 // Components
 import LobbyHeader from '../components/lobbies/LobbyHeader.vue';
@@ -40,6 +41,7 @@ const router = useRouter();
 const userStore = useUserStore();
 const toastStore = useToastStore();
 const modalStore = useModalStore();
+const inAppNotificationStore = useInAppNotificationStore(); // Initialize store
 
 const lobbies = ref<ILobby[]>([]);
 const loading = ref(true);
@@ -60,6 +62,12 @@ const fetchLobbies = async () => {
 };
 
 onMounted(fetchLobbies);
+
+// Watch for real-time lobby updates
+watch(() => inAppNotificationStore.lobbyUpdateTrigger, () => {
+    console.log('Real-time lobby update received, refreshing list...');
+    fetchLobbies();
+});
 
 const filteredLobbies = computed(() => {
   let result = lobbies.value;

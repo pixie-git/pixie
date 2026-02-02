@@ -32,6 +32,9 @@ export class LobbyController {
       const options = { description, maxCollaborators, palette, width, height };
       const lobby = await LobbyService.create(name, ownerId, options);
 
+      // Broadcast update to all clients
+      NotificationService.broadcast({ type: 'LOBBY_UPDATE' });
+
       return res.status(201).json(lobby);
 
     } catch (error: any) {
@@ -130,6 +133,9 @@ export class LobbyController {
       }
 
       await LobbyService.delete(id);
+
+      // Broadcast update to all clients
+      NotificationService.broadcast({ type: 'LOBBY_UPDATE' });
 
       return res.status(200).json({ message: 'Lobby deleted successfully' });
     } catch (error) {
