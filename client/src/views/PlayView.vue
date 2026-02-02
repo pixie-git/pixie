@@ -536,15 +536,14 @@ onUnmounted(() => {
 
   .canvas-area {
     order: 1;
-    flex: none; /* Don't take all space, let it be sized by content/height */
-    height: 50vh; /* Dedicate top half to canvas */
+    flex: 1; /* Take remaining space */
+    min-height: 40vh; /* Ensure it doesn't shrink too much */
     background: transparent;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 1rem;
+    display: flex; /* Flex row to hold canvas + userlist */
+    padding: 0; /* Maximize space */
     position: relative;
-    width: 100%; /* Ensure full width */
+    width: 100%; 
+    overflow: hidden; /* Prevent spill */
   }
 
   .canvas-container {
@@ -561,8 +560,7 @@ onUnmounted(() => {
     bottom: auto;
     width: 100%;
     height: 100%;
-    max-width: 350px; /* Limit width on mobile */
-    max-height: 350px;
+    /* Removed max-width/height limits to fill space */
     box-shadow: none; /* Cleaner look on mobile or keep it? Design shows simple box */
     border: 1px solid var(--color-border);
   }

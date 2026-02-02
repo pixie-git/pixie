@@ -241,7 +241,7 @@ li.user-item.banned {
 }
 
 .mini-badge {
-  margin-top: 10px;
+  margin-top: 45px;
   background: #a855f7;
   color: white;
   width: 20px;
