@@ -81,11 +81,16 @@ export const setupSocket = (io: Server) => {
         if (!user || !user.id) return;
 
         const lobby = await LobbyService.getById(lobbyId);
-        if (!lobby || !lobby.owner) return;
+        if (!lobby) return;
 
-        const ownerId = (lobby.owner as any)._id ? (lobby.owner as any)._id.toString() : lobby.owner.toString();
+        let ownerId: string | null = null;
+        if (lobby.owner) {
+          ownerId = (lobby.owner as any)._id ? (lobby.owner as any)._id.toString() : lobby.owner.toString();
+        }
 
-        if (ownerId !== user.id && !user.isAdmin) {
+        const isOwner = ownerId && ownerId === user.id;
+
+        if (!isOwner && !user.isAdmin) {
           socket.emit(CONFIG.EVENTS.SERVER.ERROR, { message: "Only the lobby owner or admin can clear the canvas" });
           return;
         }
