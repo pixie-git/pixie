@@ -33,7 +33,8 @@ export class UserService {
 			isNewUser = true
 		}
 
-		const token = jwt.sign({ id: user._id, username: user.username, isAdmin: user.isAdmin }, JWT_SECRET, { expiresIn: CONFIG.JWT.EXPIRES_IN as any })
+
+		const token = this.generateToken(user)
 
 		return {
 			username: user.username,
@@ -66,12 +67,21 @@ export class UserService {
 			throw new Error("User not found")
 		}
 
-		const token = jwt.sign({ id: user._id, username: user.username, isAdmin: user.isAdmin }, JWT_SECRET, { expiresIn: CONFIG.JWT.EXPIRES_IN as any })
+		const token = this.generateToken(user)
 
 		return {
 			username: user.username,
 			token
 		}
+	}
+
+	private static generateToken(user: any): string {
+		const JWT_SECRET = CONFIG.JWT.SECRET
+		return jwt.sign(
+			{ id: user._id, username: user.username, isAdmin: user.isAdmin },
+			JWT_SECRET,
+			{ expiresIn: CONFIG.JWT.EXPIRES_IN as any }
+		)
 	}
 }
 

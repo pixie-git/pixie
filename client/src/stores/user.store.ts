@@ -16,7 +16,7 @@ export const useUserStore = defineStore("user", () => {
 		localStorage.setItem("authToken", authToken)
 		localStorage.setItem("userId", userId)
 		localStorage.setItem("isAdmin", String(admin))
-		localStorage.setItem("isAdmin", String(admin))
+
 	}
 
 	async function updateProfile(newUsername: string) {

@@ -81,7 +81,7 @@ const router = useRouter();
 const userStore = useUserStore();
 const notificationStore = useInAppNotificationStore();
 const { isMuted } = storeToRefs(notificationStore);
-import { useToastStore } from '../stores/toast.store'; // Assuming toast store exists per api.ts file earlier
+import { useToastStore } from '../stores/toast.store';
 
 const toastStore = useToastStore();
 const isEditing = ref(false);
@@ -110,7 +110,9 @@ const saveUsername = async () => {
         toastStore.add('Username updated successfully', 'success');
         isEditing.value = false;
     } catch (error: any) {
-        // Error is handled globally usually, but specific UI feedback here is good
+        // Show specific error feedback
+        const errorMessage = error.response?.data?.error || "Failed to update username";
+        toastStore.add(errorMessage, 'error');
         console.error("Failed to update username", error);
     } finally {
         isSaving.value = false;
