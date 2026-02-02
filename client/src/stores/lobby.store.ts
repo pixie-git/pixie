@@ -6,6 +6,7 @@ import { DISCONNECT_REASONS } from '../constants/disconnect.constants';
 export interface User {
   id: string;
   username: string;
+  isAdmin?: boolean;
 }
 
 export const useLobbyStore = defineStore('lobby', () => {

@@ -277,6 +277,7 @@ onUnmounted(() => {
           :users="users" 
           :banned-users="bannedUsers"
           :can-moderate="hasLobbyPermissions"
+          :owner-id="lobbyOwnerId"
           @kick="handleKickUser"
           @ban="handleBanUser"
           @unban="handleUnbanUser"

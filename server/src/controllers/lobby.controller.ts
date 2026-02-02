@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { Types } from 'mongoose';
 import { LobbyService } from '../services/lobby.service.js';
 import { ImageService } from '../services/image.service.js';
 import { disconnectUserFromLobby, broadcastToLobby } from '../utils/socketUtils.js';
@@ -179,12 +180,29 @@ export class LobbyController {
         throw new AppError('Target user ID is required', 400);
       }
 
+      if (!Types.ObjectId.isValid(targetUserId)) {
+        throw new AppError('Invalid target user ID format', 400);
+      }
+
       const lobby = await LobbyService.getById(id);
       if (!lobby) {
         throw new AppError('Lobby not found', 404);
       }
 
       // Persist Ban
+      const targetUser = await import('../models/User.js').then(m => m.User.findById(targetUserId));
+
+      if (!targetUser) {
+        throw new AppError('User not found', 404);
+      }
+
+      const isOwner = lobby.owner && (lobby.owner.toString() === targetUserId || (lobby.owner as any)._id?.toString() === targetUserId);
+      const isAdmin = targetUser.isAdmin;
+
+      if (isOwner || isAdmin) {
+        throw new AppError('Cannot ban lobby owner or admin', 403);
+      }
+
       await LobbyService.banUser(id, targetUserId);
       console.log(`[Lobby] Banning user ${targetUserId} from ${id}`);
 
