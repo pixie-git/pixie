@@ -33,7 +33,9 @@ export function usePixelBuffer(
   }
 
   function updatePixel(x: number, y: number, colorIndex: number) {
-    const { palette } = props.value;
+    const { width, height, palette } = props.value;
+    if (x < 0 || y < 0 || x >= width || y >= height) return;
+
     pixelCtx.fillStyle = palette[colorIndex] || '#000000';
     pixelCtx.fillRect(x, y, 1, 1);
     onBufferUpdate?.();
