@@ -56,7 +56,11 @@ export class NotificationService {
         console.log(`[Notification] Broadcasting event: ${event.type} to ${this.clients.length} clients`);
 
         this.clients.forEach(client => {
-            client.res.write(`data: ${data}\n\n`);
+            try {
+                client.res.write(`data: ${data}\n\n`);
+            } catch (error) {
+                console.error(`[Notification] Failed to send broadcast to client ${client.id}:`, error);
+            }
         });
     }
 
