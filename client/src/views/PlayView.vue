@@ -261,7 +261,6 @@ onUnmounted(() => {
       <!-- Center Canvas Area -->
       <section class="canvas-area">
         <div class="canvas-container">
-          <div class="canvas-wrapper">
             <PixelCanvas
               :width="width"
               :height="height"
@@ -273,7 +272,6 @@ onUnmounted(() => {
               @stroke-move="({x, y}) => canvasStore.continueStroke(x, y)"
               @stroke-end="canvasStore.endStroke()"
             />
-          </div>
         </div>
         <UserListPanel 
           :users="users" 
@@ -430,6 +428,29 @@ onUnmounted(() => {
   background-color: #f8f9fa;
   overflow: hidden;
   display: flex; /* NEW: Flex layout for side-by-side */
+}
+
+.canvas-toggle {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 100;
+  background: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.canvas-toggle label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
 }
 
 .canvas-container {

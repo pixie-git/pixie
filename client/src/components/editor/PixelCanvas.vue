@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, onUnmounted, computed } from 'vue';
-import { useCanvasRenderer } from '../../composables/canvas/useCanvasRenderer';
-import { useCanvasNavigation } from '../../composables/canvas/useCanvasNavigation';
-import { useCanvasEvents } from '../../composables/canvas/useCanvasEvents';
+import { useCanvasTransform } from '../../composables/pixel-canvas/useCanvasTransform';
+import { usePixelBuffer } from '../../composables/pixel-canvas/usePixelBuffer';
+import { useCanvasRenderer } from '../../composables/pixel-canvas/useCanvasRenderer';
+import { useCanvasInput } from '../../composables/pixel-canvas/useCanvasInput';
+
+// --- Props & Emits ---
 
 const props = withDefaults(defineProps<{
   width: number;
@@ -21,73 +24,80 @@ const emit = defineEmits<{
   (e: 'stroke-end'): void;
 }>();
 
-const canvasRef = ref<HTMLCanvasElement | null>(null);
+// --- Refs & Props wrapping ---
+
 const viewportRef = ref<HTMLDivElement | null>(null);
+const canvasRef = ref<HTMLCanvasElement | null>(null);
+
+const transformProps = computed(() => ({
+  width: props.width,
+  height: props.height,
+  initialZoom: props.initialZoom
+}));
+
+const bufferProps = computed(() => ({
+  width: props.width,
+  height: props.height,
+  pixels: props.pixels,
+  palette: props.palette
+}));
+
+const renderProps = computed(() => ({
+  width: props.width,
+  height: props.height
+}));
 
 // --- Composables ---
 
-const propsRef = computed(() => props);
-
-const { renderFullCanvas, updatePixel } = useCanvasRenderer(canvasRef, propsRef);
-
+// 1. Transform Logic
 const { 
-  scale, 
-  pan, 
-  performZoom, 
-  performPan, 
-  fitToScreen, 
-  handleResize: handleResizeNav 
-} = useCanvasNavigation(viewportRef, propsRef);
+  scale, panX, panY, 
+  performPan, performZoom, fitToScreen, handleResize, screenToPixel 
+} = useCanvasTransform(viewportRef, transformProps, () => render());
 
+// 2. Pixel Buffer
 const { 
-  isPanning, 
-  isAltPressed,
-  handleMouseDown, 
-  handleMouseMove, 
-  handleMouseUp, 
-  handleWheel, 
-  handleKeyDown, 
-  handleKeyUp, 
-  handleTouchStart, 
-  handleTouchMove, 
-  handleTouchEnd 
-} = useCanvasEvents(canvasRef, propsRef, {
-  onStrokeStart: (payload) => emit('stroke-start', payload),
-  onStrokeMove: (payload) => emit('stroke-move', payload),
+  pixelBuffer, updateBuffer, updatePixel 
+} = usePixelBuffer(bufferProps, () => render());
+
+// 3. Renderer
+const { render } = useCanvasRenderer(
+  canvasRef, 
+  viewportRef, 
+  pixelBuffer, 
+  { scale, panX, panY }, 
+  renderProps
+);
+
+// 4. Input Handling
+const { 
+  isPanning, isAltPressed, 
+  handleMouseDown, handleMouseMove, handleMouseUp, 
+  handleWheel, handleKeyDown, handleKeyUp, 
+  handleTouchStart, handleTouchMove, handleTouchEnd 
+} = useCanvasInput({
+  onStrokeStart: (coords) => emit('stroke-start', coords),
+  onStrokeMove: (coords) => emit('stroke-move', coords),
   onStrokeEnd: () => emit('stroke-end'),
   onPan: performPan,
-  onZoom: performZoom
+  onZoom: performZoom,
+  screenToPixel
 });
 
-// --- Lifecycle & Watchers ---
-
-onMounted(() => {
-  renderFullCanvas();
-  window.addEventListener('keydown', handleKeyDown);
-  window.addEventListener('keyup', handleKeyUp);
-  window.addEventListener('resize', handleResizeNav);
-  
-  setTimeout(() => {
-    fitToScreen();
-  }, 0);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeyDown);
-  window.removeEventListener('keyup', handleKeyUp);
-  window.removeEventListener('resize', handleResizeNav);
-});
+// --- Watchers ---
 
 watch(() => [props.width, props.height], () => {
-  renderFullCanvas();
+  updateBuffer();
   fitToScreen();
 });
 
-watch(() => [props.pixels, props.palette], renderFullCanvas);
+watch(() => [props.pixels, props.palette], () => {
+  updateBuffer();
+  render();
+});
 
 watch(() => props.pixelUpdateEvent, (event) => {
   if (!event) return;
-
   if (Array.isArray(event)) {
     event.forEach(p => updatePixel(p.x, p.y, p.colorIndex));
   } else {
@@ -95,9 +105,32 @@ watch(() => props.pixelUpdateEvent, (event) => {
   }
 });
 
+// --- Lifecycle ---
+
+onMounted(() => {
+  updateBuffer();
+  window.addEventListener('keydown', handleKeyDown);
+  window.addEventListener('keyup', handleKeyUp);
+  window.addEventListener('resize', handleResize);
+  
+  // Initial render after a tick to ensure viewport size is correct
+  setTimeout(fitToScreen, 0);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyDown);
+  window.removeEventListener('keyup', handleKeyUp);
+  window.removeEventListener('resize', handleResize);
+});
+
+// --- Expose ---
+
 defineExpose({
   updatePixel,
-  renderFullCanvas
+  renderFullCanvas: () => {
+    updateBuffer();
+    render();
+  }
 });
 </script>
 
@@ -116,26 +149,7 @@ defineExpose({
     @touchcancel.prevent="handleTouchEnd"
     :class="{ 'panning': isAltPressed, 'dragging': isPanning }"
   >
-    <div 
-      class="grid"
-      :style="{
-        width: `${props.width * scale}px`,
-        height: `${props.height * scale}px`,
-        transform: `translate(${pan.x}px, ${pan.y}px)`,
-        'background-size': `${scale}px ${scale}px`
-      }"
-    ></div>
-    <div 
-      class="transform-layer"
-      :style="{ 
-        transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})` 
-      }"
-    >
-      <canvas 
-        ref="canvasRef" 
-        class="pixel-canvas"
-      ></canvas>
-    </div>
+    <canvas ref="canvasRef" class="main-canvas"></canvas>
   </div>
 </template>
 
@@ -145,10 +159,10 @@ defineExpose({
   width: 100%; 
   height: 80vh; 
   overflow: hidden;
-
   cursor: crosshair;
   user-select: none;
   touch-action: none;
+  background-color: #1a1a1a;
 }
 
 .viewport.panning {
@@ -159,35 +173,9 @@ defineExpose({
   cursor: grabbing;
 }
 
-.transform-layer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  transform-origin: 0 0;
-  /* Will-change optimizes compositing */
-  will-change: transform;
-}
-
-.grid {
-  position: absolute;
-  top: 0;
-  left: 0;
+.main-canvas {
+  display: block;
   width: 100%;
   height: 100%;
-  pointer-events: none;
-  mix-blend-mode: difference;
-  image-rendering: pixelated; 
-  z-index: 10;
-  background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.25) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.25) 1px, transparent 1px);
-}
-
-.pixel-canvas {
-  display: block;
-  image-rendering: pixelated;
-  background-color: #fff;
-  /* No border - it causes coordinate misalignment since getBoundingClientRect includes border */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 </style>
