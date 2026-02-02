@@ -12,8 +12,11 @@ class SocketService {
     }
 
     const token = localStorage.getItem('authToken');
-    const url = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-    this.socket = io(url, {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    // If API URL is relative (e.g. /api), we want to connect to the root origin for socket.io
+    // because Nginx routes /socket.io from the root, not /api/socket.io
+    const socketUrl = apiUrl.startsWith('/') ? window.location.origin : apiUrl;
+    this.socket = io(socketUrl, {
       auth: { token }
     });
   }

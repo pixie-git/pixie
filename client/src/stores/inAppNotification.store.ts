@@ -94,7 +94,8 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
             eventSource.close();
         }
 
-        const url = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/notifications/stream`;
+        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+        const url = `${baseUrl}/notifications/stream`;
 
         eventSource = new EventSourcePolyfill(url, {
             headers: {
