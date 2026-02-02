@@ -34,7 +34,12 @@ export class NotificationService {
             console.log(`[Notification] Sending to user ${userId}, found ${targets.length} connections`);
 
             if (targets.length > 0) {
-                const data = JSON.stringify(notification); // Send the full DB object
+                // Send standard event structure
+                const event = {
+                    type: 'NOTIFICATION',
+                    payload: notification
+                };
+                const data = JSON.stringify(event);
                 targets.forEach(client => {
                     client.res.write(`data: ${data}\n\n`);
                 });
@@ -42,6 +47,17 @@ export class NotificationService {
         } catch (error) {
             console.error(`[Notification] Error saving/sending notification for ${userId}:`, error);
         }
+    }
+
+    static broadcast(event: { type: string, payload?: any }) {
+        if (this.clients.length === 0) return;
+
+        const data = JSON.stringify(event);
+        console.log(`[Notification] Broadcasting event: ${event.type} to ${this.clients.length} clients`);
+
+        this.clients.forEach(client => {
+            client.res.write(`data: ${data}\n\n`);
+        });
     }
 
     static async getHistory(userId: string, limit: number = 50) {

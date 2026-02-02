@@ -15,6 +15,7 @@ export interface InAppNotification {
 
 export const useInAppNotificationStore = defineStore('inAppNotification', () => {
     const notifications = ref<InAppNotification[]>([]);
+    const lobbyUpdateTrigger = ref(0);
 
     const unreadCount = computed(() => notifications.value.filter(n => !n.isRead).length);
     let eventSource: any = null;
@@ -97,19 +98,31 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
 
             console.log('[SSE] Message received:', event.data);
             try {
-                const payload = JSON.parse(event.data);
-                console.log('[SSE] Parsed payload:', payload);
+                const eventData = JSON.parse(event.data);
+                console.log('[SSE] Parsed event:', eventData);
 
-                // Map payload to frontend structure
-                const newNotification: InAppNotification = {
-                    id: payload._id,
-                    title: payload.title,
-                    description: payload.message,
-                    timeAgo: 'Just now',
-                    isRead: payload.isRead
-                };
+                // Check for event type
+                if (eventData.type === 'LOBBY_UPDATE') {
+                    console.log('[SSE] Lobby update received');
+                    lobbyUpdateTrigger.value++;
+                    return;
+                }
 
-                addNotification(newNotification);
+                // Handle Notification type (legacy or structured)
+                // Support both old formatted direct notifications and new {type: 'NOTIFICATION', payload: ...}
+                const payload = eventData.type === 'NOTIFICATION' ? eventData.payload : eventData;
+
+                // If it looks like a notification
+                if (payload._id && payload.title) {
+                    const newNotification: InAppNotification = {
+                        id: payload._id,
+                        title: payload.title,
+                        description: payload.message,
+                        timeAgo: 'Just now',
+                        isRead: payload.isRead
+                    };
+                    addNotification(newNotification);
+                }
             } catch (e) {
                 console.error('[SSE] Failed to parse message', e);
             }
@@ -144,6 +157,7 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
         markAllAsRead,
         fetchNotifications,
         setupSSE,
-        disconnectSSE
+        disconnectSSE,
+        lobbyUpdateTrigger
     };
 });
