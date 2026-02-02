@@ -185,6 +185,19 @@ export class LobbyController {
       }
 
       // Persist Ban
+      const targetUser = await import('../models/User.js').then(m => m.User.findById(targetUserId));
+
+      if (!targetUser) {
+        throw new AppError('User not found', 404);
+      }
+
+      const isOwner = lobby.owner && (lobby.owner.toString() === targetUserId || (lobby.owner as any)._id?.toString() === targetUserId);
+      const isAdmin = targetUser.isAdmin;
+
+      if (isOwner || isAdmin) {
+        throw new AppError('Cannot ban lobby owner or admin', 403);
+      }
+
       await LobbyService.banUser(id, targetUserId);
       console.log(`[Lobby] Banning user ${targetUserId} from ${id}`);
 

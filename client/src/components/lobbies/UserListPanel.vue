@@ -9,6 +9,7 @@ defineProps<{
   users: User[];
   bannedUsers?: BannedUser[];
   canModerate?: boolean; 
+  ownerId?: string;
 }>();
 
 const emit = defineEmits<{
@@ -83,7 +84,14 @@ const handleUnban = async (userId: string) => {
           
           <div v-if="canModerate && user.id !== userStore.id" class="mod-actions">
             <button class="mod-btn kick" @click="handleKick(user.id)" title="Kick User">K</button>
-            <button class="mod-btn ban" @click="handleBan(user.id)" title="Ban User">B</button>
+            <button 
+              v-if="user.id !== ownerId && !user.isAdmin" 
+              class="mod-btn ban" 
+              @click="handleBan(user.id)" 
+              title="Ban User"
+            >
+              B
+            </button>
           </div>
         </li>
       </ul>
