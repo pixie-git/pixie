@@ -1,0 +1,53 @@
+services:
+  mongo:
+    image: mongo:7.0-jammy
+    container_name: pixie-mongo-prod
+    restart: always
+    volumes:
+      - mongo-data-prod:/data/db
+    networks:
+      - pixie-net-prod
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.prod
+    container_name: pixie-server-prod
+    restart: always
+    environment:
+      - PORT=3000
+      - MONGO_URI=mongodb://mongo:27017/pixie
+      # CORS: Since we are using a proxy (Nginx), the request origin will likely match the host.
+      # You can strict this to your domain e.g. https://pixie.yourdomain.com
+      - CLIENT_ORIGIN=*
+    depends_on:
+      - mongo
+    networks:
+      - pixie-net-prod
+    # No need to expose ports to host, as client container proxies to it internally.
+    # Expose only if you want direct access for debugging.
+    # ports:
+    #   - "3000:3000"
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile.prod
+      args:
+        # We use a relative path '/api' so requests go to the same domain (e.g. https://pixie.domain.com/api)
+        # Nginx in this container will proxy these checks to the server container.
+        - VITE_API_URL=/api
+    container_name: pixie-client-prod
+    restart: always
+    networks:
+      - pixie-net-prod
+    # Expose port (NPM will point to this container:80)
+    ports:
+      - "8080:80"
+
+volumes:
+  mongo-data-prod:
+
+networks:
+  pixie-net-prod:
+    driver: bridge
