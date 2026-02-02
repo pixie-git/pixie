@@ -7,7 +7,7 @@
 </template>
 
 <script setup lang="ts">
-import { onUnmounted, watch } from 'vue';
+import { onUnmounted, watch, onMounted } from 'vue';
 import GlobalErrorPopup from './components/common/GlobalErrorPopup.vue';
 import ConfirmationModal from './components/common/ConfirmationModal.vue';
 import { useInAppNotificationStore } from './stores/inAppNotification.store';
@@ -16,9 +16,13 @@ import { useUserStore } from './stores/user.store';
 const notificationStore = useInAppNotificationStore();
 const userStore = useUserStore();
 
-// Reactive SSE setup
-// When user logs in (token becomes available), setup SSE
-// When user logs out (token removed), disconnect SSE
+onMounted(() => {
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme) {
+    document.body.setAttribute('data-theme', savedTheme);
+  }
+});
+
 watch(
   () => userStore.isAuthenticated,
   (isAuthenticated) => {
@@ -29,7 +33,7 @@ watch(
       notificationStore.disconnectSSE();
     }
   },
-  { immediate: true } // Check immediately on mount
+  { immediate: true }
 );
 
 onUnmounted(() => {

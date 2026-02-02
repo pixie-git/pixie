@@ -17,6 +17,7 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
     const notifications = ref<InAppNotification[]>([]);
 
     const unreadCount = computed(() => notifications.value.filter(n => !n.isRead).length);
+    const isMuted = ref(localStorage.getItem('notification_muted') === 'true');
     let eventSource: any = null;
 
     const markAsRead = async (id: string) => {
@@ -66,14 +67,28 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
         }
     };
 
+    const toggleMute = () => {
+        isMuted.value = !isMuted.value;
+        localStorage.setItem('notification_muted', String(isMuted.value));
+
+        if (isMuted.value) {
+            disconnectSSE();
+        } else {
+            setupSSE();
+        }
+    };
+
     const setupSSE = () => {
         const userStore = useUserStore();
         const token = userStore.token || localStorage.getItem('authToken');
 
         if (!token) return;
 
-        // Fetch history immediately
+        // Fetch history immediately, regardless of mute state
         fetchNotifications();
+
+        // If muted, do not establish SSE connection
+        if (isMuted.value) return;
 
         if (eventSource) {
             eventSource.close();
@@ -116,7 +131,6 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
         };
 
         eventSource.onerror = () => {
-            // console.error('[SSE] Error:', error);
             // Polyfill might error on re-connect attempts, usually safe to ignore or just log
         };
     };
@@ -134,7 +148,6 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
             eventSource = null;
             console.log('[SSE] Disconnected');
         }
-        notifications.value = []; // Clear on disconnect/logout
     };
 
     return {
@@ -144,6 +157,8 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
         markAllAsRead,
         fetchNotifications,
         setupSSE,
-        disconnectSSE
+        disconnectSSE,
+        isMuted,
+        toggleMute
     };
 });
