@@ -109,12 +109,7 @@ const toggleNotifications = () => {
   align-items: center;
 }
 
-.page-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 3rem;
-  color: var(--color-text);
-}
+
 
 .profile-card {
   background: var(--color-surface);
