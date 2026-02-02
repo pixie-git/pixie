@@ -10,6 +10,11 @@ interface LoginResponse {
 	isAdmin: boolean
 }
 
+interface UpdateUserResponse {
+	username: string
+	token: string
+}
+
 interface AllUsersResponse {
 	username: string
 	isAdmin: boolean
@@ -17,9 +22,6 @@ interface AllUsersResponse {
 }
 
 export class UserService {
-	/**
-	 * Handle user login/registration and token generation
-	 */
 	static async login(username: string): Promise<LoginResponse> {
 		const JWT_SECRET = CONFIG.JWT.SECRET
 
@@ -42,9 +44,6 @@ export class UserService {
 		}
 	}
 
-	/**
-	 * Retrieve all users with limited fields
-	 */
 	static async getAllUsers(): Promise<AllUsersResponse[]> {
 		const users = await User.find({}, "username isAdmin")
 		return users.map((user) => ({
@@ -53,4 +52,26 @@ export class UserService {
 			_id: user._id?.toString(),
 		}))
 	}
+
+	static async updateUser(userId: string, newUsername: string): Promise<UpdateUserResponse> {
+		const JWT_SECRET = CONFIG.JWT.SECRET
+
+		const existing = await User.findOne({ username: newUsername })
+		if (existing && existing._id.toString() !== userId) {
+			throw new Error("Username already taken")
+		}
+
+		const user = await User.findByIdAndUpdate(userId, { username: newUsername }, { new: true })
+		if (!user) {
+			throw new Error("User not found")
+		}
+
+		const token = jwt.sign({ id: user._id, username: user.username, isAdmin: user.isAdmin }, JWT_SECRET, { expiresIn: CONFIG.JWT.EXPIRES_IN as any })
+
+		return {
+			username: user.username,
+			token
+		}
+	}
 }
+
