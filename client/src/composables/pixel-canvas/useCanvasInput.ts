@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { ref, onUnmounted } from 'vue';
 
 export interface CanvasInputCallbacks {
   onStrokeStart: (coords: { x: number; y: number }) => void;
@@ -199,6 +199,10 @@ export function useCanvasInput(callbacks: CanvasInputCallbacks) {
       lastTouchCenter.value = null;
     }
   }
+
+  onUnmounted(() => {
+    clearTouchTimeout();
+  });
 
   return {
     isPanning,
