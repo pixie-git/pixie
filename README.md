@@ -41,7 +41,7 @@
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/yourusername/pixie.git
+    git clone https://github.com/pixie-git/pixie.git
     cd pixie
     ```
 
