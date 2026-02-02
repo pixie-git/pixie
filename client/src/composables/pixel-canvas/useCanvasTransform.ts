@@ -113,7 +113,7 @@ export function useCanvasTransform(
     const x = Math.floor((screenX - panX.value) / scale.value);
     const y = Math.floor((screenY - panY.value) / scale.value);
 
-    // Use computed or raw props? raw props are safer inside functions
+    // Validate that the pixel coordinates are within the canvas bounds from props.value
     if (x >= 0 && x < props.value.width && y >= 0 && y < props.value.height) {
       return { x, y };
     }
