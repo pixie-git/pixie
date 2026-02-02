@@ -33,6 +33,7 @@ defineEmits<{ close: [] }>();
   background: var(--color-surface);
   z-index: 9999;
   box-shadow: -4px 0 16px var(--color-shadow);
+  padding-top: 48px;
 }
 
 .close-btn {
