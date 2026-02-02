@@ -37,7 +37,7 @@ services:
       args:
         # We use a relative path '/api' so requests go to the same domain (e.g. https://pixie.domain.com/api)
         # Nginx in this container will proxy these checks to the server container.
-        - VITE_API_URL=/api
+        - VITE_API_URL=
     container_name: pixie-client-prod
     restart: always
     networks:
