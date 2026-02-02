@@ -17,6 +17,7 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
     const notifications = ref<InAppNotification[]>([]);
 
     const unreadCount = computed(() => notifications.value.filter(n => !n.isRead).length);
+    const isMuted = ref(localStorage.getItem('notification_muted') === 'true');
     let eventSource: any = null;
 
     const markAsRead = async (id: string) => {
@@ -66,11 +67,22 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
         }
     };
 
+    const toggleMute = () => {
+        isMuted.value = !isMuted.value;
+        localStorage.setItem('notification_muted', String(isMuted.value));
+
+        if (isMuted.value) {
+            disconnectSSE();
+        } else {
+            setupSSE();
+        }
+    };
+
     const setupSSE = () => {
         const userStore = useUserStore();
         const token = userStore.token || localStorage.getItem('authToken');
 
-        if (!token) return;
+        if (!token || isMuted.value) return;
 
         // Fetch history immediately
         fetchNotifications();
@@ -144,6 +156,8 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
         markAllAsRead,
         fetchNotifications,
         setupSSE,
-        disconnectSSE
+        disconnectSSE,
+        isMuted,
+        toggleMute
     };
 });
