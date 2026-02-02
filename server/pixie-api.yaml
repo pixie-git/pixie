@@ -34,6 +34,79 @@ paths:
                 $ref: '#/components/schemas/LoginResponse'
         '400':
           description: Bad Request (Missing username)
+  /notifications/stream:
+    get:
+      summary: SSE Stream for notifications
+      description: Server-Sent Events stream for real-time notifications.
+      tags:
+        - Notifications
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: SSE Stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+  /notifications:
+    get:
+      summary: Get notification history
+      description: Retrieve past notifications.
+      tags:
+        - Notifications
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    _id:
+                      type: string
+                    title:
+                      type: string
+                    message:
+                      type: string
+                    read:
+                      type: boolean
+                    createdAt:
+                      type: string
+                      format: date-time
+  /notifications/{id}/read:
+    put:
+      summary: Mark notification as read
+      description: Mark a specific notification as read.
+      tags:
+        - Notifications
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Notification ID
+      responses:
+        '200':
+          description: Notification marked as read
+  /notifications/read-all:
+    put:
+      summary: Mark all notifications as read
+      description: Mark all user's notifications as read.
+      tags:
+        - Notifications
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: All notifications marked as read
   /users:
     get:
       summary: Get all users
@@ -424,8 +497,28 @@ components:
           type: string
           example: "A place for artists"
         owner:
+          type: object
+          properties:
+            _id:
+              type: string
+            username:
+              type: string
+          example:
+            _id: "60d0fe4f5311236168a109ca"
+            username: "playerOne"
+        allowedUsers:
+          type: array
+          items:
+            type: string
+            description: ObjectId of allowed users
+        bannedUsers:
+          type: array
+          items:
+            type: string
+            description: ObjectId of banned users
+        canvas:
           type: string
-          example: "60d0fe4f5311236168a109ca"
+          description: ObjectId of the canvas
         maxCollaborators:
           type: integer
           example: 10
@@ -441,4 +534,3 @@ components:
         updatedAt:
           type: string
           format: date-time
-
