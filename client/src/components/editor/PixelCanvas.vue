@@ -110,7 +110,20 @@ watch(() => props.pixelUpdateEvent, (event) => {
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown);
   window.addEventListener('keyup', handleKeyUp);
-  window.addEventListener('resize', handleResize);
+  // Remove window resize listener as ResizeObserver covers it and more
+  // window.addEventListener('resize', handleResize);
+  
+  // Use ResizeObserver to detect container size changes (e.g. sidebar toggle)
+  if (viewportRef.value) {
+    const resizeObserver = new ResizeObserver(() => {
+      handleResize();
+    });
+    resizeObserver.observe(viewportRef.value);
+    
+    // Store observer to disconnect later (using a ref inside setup would be cleaner but we can attach it to the element or just use a local variable if we could, but scope issue. 
+    // Actually, let's declare it outside.
+    (viewportRef.value as any).__resizeObserver = resizeObserver;
+  }
   
   // Initial buffer update and render after a tick to ensure viewport size is correct
   setTimeout(() => {
@@ -122,7 +135,11 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown);
   window.removeEventListener('keyup', handleKeyUp);
-  window.removeEventListener('resize', handleResize);
+  // window.removeEventListener('resize', handleResize);
+  
+  if (viewportRef.value && (viewportRef.value as any).__resizeObserver) {
+    (viewportRef.value as any).__resizeObserver.disconnect();
+  }
 });
 
 // --- Expose ---
@@ -159,7 +176,7 @@ defineExpose({
 .viewport {
   position: relative;
   width: 100%; 
-  height: 80vh; 
+  height: 100%; 
   overflow: hidden;
   cursor: crosshair;
   user-select: none;
