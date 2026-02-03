@@ -205,23 +205,7 @@ export const useCanvasStore = defineStore('canvas', () => {
       }
     });
 
-    socketService.onLobbyDeleted(({ message }) => {
-      console.log('[Store] Lobby deleted:', message);
 
-      // Use notification store
-      import('../stores/toast.store').then(({ useToastStore }) => {
-        const toastStore = useToastStore();
-        toastStore.add(`${message} Redirecting...`, 'error', 5000);
-      });
-
-      // Disable canvas to prevent further edits
-      isDrawing.value = false;
-
-      // Redirect after 3 seconds
-      setTimeout(() => {
-        window.location.href = '/lobbies';
-      }, 1000);
-    });
 
     socketService.onCanvasCleared(() => {
       clearCanvas();
