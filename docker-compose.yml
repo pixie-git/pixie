@@ -27,9 +27,13 @@ services:
       - pixie-net
 
   server:
-    build: ./server
+    build:
+      context: ./server
+      target: build-stage
     container_name: pixie-server
     restart: on-failure
+    command: npm run dev
+
     ports:
       - "3000:3000"
     environment:
@@ -45,9 +49,14 @@ services:
       - pixie-net
 
   client:
-    build: ./client
+    build:
+      context: ./client
+      target: build-stage
     container_name: pixie-client
+    restart: on-failure
+    command: npm run dev -- --host 0.0.0.0
     ports:
+
       - "5173:5173"
     environment:
       - VITE_API_URL=http://localhost:3000

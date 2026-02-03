@@ -255,6 +255,24 @@ onUnmounted(() => {
   
         </div>
 
+
+          <!-- Instructions (Desktop Only) -->
+          <div class="instructions-card desktop-only">
+            <h3>Controls</h3>
+            <div class="instruction-item">
+              <span class="label">Draw</span>
+              <kbd class="key">Left Click</kbd>
+            </div>
+            <div class="instruction-item">
+              <span class="label">Pan</span>
+              <kbd class="key">Alt + Drag</kbd>
+            </div>
+            <div class="instruction-item">
+              <span class="label">Zoom</span>
+              <kbd class="key">Scroll</kbd>
+            </div>
+          </div>
+
           <!-- Create New Button -->
           <button class="create-btn" @click="handleCreateNew">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -570,5 +588,55 @@ onUnmounted(() => {
   }
 
 
-}
+
+  }
+
+  /* Instructions Card */
+  .instructions-card {
+    width: 100%;
+    background: var(--color-card-header-bg);
+    border: 1px solid var(--color-border);
+    padding: 1.25rem;
+    border-radius: 12px;
+    margin-top: auto; /* Push to bottom if space is available (before button) */
+    margin-bottom: 1rem;
+  }
+
+  .instructions-card h3 {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 1rem;
+    color: var(--color-text-muted);
+    font-weight: 700;
+  }
+
+  .instruction-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .instruction-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .label {
+    color: var(--color-text);
+    font-weight: 500;
+  }
+
+  .key {
+    background: var(--color-surface);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.8rem;
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    box-shadow: 0 1px 2px var(--color-shadow);
+  }
+
 </style>
