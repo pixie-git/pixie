@@ -225,7 +225,6 @@ export const useCanvasStore = defineStore('canvas', () => {
 
     socketService.onCanvasCleared(() => {
       clearCanvas();
-      // Force redraw if needed, but reactivity on pixels should handle it if components watch it
       triggerRef(pixels);
     });
   }

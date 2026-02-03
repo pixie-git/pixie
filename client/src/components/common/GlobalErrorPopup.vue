@@ -27,7 +27,7 @@ const store = useToastStore();
 const { notifications } = storeToRefs(store);
 const { remove } = store;
 
-// Show the most recent notification (or the first one, depending on preference. LIFO is usually better for alerts)
+// Show the most recent notification
 const currentNotification = computed(() => notifications.value[notifications.value.length - 1]);
 
 const getTitle = (type: NotificationType) => {

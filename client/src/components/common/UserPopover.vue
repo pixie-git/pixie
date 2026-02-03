@@ -26,7 +26,6 @@ const popoverStyle = computed(() => {
   };
 });
 
-// Close on scroll/resize to avoid misalignment
 function closePopover() {
   emit('close');
 }

@@ -40,7 +40,7 @@ defineEmits<{
 
 const userStore = useUserStore();
 const isOwner = computed(() => {
-    return props.lobby.owner?.username === userStore.username || userStore.isAdmin; // Assuming username check for now, ideally ID
+    return props.lobby.owner?._id === userStore.id || userStore.isAdmin;
 });
 
 const formatDate = (dateString: string) => {

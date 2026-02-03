@@ -1,4 +1,5 @@
 import { Lobby, ILobby } from '../models/Lobby.js';
+import { Canvas } from '../models/Canvas.js';
 import { DISCONNECT_REASONS } from '../constants/disconnect.constants.js';
 
 /** DTO for banned user data - only expose necessary fields */
@@ -58,11 +59,8 @@ export class LobbyService {
     const lobby = await Lobby.findById(id);
     if (!lobby) return null;
 
-    // Delete associated Canvas
-    // @ts-ignore
     if (lobby.canvas) {
-      // @ts-ignore
-      await import('../models/Canvas.js').then(m => m.Canvas.findByIdAndDelete(lobby.canvas));
+      await Canvas.findByIdAndDelete(lobby.canvas);
     }
 
     return await Lobby.findByIdAndDelete(id);

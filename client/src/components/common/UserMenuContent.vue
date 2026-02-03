@@ -27,7 +27,6 @@ const userStore = useUserStore();
 const { username } = storeToRefs(userStore);
 
 function goToProfile() {
-  // Placeholder for future profile page implementation
   console.log('Go to profile');
   emit('close');
   router.push('/profile');
