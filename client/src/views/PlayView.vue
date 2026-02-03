@@ -525,9 +525,7 @@ onUnmounted(() => {
   
   .sidebar-group {
     width: 100%;
-    overflow-x: auto; /* Allow horizontal scroll for palette if needed */
     display: flex;
-    justify-content: center;
   }
 
   .export-btn {

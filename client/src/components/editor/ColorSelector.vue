@@ -74,7 +74,7 @@ const selectColor = (index: number) => {
     border: none;
     box-shadow: none;
     background: transparent;
-    justify-content: center; /* Center if few colors, or start if scrolling */
+    justify-content: flex-start;
   }
 
   .color-swatch {
