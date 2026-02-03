@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import { EventSourcePolyfill } from 'event-source-polyfill';
 import { useUserStore } from './user.store';
 import * as api from '../services/api';
+import { getApiOrigin } from '../config/api';
 
 
 export interface InAppNotification {
@@ -95,7 +96,10 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
             eventSource.close();
         }
 
-        const url = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/notifications/stream`;
+
+
+        const apiOrigin = getApiOrigin();
+        const url = `${apiOrigin}/api/notifications/stream`;
 
         eventSource = new EventSourcePolyfill(url, {
             headers: {

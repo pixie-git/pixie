@@ -4,16 +4,20 @@ import { Canvas } from "../models/Canvas.js"
 import { CONFIG } from "../config.js"
 
 export const seedUsers = async (): Promise<void> => {
-	const users = [
-		{ username: "Matteo", isAdmin: true },
-		{ username: "Andrea", isAdmin: true },
-		{ username: "Guest", isAdmin: false },
-		{ username: "Alice", isAdmin: false },
-		{ username: "Bob", isAdmin: false },
-	]
+	const isProduction = process.env.NODE_ENV === 'production';
+
+	const users = isProduction
+		? [{ username: "admin", isAdmin: true }]
+		: [
+			{ username: "Matteo", isAdmin: true },
+			{ username: "Andrea", isAdmin: true },
+			{ username: "Guest", isAdmin: false },
+			{ username: "Alice", isAdmin: false },
+			{ username: "Bob", isAdmin: false },
+		];
 
 	try {
-		console.log("Seeding users...")
+		console.log(`Seeding users (Production: ${isProduction})...`)
 		for (const u of users) {
 			const existing = await User.findOne({ username: u.username })
 			if (!existing) {
@@ -30,6 +34,11 @@ export const seedUsers = async (): Promise<void> => {
 }
 
 export const seedLobbies = async (): Promise<void> => {
+	if (process.env.NODE_ENV === 'production') {
+		console.log("Skipping lobby seeding in production.");
+		return;
+	}
+
 	try {
 		console.log("Seeding lobbies...")
 

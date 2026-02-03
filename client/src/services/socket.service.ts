@@ -1,4 +1,5 @@
 import { io, type Socket } from 'socket.io-client';
+import { getApiOrigin } from '../config/api';
 
 class SocketService {
   private socket: Socket | null = null;
@@ -11,8 +12,10 @@ class SocketService {
       this.socket = null;
     }
 
+
+
     const token = localStorage.getItem('authToken');
-    const url = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    const url = getApiOrigin();
     this.socket = io(url, {
       auth: { token }
     });
