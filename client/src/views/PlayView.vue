@@ -53,6 +53,10 @@ watch(disconnectReason, async (reason) => {
       title = 'Lobby Full';
       message = 'This lobby has reached its maximum capacity.';
       type = 'warning';
+    } else if (reason === DISCONNECT_REASONS.LOBBY_DELETED) {
+      title = 'Lobby Deleted';
+      message = 'The lobby has been deleted by the owner.';
+      type = 'danger';
     }
 
     // Wait for user to acknowledge

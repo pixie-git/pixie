@@ -65,6 +65,12 @@ export const useLobbyStore = defineStore('lobby', () => {
         leaveLobby();
       }
     });
+
+    socketService.onLobbyDeleted(({ message }) => {
+      console.log('[LobbyStore] Lobby deleted:', message);
+      disconnectReason.value = DISCONNECT_REASONS.LOBBY_DELETED;
+      leaveLobby();
+    });
   };
 
   const leaveLobby = () => {
