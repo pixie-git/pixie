@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { useCanvasStore } from '@/stores/canvas.store';
+import { useEditorStore } from '@/stores/editor.store';
 import { storeToRefs } from 'pinia';
 
-const store = useCanvasStore();
+const store = useEditorStore();
 
 const { palette, selectedColorIndex } = storeToRefs(store);
 
@@ -27,16 +27,14 @@ const selectColor = (index: number) => {
 <style scoped>
 .color-picker {
   display: grid;
-  grid-template-columns: repeat(3, 1fr); /* 3 columns for better density */
+  grid-template-columns: repeat(2, 1fr); /* 2 columns like in the design */
   gap: 8px;
   padding: 12px;
-  background: var(--color-surface);
+  background: #fff; /* White background as per design */
   border-radius: 12px;
   width: fit-content;
-  box-shadow: 0 2px 8px var(--color-shadow);
-  border: 1px solid var(--color-border);
-  max-height: 60vh; /* Limit height to allow scrolling */
-  overflow-y: auto; /* Enable vertical scrolling */
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border: 1px solid #e0e0e0;
 }
 
 .color-swatch {
@@ -55,7 +53,7 @@ const selectColor = (index: number) => {
 }
 
 .color-swatch.active {
-  border-color: var(--color-text);
+  border-color: #333;
   box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
   transform: scale(1.15);
   z-index: 1;
@@ -74,7 +72,7 @@ const selectColor = (index: number) => {
     border: none;
     box-shadow: none;
     background: transparent;
-    justify-content: flex-start;
+    justify-content: center; /* Center if few colors, or start if scrolling */
   }
 
   .color-swatch {

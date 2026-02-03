@@ -1,28 +1,28 @@
 <template>
   <footer class="bottom-nav">
+     <!-- Left: Logo -->
     <div class="nav-item">
-       <img src="@/assets/PixieLogo.png" alt="Pixie" class="nav-logo" @click="$router.push('/lobbies')" />
+       <img src="@/assets/PixieLogo.png" alt="Pixie" class="nav-logo" />
     </div>
     
+    <!-- Center: FAB (Create) -->
     <div class="nav-item fab-container">
-      <button class="fab-btn" @click="$router.push('/create-lobby')">+</button>
+      <button class="fab-btn" @click="$router.push('/create-lobby')">
+        +
+      </button>
     </div>
 
+    <!-- Right: Profile -->
     <div class="nav-item">
-      <button class="nav-icon-btn" title="Profile" @click="isDrawerOpen = true">
+      <button class="nav-icon-btn" title="Profile">
          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
       </button>
     </div>
   </footer>
-
-  <UserDrawer :is-open="isDrawerOpen" @close="isDrawerOpen = false" />
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import UserDrawer from '../common/UserDrawer.vue';
-
-const isDrawerOpen = ref(false);
+// Pure presentation component
 </script>
 
 <style scoped>

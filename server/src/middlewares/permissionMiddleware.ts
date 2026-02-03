@@ -1,17 +1,16 @@
 import { Response, NextFunction } from "express";
 import { AuthRequest } from "./authMiddleware.js";
 import { Lobby } from "../models/Lobby.js";
-import { LobbyService } from "../services/lobby.service.js";
-import { AppError } from "../utils/AppError.js";
+import { Types } from "mongoose";
 
 /**
  * Middleware to check if the user is a System Administrator.
  */
 export const requireSysAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
-  if (!req.user || !req.user.isAdmin) {
-    return next(new AppError("Access denied. System Administrator privileges required.", 403));
-  }
-  next();
+    if (!req.user || !req.user.isAdmin) {
+        return res.status(403).json({ error: "Access denied. System Administrator privileges required." });
+    }
+    next();
 };
 
 /**
@@ -19,28 +18,29 @@ export const requireSysAdmin = (req: AuthRequest, res: Response, next: NextFunct
  * Assumes req.params.id is the lobby ID.
  */
 export const requireLobbyOwner = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    const lobbyId = req.params.id;
-    const userId = req.user?.id;
+    try {
+        const lobbyId = req.params.id;
+        const userId = req.user?.id;
 
-    if (!lobbyId || !userId) {
-      throw new AppError("Invalid request data", 400);
+        if (!lobbyId || !userId) {
+            return res.status(400).json({ error: "Invalid request data" });
+        }
+
+        const lobby = await Lobby.findById(lobbyId);
+        if (!lobby) {
+            return res.status(404).json({ error: "Lobby not found" });
+        }
+
+        // Check if user is owner OR sysadmin (SysAdmins can manage everything)
+        if (lobby.owner?.toString() !== userId && !req.user.isAdmin) {
+            return res.status(403).json({ error: "Access denied. You are not the owner of this lobby." });
+        }
+
+        next();
+    } catch (error) {
+        console.error("[PermissionMiddleware] requireLobbyOwner Error:", error);
+        return res.status(500).json({ error: "Internal Server Error" });
     }
-
-    const lobby = await Lobby.findById(lobbyId);
-    if (!lobby) {
-      throw new AppError("Lobby not found", 404);
-    }
-
-    // Check if user is owner OR sysadmin (SysAdmins can manage everything)
-    if (lobby.owner?.toString() !== userId && !req.user.isAdmin) {
-      throw new AppError("Access denied. You are not the owner of this lobby.", 403);
-    }
-
-    next();
-  } catch (error) {
-    next(error);
-  }
 };
 
 /**
@@ -48,31 +48,30 @@ export const requireLobbyOwner = async (req: AuthRequest, res: Response, next: N
  * Assumes req.params.id is the lobby ID.
  */
 export const requireLobbyAccess = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    const lobbyId = req.params.id;
-    const userId = req.user?.id;
-
-    if (!lobbyId || !userId) {
-      throw new AppError("Invalid request data", 400);
-    }
-
-    const lobby = await Lobby.findById(lobbyId);
-    if (!lobby) {
-      throw new AppError("Lobby not found", 404);
-    }
-
-    // reused logic from Service
     try {
-      LobbyService.validateJoinAccess(lobby, userId);
-    } catch (e: any) {
-      throw new AppError(e.message, 403);
+        const lobbyId = req.params.id;
+        const userId = req.user?.id;
+
+        if (!lobbyId || !userId) {
+            return res.status(400).json({ error: "Invalid request data" });
+        }
+
+        const lobby = await Lobby.findById(lobbyId);
+        if (!lobby) {
+            return res.status(404).json({ error: "Lobby not found" });
+        }
+
+        // Check if user is banned
+        if (lobby.bannedUsers.some((id: Types.ObjectId) => id.toString() === userId)) {
+            return res.status(403).json({ error: "Access denied. You are banned from this lobby." });
+        }
+
+        // If we implement private lobbies in the future, check allowedUsers here
+        // For now, just check ban status
+
+        next();
+    } catch (error) {
+        console.error("[PermissionMiddleware] requireLobbyAccess Error:", error);
+        return res.status(500).json({ error: "Internal Server Error" });
     }
-
-    // If we implement private lobbies in the future, check access here
-    // For now, just check ban status
-
-    next();
-  } catch (error) {
-    next(error);
-  }
 };

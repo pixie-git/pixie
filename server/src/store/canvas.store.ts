@@ -3,28 +3,28 @@ import { CONFIG } from '../config.js';
 export class CanvasStore {
   private lobbies: Map<string, { width: number; height: number; palette: string[]; data: Uint8Array }> = new Map();
 
-  public isLobbyInMemory(lobbyId: string): boolean {
-    return this.lobbies.has(lobbyId);
+  public isLobbyInMemory(lobbyName: string): boolean {
+    return this.lobbies.has(lobbyName);
   }
 
-  public getLobbyMetaData(lobbyId: string) {
-    return this.lobbies.get(lobbyId);
+  public getLobbyMetaData(lobbyName: string) {
+    return this.lobbies.get(lobbyName);
   }
 
-  public getLobbyPixelData(lobbyId: string): Uint8Array | undefined {
-    return this.lobbies.get(lobbyId)?.data;
+  public getLobbyPixelData(lobbyName: string): Uint8Array | undefined {
+    return this.lobbies.get(lobbyName)?.data;
   }
 
   // Load data from DB buffer to RAM Uint8Array
-  public loadLobbyToMemory(lobbyId: string, width: number, height: number, palette: string[], data: Buffer | Uint8Array): Uint8Array {
-    console.log(`[CanvasStore] Loading lobby: ${lobbyId} (${width}x${height}, palette len: ${palette.length})`);
+  public loadLobbyToMemory(lobbyName: string, width: number, height: number, palette: string[], data: Buffer | Uint8Array): Uint8Array {
+    console.log(`[CanvasStore] Loading lobby: ${lobbyName} (${width}x${height}, palette len: ${palette.length})`);
     const memoryBuffer = new Uint8Array(data);
-    this.lobbies.set(lobbyId, { width, height, palette, data: memoryBuffer });
+    this.lobbies.set(lobbyName, { width, height, palette, data: memoryBuffer });
     return memoryBuffer;
   }
 
-  public modifyPixelColor(lobbyId: string, x: number, y: number, color: number): boolean {
-    const lobby = this.lobbies.get(lobbyId);
+  public modifyPixelColor(lobbyName: string, x: number, y: number, color: number): boolean {
+    const lobby = this.lobbies.get(lobbyName);
     if (!lobby) return false;
 
     // Validate coordinates against specific lobby dimensions
@@ -45,20 +45,8 @@ export class CanvasStore {
     return false;
   }
 
-  public clearLobbyCanvas(lobbyId: string): boolean {
-    const lobby = this.lobbies.get(lobbyId);
-    if (!lobby) return false;
-    lobby.data.fill(0); // Fill with index 0 (assumed transparent/background)
-    return true;
-  }
-
   public getInMemoryLobbyIds(): string[] {
     return Array.from(this.lobbies.keys());
-  }
-
-  public removeLobby(lobbyId: string): boolean {
-    console.log(`[CanvasStore] Removing lobby from memory: ${lobbyId}`);
-    return this.lobbies.delete(lobbyId);
   }
 }
 

@@ -8,6 +8,7 @@ export interface ILobby extends Document {
   maxCollaborators: number;
   owner?: Types.ObjectId; // Links to your User schema
   canvas: Types.ObjectId; // Links to Canvas schema
+  allowedUsers: Types.ObjectId[];
   bannedUsers: Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
@@ -35,6 +36,7 @@ const lobbySchema = new Schema<ILobby>({
   maxCollaborators: { type: Number, default: 10, min: 1, max: 50 },
   owner: { type: Schema.Types.ObjectId, ref: 'User' },
   canvas: { type: Schema.Types.ObjectId, ref: 'Canvas', required: true },
+  allowedUsers: [{ type: Schema.Types.ObjectId, ref: 'User' }],
   bannedUsers: [{ type: Schema.Types.ObjectId, ref: 'User' }]
 }, { timestamps: true });
 

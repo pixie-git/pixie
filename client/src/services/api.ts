@@ -1,17 +1,7 @@
-import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios"
+import axios, { type AxiosInstance } from "axios"
 
-// Extend Axios Request Config to support custom flags
-declare module 'axios' {
-	export interface AxiosRequestConfig {
-		skipGlobalErrorHandler?: boolean;
-	}
-}
-
-import { getApiOrigin } from "../config/api";
-
-const apiOrigin = getApiOrigin();
 const api: AxiosInstance = axios.create({
-	baseURL: `${apiOrigin}/api`,
+	baseURL: import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : "http://localhost:3000/api",
 })
 
 // Add token to all requests if it exists
@@ -23,27 +13,19 @@ api.interceptors.request.use((config) => {
 	return config
 })
 
-export const updateUser = (userId: string, username: string, config?: AxiosRequestConfig) =>
-	api.put<{ username: string, token: string }>(`/users/${userId}`, { username }, config);
-
-import { useToastStore } from "../stores/toast.store";
+import { useNotificationStore } from "../stores/notification";
 
 // Global Error Handling
 api.interceptors.response.use(
 	(response) => response,
 	(error) => {
-		// Check if the request explicitly asked to skip global error handling
-		if (error.config && error.config.skipGlobalErrorHandler) {
-			return Promise.reject(error);
-		}
-
-		const toastStore = useToastStore();
+		const notificationStore = useNotificationStore();
 
 		if (error.response) {
 			const message = error.response.data?.error || "An unexpected error occurred.";
-			toastStore.add(message, 'error');
+			notificationStore.add(message, 'error');
 
-			if (error.response.status === 401) {
+			if (error.response.status === 401 || error.response.status === 403) {
 				// Token invalid or expired
 				localStorage.removeItem("authToken");
 				// Force redirect to login (avoiding router circular dependency)
@@ -52,18 +34,17 @@ api.interceptors.response.use(
 				}
 			}
 		} else {
-			toastStore.add("Network Error. Please check your connection.", 'error');
+			notificationStore.add("Network Error. Please check your connection.", 'error');
 		}
 		return Promise.reject(error);
 	}
 )
 
 
-import { ILobby, INotification } from "../types";
+import { ILobby } from "../types";
 
-export const getLobbies = (config?: AxiosRequestConfig) => api.get<ILobby[]>("/lobbies", config);
-export const getLobbyById = (id: string, config?: AxiosRequestConfig) => api.get<ILobby>(`/lobbies/${id}`, config);
-
+export const getLobbies = () => api.get<ILobby[]>("/lobbies");
+export const getLobbyById = (id: string) => api.get<ILobby>(`/lobbies/${id}`);
 export const createLobby = (data: {
 	name: string;
 	ownerId?: string;
@@ -72,36 +53,6 @@ export const createLobby = (data: {
 	palette?: string[];
 	width?: number;
 	height?: number;
-}, config?: AxiosRequestConfig) => api.post<ILobby>("/lobbies", data, config);
-
-export const deleteLobby = (id: string, config?: AxiosRequestConfig) => api.delete<{ message: string }>(`/lobbies/${id}`, config);
-
-export const exportLobbyImage = (id: string, scale: number = 1, config?: AxiosRequestConfig) =>
-	api.get(`/lobbies/${id}/image`, {
-		params: { scale },
-		responseType: 'blob',
-		...config
-	});
-
-export const kickUser = (lobbyId: string, userId: string, config?: AxiosRequestConfig) =>
-	api.post<{ message: string }>(`/lobbies/${lobbyId}/kick`, { targetUserId: userId }, config);
-
-export const banUser = (lobbyId: string, userId: string, config?: AxiosRequestConfig) =>
-	api.post<{ message: string }>(`/lobbies/${lobbyId}/ban`, { targetUserId: userId }, config);
-
-export interface BannedUser {
-	_id: string;
-	username: string;
-}
-
-export const getBannedUsers = (lobbyId: string, config?: AxiosRequestConfig) =>
-	api.get<BannedUser[]>(`/lobbies/${lobbyId}/banned`, config);
-
-export const unbanUser = (lobbyId: string, userId: string, config?: AxiosRequestConfig) =>
-	api.post<{ message: string }>(`/lobbies/${lobbyId}/unban`, { targetUserId: userId }, config);
-
-export const getNotifications = (config?: AxiosRequestConfig) => api.get<INotification[]>("/notifications", config);
-export const markNotificationAsRead = (id: string, config?: AxiosRequestConfig) => api.put(`/notifications/${id}/read`, {}, config);
-export const markAllNotificationsAsRead = (config?: AxiosRequestConfig) => api.put("/notifications/read-all", {}, config);
+}) => api.post<ILobby>("/lobbies", data);
 
 export default api;

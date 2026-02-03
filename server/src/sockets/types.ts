@@ -1,14 +1,14 @@
 import { Socket } from 'socket.io';
 
 export interface DrawPayload {
-  lobbyId: string;
+  lobbyName: string;
   x: number;
   y: number;
   color: number;
 }
 
 export interface DrawBatchPayload {
-  lobbyId: string;
+  lobbyName: string;
   pixels: { x: number; y: number; color: number }[];
 }
 

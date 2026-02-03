@@ -3,32 +3,43 @@ import { ref, shallowRef, triggerRef } from 'vue';
 import { getPalette } from '../config/palettes';
 import { socketService } from '@/services/socket.service';
 
-export const useCanvasStore = defineStore('canvas', () => {
+export const useEditorStore = defineStore('editor', () => {
 
-  const width = ref<number>(0);
-  const height = ref<number>(0);
+  // --- STATE ---
 
-  const pixels = shallowRef<Uint8Array>(new Uint8Array(0));
+  // Fixed dimensions for MVP
+  const width = ref<number>(64);
+  const height = ref<number>(64);
+  const isConnected = ref(false);
 
+  // Using shallowRef for performance optimization. 
+  // Vue won't create a Proxy for every byte, saving CPU/RAM.
+  const pixels = shallowRef<Uint8Array>(new Uint8Array(width.value * height.value));
+
+  // Event emitter for individual pixel updates (remote changes)
+  // Components can watch this to efficiently redraw single pixels
+  // Can be a single update or an array of updates
   const pixelUpdateEvent = ref<{ x: number; y: number; colorIndex: number } | { x: number; y: number; colorIndex: number }[] | null>(null);
 
+  // Defensive copy of the palette
   const palette = ref<string[]>(getPalette('default'));
 
   const selectedColorIndex = ref<number>(1);
 
+  // --- DRAWING STATE ---
   const isDrawing = ref(false);
   const lastX = ref<number | null>(null);
   const lastY = ref<number | null>(null);
-  const pendingDrawBuffer = ref<{ x: number, y: number, color: number }[]>([]);
+  const pixelsBuffer = ref<{ x: number, y: number, color: number }[]>([]);
 
+
+  // --- GETTERS ---
 
   const getColorHex = (index: number): string => {
     return palette.value[index] || '#000000';
   };
 
   const getPixelIndex = (x: number, y: number): number => {
-    if (width.value === 0 || height.value === 0) return -1;
-
     if (x < 0 || x >= width.value || y < 0 || y >= height.value) {
       return -1;
     }
@@ -54,6 +65,8 @@ export const useCanvasStore = defineStore('canvas', () => {
     }
   };
 
+  // Helper for optimistic update
+  // Returns true if pixel was actually changed
   const updatePixelData = (x: number, y: number, color: number): boolean => {
     const index = getPixelIndex(x, y);
     if (index !== -1 && pixels.value[index] !== color) {
@@ -65,14 +78,15 @@ export const useCanvasStore = defineStore('canvas', () => {
 
   const startStroke = (x: number, y: number) => {
     isDrawing.value = true;
-    pendingDrawBuffer.value = []; // Reset buffer
+    pixelsBuffer.value = []; // Reset buffer
     lastX.value = x;
     lastY.value = y;
 
+    // Draw the initial point
     if (updatePixelData(x, y, selectedColorIndex.value)) {
       const update = { x, y, colorIndex: selectedColorIndex.value };
       pixelUpdateEvent.value = update;
-      pendingDrawBuffer.value.push({ x, y, color: selectedColorIndex.value });
+      pixelsBuffer.value.push({ x, y, color: selectedColorIndex.value });
     }
   };
 
@@ -111,15 +125,18 @@ export const useCanvasStore = defineStore('canvas', () => {
     }
 
     if (localUpdates.length > 0) {
+      // Batch update to UI
       pixelUpdateEvent.value = localUpdates.map(u => ({ x: u.x, y: u.y, colorIndex: u.color }));
-      pendingDrawBuffer.value.push(...localUpdates);
+      // Add to network buffer
+      pixelsBuffer.value.push(...localUpdates);
     }
 
     lastX.value = x;
     lastY.value = y;
   };
 
-  const currentLobbyId = ref<string>('');
+  // State for current lobby
+  const currentLobbyName = ref<string>('');
 
   const endStroke = () => {
     if (!isDrawing.value) return;
@@ -128,50 +145,55 @@ export const useCanvasStore = defineStore('canvas', () => {
     lastX.value = null;
     lastY.value = null;
 
-    if (pendingDrawBuffer.value.length > 0 && currentLobbyId.value) {
+    // Send the buffer to the server
+    if (pixelsBuffer.value.length > 0 && currentLobbyName.value) {
       socketService.emitDrawBatch({
-        lobbyId: currentLobbyId.value,
-        pixels: pendingDrawBuffer.value
+        lobbyName: currentLobbyName.value,
+        pixels: pixelsBuffer.value
       });
-      pendingDrawBuffer.value = [];
+      pixelsBuffer.value = [];
     }
   };
 
+  // Deprecated: kept for single click compatibility if needed, 
+  // but startStroke/endStroke handles single points too.
   const setPixel = (x: number, y: number): void => {
     startStroke(x, y);
     endStroke();
   };
 
-  // Emits clear request to server
-  const clearLobby = () => {
-    if (currentLobbyId.value) {
-      socketService.emitClearCanvas(currentLobbyId.value);
-    }
-  };
-
   const clearCanvas = (): void => {
-    // Replace array to ensure reactivity triggers
-    if (width.value > 0 && height.value > 0) {
-      pixels.value = new Uint8Array(width.value * height.value);
-      triggerRef(pixels); // Explicit trigger just in case
-    }
+    pixels.value.fill(0);
   };
 
-  function init(lobbyId: string) {
-    if (!lobbyId) return;
-    currentLobbyId.value = lobbyId;
+  function init(lobbyName: string) {
+    if (!lobbyName) return;
+    currentLobbyName.value = lobbyName;
 
-    // We assume socket is connected by lobby store
-    // Subscribing to canvas events
+    socketService.connect();
 
+    // Listen for connection (and reconnection)
+    socketService.onConnect(() => {
+      isConnected.value = true;
+      if (currentLobbyName.value) {
+        console.log('[Store] Socket connected, joining lobby:', currentLobbyName.value);
+        socketService.emitJoinLobby(currentLobbyName.value);
+      }
+    });
 
+    // Initial join attempt (in case socket was already open or connects fast)
+    socketService.emitJoinLobby(lobbyName);
+
+    // Logic to bind Model events to ViewModel state
     socketService.onInit((state) => {
       const { width: w, height: h, palette: p, data } = state as any;
       width.value = w;
       height.value = h;
-      palette.value = (Array.isArray(p) && p.length > 0) ? p : getPalette('default');
+      // Palette comes from server as string[] now (from Canvas model)
+      palette.value = p || getPalette('default');
       pixels.value = new Uint8Array(data);
 
+      // Ensure selected color is within bounds of the new palette
       if (selectedColorIndex.value >= palette.value.length) {
         selectedColorIndex.value = 0;
       }
@@ -184,6 +206,7 @@ export const useCanvasStore = defineStore('canvas', () => {
       const index = getPixelIndex(x, y);
       if (index !== -1) {
         pixels.value[index] = color;
+        // Emit event for efficient single-pixel canvas update
         pixelUpdateEvent.value = { x, y, colorIndex: color };
       }
     });
@@ -204,27 +227,7 @@ export const useCanvasStore = defineStore('canvas', () => {
         pixelUpdateEvent.value = updates;
       }
     });
-
-
-
-    socketService.onCanvasCleared(() => {
-      clearCanvas();
-      triggerRef(pixels);
-    });
   }
-
-  const reset = () => {
-    // socketService.disconnect(); // Handled by lobby store
-    currentLobbyId.value = '';
-    pendingDrawBuffer.value = [];
-    isDrawing.value = false;
-
-    width.value = 0;
-    height.value = 0;
-    pixels.value = new Uint8Array(0);
-    palette.value = getPalette('default');
-    selectedColorIndex.value = 0;
-  };
 
   return {
     width,
@@ -243,8 +246,7 @@ export const useCanvasStore = defineStore('canvas', () => {
     continueStroke,
     endStroke,
     clearCanvas,
-    clearLobby,
-    init,
-    reset
+    isConnected,
+    init
   };
 });

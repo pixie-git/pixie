@@ -10,7 +10,7 @@ export interface Notification {
     duration?: number;
 }
 
-export const useToastStore = defineStore('toast', () => {
+export const useNotificationStore = defineStore('notification', () => {
     const notifications = ref<Notification[]>([]);
 
     const add = (message: string, type: NotificationType = 'info', duration = 0) => {

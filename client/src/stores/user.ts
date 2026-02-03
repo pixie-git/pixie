@@ -1,5 +1,5 @@
 import { defineStore } from "pinia"
-import { ref, computed, type Ref } from "vue"
+import { ref, type Ref } from "vue"
 
 export const useUserStore = defineStore("user", () => {
 	const username: Ref<string> = ref(localStorage.getItem("username") || "")
@@ -16,20 +16,6 @@ export const useUserStore = defineStore("user", () => {
 		localStorage.setItem("authToken", authToken)
 		localStorage.setItem("userId", userId)
 		localStorage.setItem("isAdmin", String(admin))
-
-	}
-
-	async function updateProfile(newUsername: string) {
-		if (!id.value) return;
-		const api = await import('../services/api');
-
-		const response = await api.updateUser(id.value, newUsername);
-		const { username: name, token: newToken } = response.data;
-
-		username.value = name;
-		token.value = newToken;
-		localStorage.setItem("username", name);
-		localStorage.setItem("authToken", newToken);
 	}
 
 	function logout(): void {
@@ -43,7 +29,5 @@ export const useUserStore = defineStore("user", () => {
 		localStorage.removeItem("isAdmin")
 	}
 
-	const isAuthenticated = computed(() => !!token.value)
-
-	return { username, token, id, isAdmin, isAuthenticated, login, logout, updateProfile }
+	return { username, token, id, isAdmin, login, logout }
 })

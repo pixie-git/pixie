@@ -21,13 +21,13 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useToastStore, type NotificationType } from '../../stores/toast.store';
+import { useNotificationStore, type NotificationType } from '../../stores/notification';
 
-const store = useToastStore();
+const store = useNotificationStore();
 const { notifications } = storeToRefs(store);
 const { remove } = store;
 
-// Show the most recent notification
+// Show the most recent notification (or the first one, depending on preference. LIFO is usually better for alerts)
 const currentNotification = computed(() => notifications.value[notifications.value.length - 1]);
 
 const getTitle = (type: NotificationType) => {

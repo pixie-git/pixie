@@ -1,10 +1,9 @@
 import express, { Router } from "express"
-import { LoginController } from "../controllers/login.controller.js"
-import { UserController } from "../controllers/user.controller.js"
+import { LoginController } from "../controllers/LoginController.js"
+import { UserController } from "../controllers/UserController.js"
 import { authenticateToken } from "../middlewares/authMiddleware.js"
 import { requireLobbyAccess, requireLobbyOwner } from "../middlewares/permissionMiddleware.js"
 import { LobbyController } from "../controllers/lobby.controller.js"
-import { NotificationController } from "../controllers/notification.controller.js"
 
 const router: Router = express.Router()
 
@@ -13,16 +12,8 @@ router.post("/login", LoginController.login)
 
 // Users
 router.get("/users", authenticateToken, UserController.getAll)
-router.put("/users/:id", authenticateToken, UserController.update)
 
 // Test Error
-
-// Notifications
-// Notifications
-router.get("/notifications/stream", authenticateToken, NotificationController.stream)
-router.get("/notifications", authenticateToken, NotificationController.getHistory)
-router.put("/notifications/:id/read", authenticateToken, NotificationController.markAsRead)
-router.put("/notifications/read-all", authenticateToken, NotificationController.markAllAsRead)
 
 // Lobbies
 router.post("/lobbies", authenticateToken, LobbyController.create)
@@ -33,7 +24,5 @@ router.delete("/lobbies/:id", authenticateToken, requireLobbyOwner, LobbyControl
 router.post("/lobbies/:id/kick", authenticateToken, requireLobbyOwner, LobbyController.kickUser)
 router.get("/lobbies/:id/image", authenticateToken, requireLobbyAccess, LobbyController.getLobbyImage)
 router.post("/lobbies/:id/ban", authenticateToken, requireLobbyOwner, LobbyController.banUser)
-router.get("/lobbies/:id/banned", authenticateToken, requireLobbyOwner, LobbyController.getBannedUsers)
-router.post("/lobbies/:id/unban", authenticateToken, requireLobbyOwner, LobbyController.unbanUser)
 
 export default router

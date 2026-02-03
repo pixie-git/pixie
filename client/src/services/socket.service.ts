@@ -1,21 +1,11 @@
 import { io, type Socket } from 'socket.io-client';
-import { getApiOrigin } from '../config/api';
 
 class SocketService {
   private socket: Socket | null = null;
 
   connect() {
-    // Clean up any existing socket to prevent orphaned connections
-    if (this.socket) {
-      this.socket.removeAllListeners();
-      this.socket.disconnect();
-      this.socket = null;
-    }
-
-
-
     const token = localStorage.getItem('authToken');
-    const url = getApiOrigin();
+    const url = import.meta.env.VITE_API_URL || 'http://localhost:3000';
     this.socket = io(url, {
       auth: { token }
     });
@@ -37,60 +27,16 @@ class SocketService {
     this.socket?.on('PIXEL_UPDATE_BATCH', cb);
   }
 
-  onLobbyDeleted(cb: (data: { message: string }) => void) {
-    this.socket?.on('LOBBY_DELETED', cb);
-  }
-
-  emitDraw(payload: { lobbyId: string; x: number; y: number; color: number }) {
+  emitDraw(payload: { lobbyName: string; x: number; y: number; color: number }) {
     this.socket?.emit('DRAW', payload);
   }
 
-  emitDrawBatch(payload: { lobbyId: string; pixels: { x: number; y: number; color: number }[] }) {
+  emitDrawBatch(payload: { lobbyName: string; pixels: { x: number; y: number; color: number }[] }) {
     this.socket?.emit('DRAW_BATCH', payload);
   }
 
-  emitJoinLobby(lobbyId: string) {
-    this.socket?.emit('JOIN_LOBBY', lobbyId);
-  }
-
-  emitClearCanvas(lobbyId: string) {
-    this.socket?.emit('CLEAR_CANVAS', lobbyId);
-  }
-
-  onCanvasCleared(cb: () => void) {
-    this.socket?.on('CANVAS_CLEARED', cb);
-  }
-
-  onLobbyUsers<T>(cb: (users: T[]) => void) {
-    this.socket?.on('LOBBY_USERS', cb);
-  }
-
-  onUserJoined<T>(cb: (user: T) => void) {
-    this.socket?.on('USER_JOINED', cb);
-  }
-
-  onUserLeft<T>(cb: (user: T) => void) {
-    this.socket?.on('USER_LEFT', cb);
-  }
-
-  onForceDisconnect(cb: (data: { lobbyId: string; reason: string }) => void) {
-    this.socket?.on('FORCE_DISCONNECT', cb);
-  }
-
-  onError(cb: (data: { message: string }) => void) {
-    this.socket?.on('ERROR', cb);
-  }
-
-  onBannedUsersUpdated(cb: (signal: { updated: boolean }) => void) {
-    this.socket?.on('BANNED_USERS_UPDATED', cb);
-  }
-
-  disconnect() {
-    if (this.socket) {
-      this.socket.removeAllListeners();
-      this.socket.disconnect();
-      this.socket = null;
-    }
+  emitJoinLobby(lobbyName: string) {
+    this.socket?.emit('JOIN_LOBBY', lobbyName);
   }
 }
 

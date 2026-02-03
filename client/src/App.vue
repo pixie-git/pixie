@@ -1,44 +1,20 @@
 <template>
   <div id="app">
     <GlobalErrorPopup />
-    <ConfirmationModal />
     <router-view />
   </div>
 </template>
 
-<script setup lang="ts">
-import { onUnmounted, watch, onMounted } from 'vue';
+<script lang="ts">
+import { defineComponent } from 'vue';
 import GlobalErrorPopup from './components/common/GlobalErrorPopup.vue';
-import ConfirmationModal from './components/common/ConfirmationModal.vue';
-import { useInAppNotificationStore } from './stores/inAppNotification.store';
-import { useUserStore } from './stores/user.store';
 
-const notificationStore = useInAppNotificationStore();
-const userStore = useUserStore();
-
-onMounted(() => {
-  const savedTheme = localStorage.getItem('theme');
-  if (savedTheme) {
-    document.body.setAttribute('data-theme', savedTheme);
+export default defineComponent({
+  name: 'App',
+  components: {
+    GlobalErrorPopup
   }
-});
-
-watch(
-  () => userStore.isAuthenticated,
-  (isAuthenticated) => {
-    console.log('[App] Auth state changed:', isAuthenticated);
-    if (isAuthenticated) {
-      notificationStore.setupSSE();
-    } else {
-      notificationStore.disconnectSSE();
-    }
-  },
-  { immediate: true }
-);
-
-onUnmounted(() => {
-  notificationStore.disconnectSSE();
-});
+})
 </script>
 
 <style>
