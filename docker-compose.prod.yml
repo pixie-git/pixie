@@ -50,7 +50,7 @@ services:
       context: ./client
       dockerfile: Dockerfile
       args:
-        - VITE_API_URL=
+        - VITE_API_URL=${VITE_API_URL-}
     container_name: pixie-client
     restart: always
     ports:
