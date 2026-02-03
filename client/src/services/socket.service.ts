@@ -12,7 +12,7 @@ class SocketService {
     }
 
     const token = localStorage.getItem('authToken');
-    const url = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    const url = import.meta.env.VITE_API_URL ?? (import.meta.env.PROD ? '' : 'http://localhost:3000');
     this.socket = io(url, {
       auth: { token }
     });

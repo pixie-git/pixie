@@ -1,0 +1,65 @@
+services:
+  mongo:
+    image: mongo:7.0-jammy
+    container_name: pixie-mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./mongo-data:/data/db
+    networks:
+      - pixie-net
+
+  mongo-express:
+    image: mongo-express
+    container_name: pixie-mongo-express
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongo
+      - ME_CONFIG_MONGODB_PORT=27017
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=pass
+    depends_on:
+      - mongo
+    networks:
+      - pixie-net
+
+  server:
+    build: 
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: pixie-server
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - MONGO_URI=mongodb://mongo:27017/pixie
+      - CLIENT_ORIGIN=*
+      - JWT_SECRET=production-secret-change-me
+      - NODE_ENV=production
+    depends_on:
+      - mongo
+    networks:
+      - pixie-net
+
+  client:
+    build: 
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=
+    container_name: pixie-client
+    restart: always
+    ports:
+      - "8080:80"
+    depends_on:
+      - server
+    networks:
+      - pixie-net
+
+networks:
+  pixie-net:
+    driver: bridge
