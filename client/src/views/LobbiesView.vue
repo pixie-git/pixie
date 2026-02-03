@@ -11,8 +11,9 @@
       <LobbyGrid 
         :lobbies="filteredLobbies"
         :loading="loading"
-        :error="error"
+        error=""
         @join="handleJoin"
+        @delete="handleDelete"
       />
     </main>
     
@@ -21,11 +22,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { useUserStore } from '../stores/user';
-import { getLobbies } from '../services/api';
+import { useUserStore } from '../stores/user.store';
+import { getLobbies, deleteLobby } from '../services/api';
 import type { ILobby } from '../types';
+import { useToastStore } from '../stores/toast.store';
+import { useModalStore } from '../stores/modal.store';
+import { useInAppNotificationStore } from '../stores/inAppNotification.store'; // Import store
 
 // Components
 import LobbyHeader from '../components/lobbies/LobbyHeader.vue';
@@ -35,10 +39,12 @@ import MobileNavBar from '../components/lobbies/MobileNavBar.vue';
 
 const router = useRouter();
 const userStore = useUserStore();
+const toastStore = useToastStore();
+const modalStore = useModalStore();
+const inAppNotificationStore = useInAppNotificationStore(); // Initialize store
 
 const lobbies = ref<ILobby[]>([]);
 const loading = ref(true);
-const error = ref('');
 const searchQuery = ref('');
 const filter = ref<'all' | 'mine'>('all');
 
@@ -49,13 +55,19 @@ const fetchLobbies = async () => {
     lobbies.value = response.data;
   } catch (err) {
     console.error(err);
-    error.value = "Failed to load lobbies";
+    // Error handled by global interceptor
   } finally {
     loading.value = false;
   }
 };
 
 onMounted(fetchLobbies);
+
+// Watch for real-time lobby updates
+watch(() => inAppNotificationStore.lobbyUpdateTrigger, () => {
+    console.log('Real-time lobby update received, refreshing list...');
+    fetchLobbies();
+});
 
 const filteredLobbies = computed(() => {
   let result = lobbies.value;
@@ -74,6 +86,29 @@ const filteredLobbies = computed(() => {
 
 const handleJoin = (lobbyId: string) => {
     router.push(`/play/${lobbyId}`);
+};
+
+const handleDelete = async (lobbyId: string) => {
+  const confirmed = await modalStore.confirm({
+    title: 'Delete Lobby',
+    message: 'Are you sure you want to delete this lobby? This action cannot be undone.',
+    confirmText: 'Delete',
+    type: 'danger'
+  });
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    await deleteLobby(lobbyId);
+    toastStore.add('Lobby deleted successfully', 'success');
+    // Refresh list
+    await fetchLobbies();
+  } catch (err) {
+    console.error("Failed to delete lobby", err);
+    // Error notification is handled by api interceptor mostly, but just in case
+  }
 };
 </script>
 

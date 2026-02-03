@@ -1,16 +1,25 @@
-# Active LTS 2026
-FROM node:24-alpine
+# Build Stage
+FROM node:24-alpine AS build-stage
 
 WORKDIR /app
 
 COPY package*.json ./
-
-RUN npm cache clean --force
 RUN npm install
 
 COPY . .
 
-EXPOSE 5173
+# Default API URL to empty (relative path) for same-domain proxying in PROD
+ARG VITE_API_URL=
+ENV VITE_API_URL=${VITE_API_URL}
 
-# Fondamentale: --host permette al browser del tuo PC di vedere Vite dentro Docker
-CMD ["npm", "run", "dev", "--", "--host"]
+RUN npm run build
+
+# Production Stage
+FROM nginx:alpine AS production-stage
+
+COPY --from=build-stage /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/nginx.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

@@ -1,3 +1,13 @@
+// Generated 256 color palette (8-bit generic)
+const largePalette = Array.from({ length: 256 }, (_, i) => {
+    if (i === 0) return '#FFFFFF';
+    if (i === 1) return '#000000';
+    const r = Math.floor((i * 137.5) % 255);
+    const g = Math.floor((i * 50) % 255);
+    const b = Math.floor((i * 200) % 255);
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+});
+
 export const PALETTES: Record<string, string[]> = {
     default: [
         '#FFFFFF', '#000000', '#1D2B53', '#7E2553',
@@ -16,7 +26,8 @@ export const PALETTES: Record<string, string[]> = {
         '#00FF00', '#FFFF00', '#FF0000', '#7B00FF',
         '#FF1493', '#00CED1', '#32CD32', '#FFD700',
         '#FF4500', '#9400D3', '#1E90FF', '#FF69B4'
-    ]
+    ],
+    large: largePalette
 };
 
 export const getPalette = (name: string): string[] => {

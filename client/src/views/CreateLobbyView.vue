@@ -5,7 +5,7 @@
       <button class="back-btn" @click="goBack" title="Back">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg>
       </button>
-      <h1>Create Your Canvas</h1>
+      <h1>Create Your Lobby</h1>
     </div>
 
     <div class="form-card">
@@ -14,11 +14,11 @@
         <!-- Row 1: Name and Max Collaborators -->
         <div class="form-row">
           <div class="form-group flex-2">
-            <label>Canvas Name</label>
+            <label>Lobby Name</label>
             <input 
               v-model="form.name" 
               type="text" 
-              placeholder="Enter canvas name" 
+              placeholder="Enter lobby name" 
               required 
             />
           </div>
@@ -37,7 +37,7 @@
         <!-- Row 2: Size and Description -->
         <div class="form-wrapper">
             <div class="left-col">
-                 <!-- Canvas Size -->
+                <!-- Canvas Size -->
                 <div class="form-group">
                     <label>Canvas Size</label>
                     <div class="size-inputs">
@@ -45,16 +45,16 @@
                         v-model.number="form.width" 
                         type="number" 
                         placeholder="Width" 
-                        min="16" 
-                        max="128"
+                        :min="CANVAS_LIMITS.MIN_WIDTH" 
+                        :max="CANVAS_LIMITS.MAX_WIDTH"
                         />
                         <span class="x-separator">x</span>
                         <input 
                         v-model.number="form.height" 
                         type="number" 
                         placeholder="Height" 
-                        min="16" 
-                        max="128"
+                        :min="CANVAS_LIMITS.MIN_HEIGHT" 
+                        :max="CANVAS_LIMITS.MAX_HEIGHT"
                         />
                     </div>
                 </div>
@@ -66,6 +66,7 @@
                         <option value="default">Default Palette</option>
                         <option value="retro">Retro (Gameboy)</option>
                         <option value="neon">Neon</option>
+                        <option value="large">Large (256 Colors)</option>
                         <option value="custom">Custom</option>
                     </select>
                 </div>
@@ -87,7 +88,7 @@
                     <label>Description (Optional)</label>
                     <textarea 
                     v-model="form.description" 
-                    placeholder="Describe your canvas"
+                    placeholder="Describe your lobby"
                     class="desc-textarea"
                     ></textarea>
                 </div>
@@ -96,10 +97,10 @@
       
         <!-- Submit Button -->
         <button type="submit" class="submit-btn" :disabled="isLoading">
-          {{ isLoading ? 'Creating...' : 'Create Canvas' }}
+          {{ isLoading ? 'Creating...' : 'Create Lobby' }}
         </button>
 
-        <p v-if="error" class="error-msg">{{ error }}</p>
+
 
       </form>
     </div>
@@ -111,11 +112,14 @@ import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import { createLobby } from '../services/api';
 import { PALETTES } from '../config/palettes';
+import { CANVAS_LIMITS } from '../config/canvasLimits';
+
+import { useToastStore } from '../stores/toast.store';
 
 const router = useRouter();
+const toastStore = useToastStore();
 
 const isLoading = ref(false);
-const error = ref('');
 
 const form = reactive({
   name: '',
@@ -155,7 +159,13 @@ const validateHexArray = (input: string): string[] | null => {
 
 const handleSubmit = async () => {
   if (!form.name.trim()) {
-      error.value = "Canvas Name is required";
+      toastStore.add("Lobby Name is required", 'error');
+      return;
+  }
+
+  const { MIN_WIDTH, MIN_HEIGHT, MAX_WIDTH, MAX_HEIGHT } = CANVAS_LIMITS;
+  if (form.width < MIN_WIDTH || form.height < MIN_HEIGHT || form.width > MAX_WIDTH || form.height > MAX_HEIGHT) {
+      toastStore.add(`Canvas dimensions must be between ${MIN_WIDTH}x${MIN_HEIGHT} and ${MAX_WIDTH}x${MAX_HEIGHT}`, 'error');
       return;
   }
   
@@ -163,7 +173,7 @@ const handleSubmit = async () => {
   if (form.palette === 'custom') {
      const validated = validateHexArray(form.customPalette);
      if (!validated) {
-       error.value = "Invalid custom palette. Please provide valid hex codes.";
+       toastStore.add("Invalid custom palette. Please provide valid hex codes.", 'error');
        return;
      }
      paletteArray = validated;
@@ -171,7 +181,6 @@ const handleSubmit = async () => {
     paletteArray = PALETTES[form.palette] || PALETTES['default'];
   }
 
-  error.value = '';
   isLoading.value = true;
 
   try {
@@ -188,7 +197,7 @@ const handleSubmit = async () => {
     router.push(`/play/${response.data._id}`);
   } catch (err: any) {
     console.error("Create Lobby Error:", err);
-    error.value = err.response?.data?.error || "Failed to create canvas. Try a different name.";
+    // Error handled by global interceptor
   } finally {
     isLoading.value = false;
   }
