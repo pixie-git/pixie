@@ -188,7 +188,7 @@ ul > li.user-item:last-child {
 }
 
 li.user-item.banned {
-  opacity: 0.6;
+  color: var(--color-text-muted);
 }
 
 .username {
@@ -238,10 +238,17 @@ li.user-item.banned {
   width: 100%;
   background: none;
   border: none;
-  padding: 5px 0;
+  padding: 8px 5px;
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: bold;
+  color: var(--color-text);
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.banned-toggle:hover {
+  background-color: var(--color-card-header-bg);
 }
 
 .banned-list {
