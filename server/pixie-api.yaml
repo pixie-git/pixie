@@ -506,11 +506,7 @@ components:
           example:
             _id: "60d0fe4f5311236168a109ca"
             username: "playerOne"
-        allowedUsers:
-          type: array
-          items:
-            type: string
-            description: ObjectId of allowed users
+
         bannedUsers:
           type: array
           items:

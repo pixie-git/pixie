@@ -68,7 +68,7 @@ export const requireLobbyAccess = async (req: AuthRequest, res: Response, next: 
       throw new AppError(e.message, 403);
     }
 
-    // If we implement private lobbies in the future, check allowedUsers here
+    // If we implement private lobbies in the future, check access here
     // For now, just check ban status
 
     next();
