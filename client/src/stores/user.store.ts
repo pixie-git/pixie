@@ -21,7 +21,6 @@ export const useUserStore = defineStore("user", () => {
 
 	async function updateProfile(newUsername: string) {
 		if (!id.value) return;
-		// Import dynamically to avoid circular dependency if any, or move import to top if safe
 		const api = await import('../services/api');
 
 		const response = await api.updateUser(id.value, newUsername);

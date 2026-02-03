@@ -144,7 +144,7 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
         };
 
         eventSource.onerror = () => {
-            // Polyfill might error on re-connect attempts, usually safe to ignore or just log
+            // Polyfill might error on re-connect attempts, usually safe to ignore
         };
     };
 

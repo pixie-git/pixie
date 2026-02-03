@@ -194,15 +194,12 @@ onMounted(async () => {
       router.push('/lobbies');
       return; // Stop initialization
     }
-    // If 404/Other, user will likely be redirected anyway or see generic error
   }
   
   // Initialize stores with ID
-  // Order matters: lobby store connects socket, canvas store listens to events
   lobbyStore.joinLobby(lobbyId);
   canvasStore.init(lobbyId);
 
-  // Fetch banned users if user has permissions
   await fetchBannedUsers();
 
   // Listen for real-time banned users updates only when user has lobby permissions

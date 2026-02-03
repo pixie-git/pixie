@@ -120,8 +120,7 @@ onMounted(() => {
     });
     resizeObserver.observe(viewportRef.value);
     
-    // Store observer to disconnect later (using a ref inside setup would be cleaner but we can attach it to the element or just use a local variable if we could, but scope issue. 
-    // Actually, let's declare it outside.
+    // Store observer to disconnect later
     (viewportRef.value as any).__resizeObserver = resizeObserver;
   }
   
