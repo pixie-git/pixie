@@ -18,7 +18,7 @@ export class LobbyService {
   static async getAll() {
     // Returns list with owner info, sorted by newest
     return await Lobby.find()
-      .select('name owner createdAt allowedUsers')
+      .select('name owner createdAt')
       .populate('owner', 'username')
       .sort({ createdAt: -1 });
   }
