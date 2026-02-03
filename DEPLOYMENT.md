@@ -32,19 +32,44 @@ This project is configured for a robust production deployment using Docker Compo
     - Host Port: 8081
 
 ### Environment Variables
-Environment variables are set in `docker-compose.yml` for "out of the box" usage.
+Environment variables are set in `docker-compose.prod.yml` for "out of the box" usage.
 
 - **Frontend (`client`)**: 
     - `VITE_API_URL`: Not set by default in production. The application defaults to relative paths (e.g., `/api`), allowing it to work on any domain (e.g., `pixie.example.org`) without recompiling.
 - **Backend (`server`)**:
-    - `CLIENT_ORIGIN=*`: Configured to allow all origins by default to prevent CORS issues when deploying behind proxies or on different domains.
+    - `CLIENT_ORIGIN`: Defaults to `*` (allow all) for easy setup, but this is **insecure** for production contexts where the API port is exposed.
+      - **Recommended**: Set this to your actual domain (e.g., `https://pixie.example.org`).
+      - *Note*: If you only access the API via the Nginx proxy (which provides a Same-Origin setup), strict CORS is often unnecessary, but restricting this variable adds a layer of defense if the backend port (3000) is accessed directly.
     - `MONGO_URI`: Points to the internal `mongo` service.
-    - `JWT_SECRET`: Default set to a placeholder. **Change this for real production use.**
+
+### Security & Credentials
+The default configuration uses placeholders. You should override these for production.
+
+**Option A: Using a `.env` file (Recommended for CLI)**
+1.  Copy the example file: `cp .env.example .env`
+2.  Edit `.env` and set your own values:
+    ```bash
+    ME_USERNAME=your_admin_user
+    ME_PASSWORD=your_secure_password
+    JWT_SECRET=your_long_random_secret
+    CLIENT_ORIGIN=https://pixie.example.org
+    ```
+3.  Docker Compose will automatically pick up these values.
+
+**Option B: Using Portainer**
+When deploying the stack in Portainer:
+1.  Scroll down to the **Environment variables** section.
+2.  Add the variables manually:
+    - `ME_USERNAME`: (e.g. `admin`)
+    - `ME_PASSWORD`: (e.g. `complex_password_123`)
+    - `JWT_SECRET`: (e.g. `random_string`)
+    - `CLIENT_ORIGIN`: (e.g. `https://pixie.yourdomain.org`)
+3.  Deploy the stack. The compose file is configured to use these values or fall back to defaults if missing.
 
 ## Deployment Scenarios
 
 ### Using Portainer & Nginx Proxy Manager (NPM)
-1.  **Deploy Stack**: Upload/Copy the `docker-compose.yml` content into a new Portainer Stack.
+1.  **Deploy Stack**: Upload/Copy the `docker-compose.prod.yml` content into a new Portainer Stack.
 2.  **Nginx Proxy Manager**:
     - Create a Proxy Host (e.g., `pixie.example.org`).
     - **Scheme**: `http`

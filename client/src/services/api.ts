@@ -7,7 +7,9 @@ declare module 'axios' {
 	}
 }
 
-const apiOrigin = import.meta.env.VITE_API_URL ?? (import.meta.env.PROD ? '' : 'http://localhost:3000');
+import { getApiOrigin } from "../config/api";
+
+const apiOrigin = getApiOrigin();
 const api: AxiosInstance = axios.create({
 	baseURL: `${apiOrigin}/api`,
 })
