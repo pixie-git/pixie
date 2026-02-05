@@ -1,16 +1,29 @@
-# Active LTS 2026
-FROM node:24-alpine
+# Development Stage (for hot-reload with volume mounts)
+FROM node:22-alpine AS dev-stage
 
 WORKDIR /app
 
 COPY package*.json ./
-
-RUN npm cache clean --force
-RUN npm install
+RUN npm install && npm rebuild
 
 COPY . .
 
 EXPOSE 5173
-
-# Fondamentale: --host permette al browser del tuo PC di vedere Vite dentro Docker
 CMD ["npm", "run", "dev", "--", "--host"]
+
+# Build Stage
+FROM dev-stage AS build
+
+ARG VITE_API_URL=
+ENV VITE_API_URL=${VITE_API_URL}
+
+RUN npm run build
+
+# Production Stage
+FROM nginx:alpine AS production-stage
+
+COPY --from=build /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/nginx.conf
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

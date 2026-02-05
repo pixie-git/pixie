@@ -2,7 +2,7 @@
 	<div class="login-container">
 		<div class="login-card">
 			<img src="@/assets/PixieLogo.png" alt="Pixie Logo" class="logo" />
-			<h1>Benvenuto in Pixie</h1>
+			<h1>Welcome to Pixie</h1>
 
 			<Transition name="message">
 				<div v-if="message" :class="['message', `message-${messageType}`]">
@@ -14,11 +14,11 @@
 				<input
 					v-model="username"
 					type="text"
-					placeholder="Inserisci il tuo nome..."
+					placeholder="Enter your name..."
 					required
 					class="username-input"
 				/>
-				<button type="submit" class="login-button">Entra</button>
+				<button type="submit" class="login-button">Enter</button>
 			</form>
 		</div>
 	</div>
@@ -28,7 +28,7 @@
 import { ref } from "vue"
 import { router } from "../router"
 import api from "../services/api"
-import { useUserStore } from "../stores/user"
+import { useUserStore } from "../stores/user.store"
 
 const username = ref("")
 const userStore = useUserStore()
@@ -51,11 +51,11 @@ const handleLogin = async () => {
 	try {
 		const response = await api.post<LoginResponse>("/login", {
 			username: username.value,
-		})
+		}, { skipGlobalErrorHandler: true })
 
 		// Server returns { username, id, token, isNewUser }
 		if (response.data.isNewUser) {
-			message.value = `✨ Nuovo utente "${response.data.username}" creato con successo!`
+			message.value = `✨ New user "${response.data.username}" created successfully!`
 			messageType.value = "success"
 			setTimeout(() => {
 				userStore.login(response.data.username, response.data.token, response.data.id, response.data.isAdmin)
@@ -65,10 +65,10 @@ const handleLogin = async () => {
 			userStore.login(response.data.username, response.data.token, response.data.id, response.data.isAdmin)
 			router.push("/lobbies")
 		}
-	} catch (error) {
+	} catch (error: any) {
 		console.error("Login failed:", error)
-		message.value = "❌ Errore durante il login. Controlla che il server sia attivo."
 		messageType.value = "error"
+		message.value = error.response?.data?.error || "Login failed. Please try again."
 	}
 }
 </script>

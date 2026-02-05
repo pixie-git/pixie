@@ -4,19 +4,28 @@ import { Canvas } from "../models/Canvas.js"
 import { CONFIG } from "../config.js"
 
 export const seedUsers = async (): Promise<void> => {
-	const users = [
-		{ username: "Matteo", isAdmin: true },
-		{ username: "Andrea", isAdmin: true },
-		{ username: "Guest", isAdmin: false },
-	]
+	const isProduction = process.env.NODE_ENV === 'production';
+
+	const users = isProduction
+		? [{ username: "admin", isAdmin: true }]
+		: [
+			{ username: "Matteo", isAdmin: true },
+			{ username: "Andrea", isAdmin: true },
+			{ username: "Guest", isAdmin: false },
+			{ username: "Alice", isAdmin: false },
+			{ username: "Bob", isAdmin: false },
+		];
 
 	try {
-		console.log("Checking user seeds...")
+		console.log(`Seeding users (Production: ${isProduction})...`)
 		for (const u of users) {
-			await User.findOneAndUpdate({ username: u.username }, u, {
-				upsert: true,
-				new: true,
-			})
+			const existing = await User.findOne({ username: u.username })
+			if (!existing) {
+				await User.create(u)
+				console.log(`Created user: ${u.username}`)
+			} else {
+				console.log(`User already exists: ${u.username}`)
+			}
 		}
 		console.log("Users seeded")
 	} catch (error) {
@@ -25,25 +34,41 @@ export const seedUsers = async (): Promise<void> => {
 }
 
 export const seedLobbies = async (): Promise<void> => {
+	if (process.env.NODE_ENV === 'production') {
+		console.log("Skipping lobby seeding in production.");
+		return;
+	}
+
 	try {
-		console.log("Checking lobby seeds...")
+		console.log("Seeding lobbies...")
 
-		const lobbiesToCreate = [
-			"Default Lobby",
-			"Neon City",
-			"Forest Realm",
-			"Desert Oasis",
-			"Cyberpunk Alley",
-			"Medieval Castle",
-			"Underwater World",
-			"Space Station",
-			"Candy Land",
-			"Haunted House"
-		];
+		// Fetch Users to assign ownership
+		const matteo = await User.findOne({ username: "Matteo" })
+		const andrea = await User.findOne({ username: "Andrea" })
+		const alice = await User.findOne({ username: "Alice" })
+		const bob = await User.findOne({ username: "Bob" })
 
-		for (let i = 1; i <= 10; i++) {
-			lobbiesToCreate.push(`Lobby #${i}`);
-		}
+		const lobbyConfigs = [
+			// Matteo's Lobbies (Admin)
+			{ name: "Matteo's Classic", owner: matteo?._id, width: 64, height: 64 },
+			{ name: "Matteo's Grand", owner: matteo?._id, width: 100, height: 100 },
+
+			// Andrea's Lobbies (Admin)
+			{ name: "Andrea's Wide", owner: andrea?._id, width: 128, height: 64 },
+			{ name: "Andrea's Studio", owner: andrea?._id, width: 64, height: 64 },
+
+			// Alice's Lobbies (User)
+			{ name: "Alice's Tall", owner: alice?._id, width: 64, height: 128 },
+			{ name: "Alice's Playground", owner: alice?._id, width: 32, height: 32 },
+
+			// Bob's Lobbies (User)
+			{ name: "Bob's Tiny", owner: bob?._id, width: 16, height: 16 },
+			{ name: "Bob's Workshop", owner: bob?._id, width: 48, height: 48 },
+
+			// Public/Unassigned Lobbies
+			{ name: "Public Sandbox", owner: undefined, width: 128, height: 128, palette: "neon" },
+			{ name: "Digital Desert", owner: undefined, width: 80, height: 40, palette: "retro" },
+		]
 
 		const PALETTES = {
 			default: [
@@ -64,46 +89,45 @@ export const seedLobbies = async (): Promise<void> => {
 				'#FF1493', '#00CED1', '#32CD32', '#FFD700',
 				'#FF4500', '#9400D3', '#1E90FF', '#FF69B4'
 			]
-		};
+		}
 
-		for (const lobbyName of lobbiesToCreate) {
-			let lobby: ILobby | null = await Lobby.findOne({ name: lobbyName })
+		for (const config of lobbyConfigs) {
+			// Check if lobby already exists
+			const existingLobby = await Lobby.findOne({ name: config.name })
+			if (existingLobby) {
+				console.log(`Lobby already exists: ${config.name}`)
+				continue
+			}
 
-			if (!lobby) {
-				console.log(`Creating '${lobbyName}'...`)
+			// Determine palette
+			let palette = PALETTES.default;
+			if (config.palette === "neon") palette = PALETTES.neon;
+			if (config.palette === "retro") palette = PALETTES.retro;
 
-				// Determine palette
-				let palette = PALETTES.default;
-				if (lobbyName.includes("Neon")) palette = PALETTES.neon;
-				if (lobbyName.includes("Gameboy") || lobbyName.includes("Retro")) palette = PALETTES.retro;
+			const lobby = await Lobby.createWithCanvas(config.name, config.owner?.toString(), {
+				width: config.width,
+				height: config.height,
+				palette: palette
+			})
+			console.log(`Created lobby: ${config.name}`)
 
-				lobby = await Lobby.createWithCanvas(lobbyName, undefined, { palette })
-
-				// Draw something unique on this new canvas so we can see they are different
-				const canvas = await Canvas.findById(lobby.canvas);
-				if (canvas) {
-					// Draw a random colored dot in a random position
-					const width = CONFIG.CANVAS.WIDTH;
-					const height = CONFIG.CANVAS.HEIGHT;
-					const randomColor = Math.floor(Math.random() * 10) + 1;
-					const randomX = Math.floor(Math.random() * width);
-					const randomY = Math.floor(Math.random() * height);
-
-					const index = randomY * width + randomX;
-					canvas.data[index] = randomColor;
-
-					// Draw a small diagonal based on index to differentiate further
-					for (let k = 0; k < 10; k++) {
-						if (index + k * width + k < canvas.data.length)
-							canvas.data[index + k * width + k] = randomColor;
-					}
-
-					canvas.markModified("data");
-					await canvas.save();
+			// Draw something unique on this new canvas
+			const canvas = await Canvas.findById(lobby.canvas);
+			if (canvas) {
+				// Random noise to make it look used
+				const count = Math.floor((config.width * config.height) * 0.05); // Fill 5%
+				for (let i = 0; i < count; i++) {
+					const idx = Math.floor(Math.random() * canvas.data.length);
+					const color = Math.floor(Math.random() * 15) + 1; // Random color 1-15
+					canvas.data[idx] = color;
 				}
+
+				canvas.markModified("data");
+				await canvas.save();
 			}
 		}
-		console.log("Lobbies seeded successfully");
+
+		console.log("Lobbies seeded successfully with variation");
 
 	} catch (error) {
 		console.error("Lobby seed failed:", error)

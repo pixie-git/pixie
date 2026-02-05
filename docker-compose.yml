@@ -1,62 +1,70 @@
+# Development Docker Compose
+# Usage: docker compose up
+
 services:
   mongo:
-    image: mongo:7.0-jammy
+    image: mongo:7
     container_name: pixie-mongo
-    restart: always
-    ports:
-      - "27017:27017"
     volumes:
-      - ./mongo-data:/data/db
+      - mongo-data:/data/db
     networks:
       - pixie-net
 
   mongo-express:
-    image: mongo-express
+    image: mongo-express:latest
     container_name: pixie-mongo-express
-    restart: always
-    ports:
-      - "8082:8081"
     environment:
-      - ME_CONFIG_MONGODB_SERVER=mongo
-      - ME_CONFIG_MONGODB_PORT=27017
-      - ME_CONFIG_BASICAUTH_USERNAME=admin
-      - ME_CONFIG_BASICAUTH_PASSWORD=pass
+      ME_CONFIG_MONGODB_URL: mongodb://mongo:27017
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin
+    ports:
+      - "8081:8081"
     depends_on:
       - mongo
     networks:
       - pixie-net
 
   server:
-    build: ./server
+    build:
+      context: ./server
+      target: dev-stage
     container_name: pixie-server
-    restart: on-failure
+    environment:
+      PORT: 3000
+      MONGO_URI: mongodb://mongo:27017/pixie
+      CLIENT_ORIGIN: http://localhost:5173
+      JWT_SECRET: dev-secret-key
     ports:
       - "3000:3000"
-    environment:
-      - PORT=3000
-      - MONGO_URI=mongodb://mongo:27017/pixie
-      - CLIENT_ORIGIN=http://localhost:5173
+    volumes:
+      - ./server/src:/app/src
+      - ./server/pixie-api.yaml:/app/pixie-api.yaml
     depends_on:
       - mongo
-    volumes:
-      - ./server:/app
-      - /app/node_modules
     networks:
       - pixie-net
+    command: npm run dev
 
   client:
-    build: ./client
+    build:
+      context: ./client
+      target: dev-stage
     container_name: pixie-client
+    environment:
+      VITE_API_URL: http://localhost:3000
     ports:
       - "5173:5173"
-    environment:
-      - VITE_API_URL=http://localhost:3000
     volumes:
-      - ./client:/app
-      - /app/node_modules
+      - ./client/src:/app/src
+      - ./client/index.html:/app/index.html
+    depends_on:
+      - server
     networks:
       - pixie-net
+    command: npm run dev -- --host
+
+volumes:
+  mongo-data:
 
 networks:
   pixie-net:
-    driver: bridge

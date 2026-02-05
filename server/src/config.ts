@@ -1,10 +1,18 @@
+// Parse CLIENT_ORIGIN: supports comma-separated list or single origin
+const parseOrigins = (origins: string | undefined): string | string[] => {
+  if (!origins) return "http://localhost:5173";
+  if (origins === "*") return "*";
+  const list = origins.split(",").map(o => o.trim()).filter(Boolean);
+  return list.length === 1 ? list[0] : list;
+};
+
 export const CONFIG = {
   // Server settings
   PORT: process.env.PORT || 3000,
   MONGO_URI: process.env.MONGO_URI || "mongodb://localhost:27017/pixie",
-  CLIENT_ORIGIN: process.env.CLIENT_ORIGIN || "http://localhost:5173",
+  CLIENT_ORIGIN: parseOrigins(process.env.CLIENT_ORIGIN),
   JWT: {
-    SECRET: process.env.JWT_SECRET || "dev-key",
+    SECRET: process.env.JWT_SECRET || "dev-secret-key",
     EXPIRES_IN: "7d",
   },
 
@@ -12,6 +20,10 @@ export const CONFIG = {
   CANVAS: {
     WIDTH: parseInt(process.env.CANVAS_WIDTH || '64', 10),
     HEIGHT: parseInt(process.env.CANVAS_HEIGHT || '64', 10),
+    MIN_WIDTH: 16,
+    MIN_HEIGHT: 16,
+    MAX_WIDTH: 1024,
+    MAX_HEIGHT: 1024,
   },
 
   // Validation
@@ -25,16 +37,18 @@ export const CONFIG = {
       DRAW_BATCH: 'DRAW_BATCH',
       KICK_USER: 'KICK_USER',
       BAN_USER: 'BAN_USER',
+      CLEAR_CANVAS: 'CLEAR_CANVAS',
     },
     SERVER: {
       INIT_STATE: 'INIT_STATE',
       PIXEL_UPDATE: 'PIXEL_UPDATE',
       PIXEL_UPDATE_BATCH: 'PIXEL_UPDATE_BATCH',
+      CANVAS_CLEARED: 'CANVAS_CLEARED',
       LOBBY_USERS: 'LOBBY_USERS',
       USER_JOINED: 'USER_JOINED',
       USER_LEFT: 'USER_LEFT',
-      USER_KICKED: 'USER_KICKED',
-      USER_BANNED: 'USER_BANNED',
+      FORCE_DISCONNECT: 'FORCE_DISCONNECT',
+      BANNED_USERS_UPDATED: 'BANNED_USERS_UPDATED',
       ERROR: 'ERROR'
     }
   }
