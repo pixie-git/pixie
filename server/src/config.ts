@@ -1,10 +1,18 @@
+// Parse CLIENT_ORIGIN: supports comma-separated list or single origin
+const parseOrigins = (origins: string | undefined): string | string[] => {
+  if (!origins) return "http://localhost:5173";
+  if (origins === "*") return "*";
+  const list = origins.split(",").map(o => o.trim()).filter(Boolean);
+  return list.length === 1 ? list[0] : list;
+};
+
 export const CONFIG = {
   // Server settings
   PORT: process.env.PORT || 3000,
   MONGO_URI: process.env.MONGO_URI || "mongodb://localhost:27017/pixie",
-  CLIENT_ORIGIN: process.env.CLIENT_ORIGIN || "http://localhost:5173",
+  CLIENT_ORIGIN: parseOrigins(process.env.CLIENT_ORIGIN),
   JWT: {
-    SECRET: process.env.JWT_SECRET || "dev-key",
+    SECRET: process.env.JWT_SECRET || "dev-secret-key",
     EXPIRES_IN: "7d",
   },
 
