@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { LobbyStore } from '../store/lobby.store.js';
+import { LobbyStore } from '../src/store/lobby.store.js';
 
 describe('LobbyStore - Data Isolation', () => {
   let store: LobbyStore;
@@ -23,5 +23,4 @@ describe('LobbyStore - Data Isolation', () => {
     expect(bufferA[0]).toBe(99);
     expect(bufferB[0]).toBe(0);
   });
-
 });
