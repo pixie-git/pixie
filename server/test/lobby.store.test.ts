@@ -15,12 +15,14 @@ describe('LobbyStore - Data Isolation', () => {
     const bufferA = store.getLobbyBuffer(idLobbyA);
     const bufferB = store.getLobbyBuffer(idLobbyB);
 
-    expect(bufferA[0]).toBe(0);
-    expect(bufferB[0]).toBe(0);
+    for (let i = 0; i < bufferA.length; i++) {
+      store.setPixel(idLobbyA, i, 99);
+    }
 
-    store.setPixel(idLobbyA, 0, 99);
+    const isLobbyAColorata = bufferA.every(pixel => pixel === 99);
+    expect(isLobbyAColorata).toBe(true);
 
-    expect(bufferA[0]).toBe(99);
-    expect(bufferB[0]).toBe(0);
+    const isLobbyBPulita = bufferB.every(pixel => pixel === 0);
+    expect(isLobbyBPulita).toBe(true);
   });
 });
