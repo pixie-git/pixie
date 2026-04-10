@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Types } from 'mongoose';
 import { ILobby } from '../models/Lobby.js';
-import { LobbyService } from './lobby.service.js';
+import { LobbyService } from '../services/lobby.service.js';
 
 export const mockLobby = {
   _id: new Types.ObjectId(),
