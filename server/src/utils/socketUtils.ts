@@ -29,13 +29,15 @@ export const disconnectUserFromLobby = async (
   reason: string
 ): Promise<boolean> => {
   const sockets = await io.in(lobbyId).fetchSockets();
-  const targetSocket = sockets.find((s: any) => s.data.user?.id === userId);
+  const targetSockets = sockets.filter((s: any) => s.data.user?.id === userId);
 
-  if (!targetSocket) return false;
+  if (targetSockets.length === 0) return false;
 
-  targetSocket.emit('FORCE_DISCONNECT', { lobbyId, reason });
-  io.to(lobbyId).except(targetSocket.id).emit('USER_LEFT', targetSocket.data.user);
-  targetSocket.leave(lobbyId);
+  for (const socket of targetSockets) {
+    socket.emit('FORCE_DISCONNECT', { lobbyId, reason });
+    io.to(lobbyId).except(socket.id).emit('USER_LEFT', socket.data.user);
+    socket.leave(lobbyId);
+  }
 
   return true;
 };
