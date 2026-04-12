@@ -64,9 +64,21 @@ describe('Canvas Batch Processing & Conflict Resolution', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     canvasStore.removeLobby(LOBBY_ID);
-    // Init canvas with 3 colors in palette to test last-write-wins properly
-    canvasStore.loadLobbyToMemory(LOBBY_ID, WIDTH, HEIGHT, ['#000000', '#ffffff', '#ff0000'], new Uint8Array(WIDTH * HEIGHT));
+    // Init canvas with 4 colors in palette to test last-write-wins properly
+    canvasStore.loadLobbyToMemory(LOBBY_ID, WIDTH, HEIGHT, ['#000000', '#ffffff', '#ff0000', '#00ff00'], new Uint8Array(WIDTH * HEIGHT));
     vi.spyOn(CanvasService as any, 'scheduleSave').mockImplementation(() => { });
+  });
+
+  it('should reject color indices outside the palette bounds', () => {
+    const x = 5;
+    const y = 5;
+    
+    // Palette has 4 colors (0, 1, 2, 3)
+    expect(CanvasService.draw(LOBBY_ID, x, y, 4)).toBe(false); // Too high
+    expect(CanvasService.draw(LOBBY_ID, x, y, -1)).toBe(false); // Negative
+    
+    const pixelData = canvasStore.getLobbyPixelData(LOBBY_ID);
+    expect(pixelData![y * WIDTH + x]).toBe(0); // Should still be 0
   });
 
   it('should resolve concurrent updates safely using last-write-wins', async () => {
