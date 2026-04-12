@@ -25,7 +25,7 @@ export const authenticateToken = (
     jwt.verify(token, JWT_SECRET, (err: any, user: any) => {
         if (err) {
             // console.log("[DEBUG] AuthMiddleware: Invalid token", err.message);
-            return next(new AppError("Invalid or expired token", 403));
+            return next(new AppError("Invalid or expired token", 401));
         }
         // console.log("[DEBUG] AuthMiddleware: Token valid for user", user?.username);
         req.user = user;
