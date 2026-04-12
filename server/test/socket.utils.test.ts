@@ -39,15 +39,14 @@ describe('socketUtils - disconnectUserFromLobby', () => {
     const result = await disconnectUserFromLobby(mockIo as any, lobbyId, userId, reason);
 
     expect(result).toBe(true);
-    
-    // RED PHASE: Currently it only disconnects the first one
+
     // We want BOTH mockSocket1 and mockSocket2 to be disconnected
     expect(mockSocket1.emit).toHaveBeenCalledWith('FORCE_DISCONNECT', { lobbyId, reason });
     expect(mockSocket1.leave).toHaveBeenCalledWith(lobbyId);
-    
+
     expect(mockSocket2.emit).toHaveBeenCalledWith('FORCE_DISCONNECT', { lobbyId, reason });
     expect(mockSocket2.leave).toHaveBeenCalledWith(lobbyId);
-    
+
     // mockSocket3 should NOT be disconnected
     expect(mockSocket3.emit).not.toHaveBeenCalled();
     expect(mockSocket3.leave).not.toHaveBeenCalled();
