@@ -32,6 +32,11 @@ export class CanvasStore {
       return false;
     }
 
+    // Validate color index against lobby's palette
+    if (color < 0 || color >= lobby.palette.length) {
+      return false;
+    }
+
     const index = y * lobby.width + x;
 
     // Boundary check (extra safety)

@@ -64,19 +64,21 @@ export const setupSocket = (io: Server) => {
     });
 
     socket.on(CONFIG.EVENTS.CLIENT.DRAW, ({ lobbyId, x, y, color }: DrawPayload) => {
-      if (lobbyId && CanvasService.draw(lobbyId, x, y, color)) {
+      if (!lobbyId || !socket.rooms.has(lobbyId)) return;
+      if (CanvasService.draw(lobbyId, x, y, color)) {
         broadcastToLobby(io, lobbyId, CONFIG.EVENTS.SERVER.PIXEL_UPDATE, { x, y, color });
       }
     });
 
     socket.on(CONFIG.EVENTS.CLIENT.DRAW_BATCH, ({ lobbyId, pixels }: DrawBatchPayload) => {
-      if (!lobbyId || !Array.isArray(pixels)) return;
+      if (!lobbyId || !socket.rooms.has(lobbyId) || !Array.isArray(pixels)) return;
       const updates = CanvasService.drawBatch(lobbyId, pixels);
       if (updates.length) broadcastToLobby(io, lobbyId, CONFIG.EVENTS.SERVER.PIXEL_UPDATE_BATCH, { pixels: updates });
     });
 
     socket.on(CONFIG.EVENTS.CLIENT.CLEAR_CANVAS, async (lobbyId: string) => {
       try {
+        if (!lobbyId || !socket.rooms.has(lobbyId)) return;
         const user = (socket as AuthenticatedSocket).user;
         if (!user || !user.id) return;
 
