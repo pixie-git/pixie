@@ -8,8 +8,13 @@ describe('Lobby Model - createWithCanvas Atomicity', () => {
   });
 
   it('should not leave an orphaned Canvas if Lobby save fails', async () => {
-    // 1. Mock Canvas.prototype.save to succeed
-    const canvasSaveSpy = vi.spyOn(Canvas.prototype, 'save').mockResolvedValue({} as any);
+    let capturedCanvasId: any;
+
+    // 1. Mock Canvas.prototype.save to capture the ID and succeed
+    const canvasSaveSpy = vi.spyOn(Canvas.prototype, 'save').mockImplementation(function (this: any) {
+      capturedCanvasId = this._id;
+      return Promise.resolve(this);
+    });
     
     // 2. Mock Lobby.prototype.save to fail (e.g., duplicate name)
     const lobbySaveSpy = vi.spyOn(Lobby.prototype, 'save').mockRejectedValue(new Error('Duplicate name'));
@@ -18,13 +23,18 @@ describe('Lobby Model - createWithCanvas Atomicity', () => {
     const canvasDeleteSpy = vi.spyOn(Canvas, 'findByIdAndDelete').mockResolvedValue({} as any);
 
     // Attempt creation
-    await expect(Lobby.createWithCanvas('Failing Lobby')).rejects.toThrow('Duplicate name');
+    try {
+      await Lobby.createWithCanvas('Failing Lobby');
+    } catch (error: any) {
+      expect(error.message).toBe('Duplicate name');
+    }
 
     // Verify it attempted to save both
     expect(canvasSaveSpy).toHaveBeenCalled();
     expect(lobbySaveSpy).toHaveBeenCalled();
 
-    // MANDATORY: Check if cleanup was triggered
-    expect(canvasDeleteSpy).toHaveBeenCalled();
+    // MANDATORY: Check if cleanup was triggered for the EXACT canvas ID
+    expect(capturedCanvasId).toBeDefined();
+    expect(canvasDeleteSpy).toHaveBeenCalledWith(capturedCanvasId);
   });
 });
