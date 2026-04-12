@@ -40,17 +40,25 @@ api.interceptors.response.use(
 		const toastStore = useToastStore();
 
 		if (error.response) {
-			const message = error.response.data?.error || "An unexpected error occurred.";
-			toastStore.add(message, 'error');
-
 			if (error.response.status === 401) {
 				// Token invalid or expired
-				localStorage.removeItem("authToken");
-				// Force redirect to login (avoiding router circular dependency)
-				if (window.location.pathname !== '/') {
-					window.location.href = "/";
-				}
+				toastStore.add(
+					"Your login session has expired. Please log in again to continue.",
+					'error',
+					0,
+					async () => {
+						const { useUserStore } = await import("../stores/user.store");
+						useUserStore().logout();
+						if (window.location.pathname !== '/') {
+							window.location.href = "/";
+						}
+					}
+				);
+				return Promise.reject(error);
 			}
+
+			const message = error.response.data?.error || "An unexpected error occurred.";
+			toastStore.add(message, 'error');
 		} else {
 			toastStore.add("Network Error. Please check your connection.", 'error');
 		}
