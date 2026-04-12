@@ -18,11 +18,7 @@ describe('Lobby Model - createWithCanvas Atomicity', () => {
     const canvasDeleteSpy = vi.spyOn(Canvas, 'findByIdAndDelete').mockResolvedValue({} as any);
 
     // Attempt creation
-    try {
-      await Lobby.createWithCanvas('Failing Lobby');
-    } catch (error: any) {
-      expect(error.message).toBe('Duplicate name');
-    }
+    await expect(Lobby.createWithCanvas('Failing Lobby')).rejects.toThrow('Duplicate name');
 
     // Verify it attempted to save both
     expect(canvasSaveSpy).toHaveBeenCalled();
