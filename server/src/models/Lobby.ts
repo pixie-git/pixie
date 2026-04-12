@@ -51,7 +51,6 @@ lobbySchema.statics.createWithCanvas = async function (name: string, ownerId?: s
   const lobbyId = new Types.ObjectId();
   const canvasId = new Types.ObjectId();
 
-  // Initialized to 0 (Transparent/White depending on palette)
   const emptyBuffer = Buffer.alloc(width * height, 0);
 
   const canvas = new Canvas({
@@ -72,9 +71,15 @@ lobbySchema.statics.createWithCanvas = async function (name: string, ownerId?: s
     canvas: canvasId
   });
 
-  // Save both
-  await Promise.all([canvas.save(), lobby.save()]);
-  return lobby;
+  try {
+    await canvas.save();
+    await lobby.save();
+    return lobby;
+  } catch (error) {
+    // Cleanup canvas if lobby save fails
+    await Canvas.findByIdAndDelete(canvasId);
+    throw error;
+  }
 };
 
 export const Lobby = model<ILobby, LobbyModel>('Lobby', lobbySchema);
