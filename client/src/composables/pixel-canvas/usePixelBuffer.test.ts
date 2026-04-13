@@ -98,4 +98,31 @@ describe('usePixelBuffer', () => {
     updateBuffer();
     expect(onBufferUpdate).toHaveBeenCalled();
   });
+
+  it('updates correctly when palette changes', () => {
+    const props = ref<PixelBufferProps>({
+      width: 1,
+      height: 1,
+      pixels: new Uint8Array([0]),
+      palette: ['#ff0000']
+    });
+
+    const { updateBuffer } = usePixelBuffer(props);
+    updateBuffer();
+
+    let imageData = mockContext.putImageData.mock.calls[0][0];
+    let data32 = new Uint32Array(imageData.data.buffer);
+    expect(data32[0]).toBe(0xFF0000FF); // #ff0000
+
+    // Change palette (new reference)
+    props.value = {
+      ...props.value,
+      palette: ['#0000ff']
+    };
+    updateBuffer();
+
+    imageData = mockContext.putImageData.mock.calls[1][0];
+    data32 = new Uint32Array(imageData.data.buffer);
+    expect(data32[0]).toBe(0xFFFF0000); // #0000ff
+  });
 });

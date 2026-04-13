@@ -7,6 +7,13 @@ export interface PixelBufferProps {
   palette: string[];
 }
 
+function hexToUint32(hex: string): number {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return (255 << 24) | (b << 16) | (g << 8) | r;
+}
+
 export function usePixelBuffer(
   props: Readonly<Ref<PixelBufferProps>>,
   onBufferUpdate?: () => void
@@ -14,6 +21,10 @@ export function usePixelBuffer(
   // Off-screen buffer for pixel data (never transformed)
   const pixelBuffer = document.createElement('canvas');
   const pixelCtx = pixelBuffer.getContext('2d')!;
+
+  // Cache for uint32Palette
+  let cachedPalette: string[] | null = null;
+  let uint32Palette = new Uint32Array(0);
 
   function updateBuffer() {
     const { width, height, pixels, palette } = props.value;
@@ -25,13 +36,12 @@ export function usePixelBuffer(
     const imageData = pixelCtx.createImageData(width, height);
     const data32 = new Uint32Array(imageData.data.buffer);
 
-    const uint32Palette = new Uint32Array(palette.length);
-    for (let i = 0; i < palette.length; i++) {
-      const hex = palette[i];
-      const r = parseInt(hex.slice(1, 3), 16);
-      const g = parseInt(hex.slice(3, 5), 16);
-      const b = parseInt(hex.slice(5, 7), 16);
-      uint32Palette[i] = (255 << 24) | (b << 16) | (g << 8) | r;
+    if (palette !== cachedPalette) {
+      uint32Palette = new Uint32Array(palette.length);
+      for (let i = 0; i < palette.length; i++) {
+        uint32Palette[i] = hexToUint32(palette[i]);
+      }
+      cachedPalette = palette;
     }
 
     for (let i = 0; i < pixels.length; i++) {
