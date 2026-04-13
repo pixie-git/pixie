@@ -9,6 +9,7 @@ import { CONFIG } from "./config.js";
 import { errorHandler } from "./middlewares/errorMiddleware.js";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
+import { CanvasService } from "./services/canvas.service.js";
 
 const PORT = CONFIG.PORT;
 
@@ -66,3 +67,21 @@ httpServer.listen(PORT, () => {
   console.log(`[INFO] Server listening on port ${PORT}`);
   console.log(`[INFO] Socket.io enabled`);
 });
+
+// --- GRACEFUL SHUTDOWN ---
+const handleShutdown = async (signal: string) => {
+  console.log(`\n[INFO] Received ${signal}. Initiating graceful shutdown...`);
+  
+  try {
+    // Flush all memory buffers to DB
+    await CanvasService.saveAll();
+    console.log(`[INFO] All canvases saved. Shutdown complete.`);
+    process.exit(0);
+  } catch (err) {
+    console.error(`[ERROR] Error during graceful shutdown:`, err);
+    process.exit(1);
+  }
+};
+
+process.on('SIGINT', () => handleShutdown('SIGINT'));
+process.on('SIGTERM', () => handleShutdown('SIGTERM'));

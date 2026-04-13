@@ -82,6 +82,14 @@ export class CanvasService {
     return successfulUpdates;
   }
 
+  static async saveAll() {
+    const lobbyIds = canvasStore.getInMemoryLobbyIds();
+    console.log(`[CanvasService] Saving all active lobbies (${lobbyIds.length}) to DB...`);
+    
+    // Save all in parallel
+    await Promise.all(lobbyIds.map(id => this.saveToDB(id)));
+  }
+
   private static scheduleSave(lobbyId: string) {
     if (this.saveTimers.has(lobbyId)) {
       return; // Timer already running, pending save will catch this change
