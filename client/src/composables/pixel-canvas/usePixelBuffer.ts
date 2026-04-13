@@ -22,13 +22,23 @@ export function usePixelBuffer(
     pixelBuffer.width = width;
     pixelBuffer.height = height;
 
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const colorIndex = pixels[y * width + x];
-        pixelCtx.fillStyle = palette[colorIndex] || '#000000';
-        pixelCtx.fillRect(x, y, 1, 1);
-      }
+    const imageData = pixelCtx.createImageData(width, height);
+    const data32 = new Uint32Array(imageData.data.buffer);
+
+    const uint32Palette = new Uint32Array(palette.length);
+    for (let i = 0; i < palette.length; i++) {
+      const hex = palette[i];
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      uint32Palette[i] = (255 << 24) | (b << 16) | (g << 8) | r;
     }
+
+    for (let i = 0; i < pixels.length; i++) {
+      data32[i] = uint32Palette[pixels[i]] || 0xFF000000;
+    }
+
+    pixelCtx.putImageData(imageData, 0, 0);
     onBufferUpdate?.();
   }
 
