@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { LobbyStore } from '../src/store/lobby.store.js';
+import { LobbyStore } from '../../src/store/lobby.store.js';
 
 describe('LobbyStore - Data Isolation', () => {
   let store: LobbyStore;

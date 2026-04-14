@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Lobby } from '../src/models/Lobby.js';
-import { Canvas } from '../src/models/Canvas.js';
+import { Lobby } from '../../src/models/Lobby.js';
+import { Canvas } from '../../src/models/Canvas.js';
 
 describe('Lobby Model - createWithCanvas Atomicity', () => {
   beforeEach(() => {

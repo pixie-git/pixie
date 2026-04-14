@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { disconnectUserFromLobby } from '../src/utils/socketUtils.js';
+import { disconnectUserFromLobby } from '../../src/utils/socketUtils.js';
 
 describe('socketUtils - disconnectUserFromLobby', () => {
   it('should disconnect ALL sockets belonging to the same user in a lobby', async () => {

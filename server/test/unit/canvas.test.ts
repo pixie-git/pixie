@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { canvasStore } from '../src/store/canvas.store.js';
-import { CanvasService } from '../src/services/canvas.service.js';
+import { canvasStore } from '../../src/store/canvas.store.js';
+import { CanvasService } from '../../src/services/canvas.service.js';
 
 describe('Canvas Single Pixel Write & Boundary Validation', () => {
   const LOBBY_ID = 'test-lobby';

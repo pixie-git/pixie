@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { CanvasService } from '../src/services/canvas.service.js';
-import { canvasStore } from '../src/store/canvas.store.js';
+import { CanvasService } from '../../src/services/canvas.service.js';
+import { canvasStore } from '../../src/store/canvas.store.js';
 
 describe('CanvasService - Lifecycle and Memory Cleanup', () => {
   it('should remove lobby canvas state from memory when unloaded', async () => {
