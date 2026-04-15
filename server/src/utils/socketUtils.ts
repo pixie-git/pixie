@@ -33,11 +33,13 @@ export const disconnectUserFromLobby = async (
 
   if (targetSockets.length === 0) return false;
 
+  const userData = targetSockets[0].data.user;
   for (const socket of targetSockets) {
     socket.emit('FORCE_DISCONNECT', { lobbyId, reason });
-    io.to(lobbyId).except(socket.id).emit('USER_LEFT', socket.data.user);
     socket.leave(lobbyId);
   }
+
+  io.to(lobbyId).emit('USER_LEFT', userData);
 
   return true;
 };
