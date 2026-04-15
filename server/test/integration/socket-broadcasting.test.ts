@@ -67,13 +67,15 @@ describe('Socket Broadcasting Integration', () => {
     });
   };
 
-  it('should broadcast DRAW event from Client A as PIXEL_UPDATE to Client B', async () => {
-    const clientA = await createClient(tokenA);
-    const clientB = await createClient(tokenB);
+  const createAndJoinClient = async (token: string): Promise<ClientSocket> => {
+    const client = await createClient(token);
+    client.emit(CONFIG.EVENTS.CLIENT.JOIN_LOBBY, mockLobbyId);
+    return client;
+  };
 
-    // Both join the lobby
-    clientA.emit(CONFIG.EVENTS.CLIENT.JOIN_LOBBY, mockLobbyId);
-    clientB.emit(CONFIG.EVENTS.CLIENT.JOIN_LOBBY, mockLobbyId);
+  it('should broadcast DRAW event from Client A as PIXEL_UPDATE to Client B', async () => {
+    const clientA = await createAndJoinClient(tokenA);
+    const clientB = await createAndJoinClient(tokenB);
 
     // Wait for B to receive PIXEL_UPDATE
     const drawData = { lobbyId: mockLobbyId, x: 10, y: 20, color: 1 };
@@ -94,11 +96,8 @@ describe('Socket Broadcasting Integration', () => {
   });
 
   it('should broadcast DRAW_BATCH event from Client A as PIXEL_UPDATE_BATCH to Client B', async () => {
-    const clientA = await createClient(tokenA);
-    const clientB = await createClient(tokenB);
-
-    clientA.emit(CONFIG.EVENTS.CLIENT.JOIN_LOBBY, mockLobbyId);
-    clientB.emit(CONFIG.EVENTS.CLIENT.JOIN_LOBBY, mockLobbyId);
+    const clientA = await createAndJoinClient(tokenA);
+    const clientB = await createAndJoinClient(tokenB);
 
     const batchData = {
       lobbyId: mockLobbyId,
