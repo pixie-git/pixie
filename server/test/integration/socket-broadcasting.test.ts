@@ -69,8 +69,10 @@ describe('Socket Broadcasting Integration', () => {
 
   const createAndJoinClient = async (token: string): Promise<ClientSocket> => {
     const client = await createClient(token);
-    client.emit(CONFIG.EVENTS.CLIENT.JOIN_LOBBY, mockLobbyId);
-    return client;
+    return new Promise((resolve) => {
+      client.on(CONFIG.EVENTS.SERVER.INIT_STATE, () => resolve(client));
+      client.emit(CONFIG.EVENTS.CLIENT.JOIN_LOBBY, mockLobbyId);
+    });
   };
 
   it('should broadcast DRAW event from Client A as PIXEL_UPDATE to Client B', async () => {
@@ -88,10 +90,7 @@ describe('Socket Broadcasting Integration', () => {
         resolve();
       });
 
-      // Small delay to ensure both joined
-      setTimeout(() => {
-        clientA.emit(CONFIG.EVENTS.CLIENT.DRAW, drawData);
-      }, 50);
+      clientA.emit(CONFIG.EVENTS.CLIENT.DRAW, drawData);
     });
   });
 
@@ -115,9 +114,7 @@ describe('Socket Broadcasting Integration', () => {
         resolve();
       });
 
-      setTimeout(() => {
-        clientA.emit(CONFIG.EVENTS.CLIENT.DRAW_BATCH, batchData);
-      }, 50);
+      clientA.emit(CONFIG.EVENTS.CLIENT.DRAW_BATCH, batchData);
     });
   });
 });
