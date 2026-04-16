@@ -33,9 +33,12 @@ export const disconnectUserFromLobby = async (
 
   if (targetSockets.length === 0) return false;
 
+  const socketIds = targetSockets.map(s => s.id);
+  // Broadcast USER_LEFT only once to other users
+  io.to(lobbyId).except(socketIds).emit('USER_LEFT', targetSockets[0].data.user);
+
   for (const socket of targetSockets) {
     socket.emit('FORCE_DISCONNECT', { lobbyId, reason });
-    io.to(lobbyId).except(socket.id).emit('USER_LEFT', socket.data.user);
     socket.leave(lobbyId);
   }
 
