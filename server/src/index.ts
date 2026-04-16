@@ -72,6 +72,12 @@ httpServer.listen(PORT, () => {
 const handleShutdown = async (signal: string) => {
   console.log(`\n[INFO] Received ${signal}. Initiating graceful shutdown...`);
 
+  // Force exit after 10s if graceful shutdown hangs
+  setTimeout(() => {
+    console.error('[ERROR] Graceful shutdown timed out. Forcing exit.');
+    process.exit(1);
+  }, 10000).unref();
+
   try {
     // Stop accepting new connections
     httpServer.close();
