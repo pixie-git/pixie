@@ -71,10 +71,18 @@ httpServer.listen(PORT, () => {
 // --- GRACEFUL SHUTDOWN ---
 const handleShutdown = async (signal: string) => {
   console.log(`\n[INFO] Received ${signal}. Initiating graceful shutdown...`);
-  
+
   try {
+    // Stop accepting new connections
+    httpServer.close();
+
     // Flush all memory buffers to DB
     await CanvasService.saveAll();
+
+    // Close DB connection
+    const mongoose = await import("mongoose");
+    await mongoose.connection.close();
+
     console.log(`[INFO] All canvases saved. Shutdown complete.`);
     process.exit(0);
   } catch (err) {
