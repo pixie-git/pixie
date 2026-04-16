@@ -12,7 +12,6 @@ describe('CanvasService Graceful Shutdown', () => {
   it('should call saveToDB for every in-memory lobby during saveAll', async () => {
     const saveToDBSpy = vi.spyOn(CanvasService, 'saveToDB').mockResolvedValue(undefined);
 
-    // This method doesn't exist yet!
     await (CanvasService as any).saveAll();
 
     expect(saveToDBSpy).toHaveBeenCalledTimes(2);
