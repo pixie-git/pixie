@@ -36,14 +36,14 @@ export const disconnectUserFromLobby = async (
   const userData = targetSockets[0].data.user;
   const socketIds = targetSockets.map(s => s.id);
 
+  // Notify everyone else in the lobby about the user leaving
+  io.to(lobbyId).except(socketIds).emit('USER_LEFT', userData);
+
   // Notify the users being disconnected
   for (const socket of targetSockets) {
     socket.emit('FORCE_DISCONNECT', { lobbyId, reason });
     socket.leave(lobbyId);
   }
-
-  // Notify everyone else in the lobby about the user leaving
-  io.to(lobbyId).except(socketIds).emit('USER_LEFT', userData);
 
   return true;
 };
