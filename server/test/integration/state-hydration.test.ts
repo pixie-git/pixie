@@ -42,9 +42,8 @@ describe('Initial State Hydration Integration', () => {
     vi.spyOn(LobbyService, 'validateJoinAccess').mockImplementation(() => {});
     vi.spyOn(LobbyService, 'validateCapacity').mockImplementation(() => {});
 
-    // Mock CanvasService methods to avoid DB errors and unintended unloads (KISS)
+    // Mock CanvasService.saveToDB to avoid DB errors (KISS)
     vi.spyOn(CanvasService, 'saveToDB').mockResolvedValue(undefined);
-    vi.spyOn(CanvasService, 'unloadLobby').mockResolvedValue(undefined);
 
     // Pre-load the lobby into memory
     const initialData = new Uint8Array(canvasWidth * canvasHeight).fill(0);
@@ -106,25 +105,28 @@ describe('Initial State Hydration Integration', () => {
       clientA.emit(CONFIG.EVENTS.CLIENT.DRAW, { lobbyId: mockLobbyId, x, y, color });
     });
 
-    // 3. Client A disconnects
-    clientA.disconnect();
-
-    // Small delay to ensure server handles disconnection
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    // 4. Connect Client B and join the same lobby
+    // 3. Connect Client B and join the same lobby (before A disconnects)
     const clientB = await createClient(tokenB);
     const state: any = await joinLobby(clientB, mockLobbyId);
 
-    // 5. Assertion: Client B receives the INIT_STATE with the pixel at (10, 10) as color 1
+    // 4. Assertion: Client B receives the INIT_STATE with the pixel at (10, 10) as color 1
     expect(state.width).toBe(canvasWidth);
     expect(state.height).toBe(canvasHeight);
     
-    // Uint8Array might arrive as a Buffer/ArrayBuffer depending on the transport
     const pixelData = new Uint8Array(state.data);
     const index = y * canvasWidth + x;
     expect(pixelData[index]).toBe(color);
 
+    // 5. Client A disconnects and Client B waits for USER_LEFT signal
+    await new Promise<void>((resolve) => {
+      clientB.once(CONFIG.EVENTS.SERVER.USER_LEFT, (user) => {
+        expect(user.id).toBe(userA.id);
+        resolve();
+      });
+      clientA.disconnect();
+    });
+
+    // 6. Final cleanup: Client B disconnects, emptying the lobby and triggering real unloadLobby
     clientB.disconnect();
   });
 });
