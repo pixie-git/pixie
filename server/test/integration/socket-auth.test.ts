@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { createServer, Server as HTTPServer } from 'http';
 import { Server } from 'socket.io';
-import { io as Client, Socket as ClientSocket } from 'socket.io-client';
-import { setupSocket } from '../../src/sockets/index.js';
+import { Server as HTTPServer } from 'http';
+import { io as Client } from 'socket.io-client';
 import { CONFIG } from '../../src/config.js';
 import jwt from 'jsonwebtoken';
+import { createTestServer } from './utils/socket-test-utils.js';
 
 describe('Socket.IO Authentication Integration', () => {
     let io: Server;
@@ -13,18 +13,11 @@ describe('Socket.IO Authentication Integration', () => {
 
     const validUser = { id: 'user-auth-123', username: 'TestUser' };
 
-    beforeAll(() => {
-        httpServer = createServer();
-        io = new Server(httpServer);
-        setupSocket(io);
-
-        return new Promise<void>((resolve) => {
-            httpServer.listen(() => {
-                const address = httpServer.address();
-                port = typeof address === 'string' ? 0 : address?.port || 0;
-                resolve();
-            });
-        });
+    beforeAll(async () => {
+        const testServerParams = await createTestServer();
+        io = testServerParams.io;
+        httpServer = testServerParams.httpServer;
+        port = testServerParams.port;
     });
 
     afterAll(() => {
