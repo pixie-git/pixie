@@ -2,7 +2,7 @@ import { createServer, Server as HTTPServer } from 'http';
 import { Server } from 'socket.io';
 import { io as Client, Socket as ClientSocket } from 'socket.io-client';
 import { vi } from 'vitest';
-import jwt from 'jsonwebtoken';
+import jwt, { Secret, VerifyCallback, JsonWebTokenError } from 'jsonwebtoken';
 import { setupSocket } from '../../../src/sockets/index.js';
 import { CONFIG } from '../../../src/config.js';
 import { LobbyService } from '../../../src/services/lobby.service.js';
@@ -16,16 +16,20 @@ export const tokenB = 'token-b';
 
 export const setupTestMocks = () => {
   // Mock JWT verification
-  vi.spyOn(jwt, 'verify').mockImplementation((token: any, secret: any, callback: any) => {
+  vi.spyOn(jwt, 'verify').mockImplementation(((
+    token: string,
+    secretOrPublicKey: Secret,
+    callback: VerifyCallback
+  ) => {
     if (token === tokenA) callback(null, userA);
     else if (token === tokenB) callback(null, userB);
-    else callback(new Error('Invalid token'));
-  });
+    else callback(new JsonWebTokenError('Invalid token'), undefined);
+  }) as typeof jwt.verify);
 
   // Mock LobbyService to allow joining
   vi.spyOn(LobbyService, 'getById').mockResolvedValue({ _id: mockLobbyId, maxCollaborators: 10, bannedUsers: [] } as any);
-  vi.spyOn(LobbyService, 'validateJoinAccess').mockImplementation(() => {});
-  vi.spyOn(LobbyService, 'validateCapacity').mockImplementation(() => {});
+  vi.spyOn(LobbyService, 'validateJoinAccess').mockImplementation(() => { });
+  vi.spyOn(LobbyService, 'validateCapacity').mockImplementation(() => { });
 
   // Mock CanvasService
   vi.spyOn(CanvasService, 'getState').mockResolvedValue({ width: 100, height: 100, palette: [], data: new Uint8Array() });
@@ -38,11 +42,13 @@ export const createTestServer = (): Promise<{ io: Server; httpServer: HTTPServer
   const io = new Server(httpServer);
   setupSocket(io);
 
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     httpServer.listen(() => {
       const address = httpServer.address();
-      const port = typeof address === 'string' ? 0 : address?.port || 0;
-      resolve({ io, httpServer, port });
+      if (!address || typeof address === 'string') {
+        return reject(new Error('Failed to gracefully acquire a port number for the test server.'));
+      }
+      resolve({ io, httpServer, port: address.port });
     });
   });
 };
