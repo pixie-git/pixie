@@ -60,8 +60,21 @@ export const createClient = (port: number, token?: string): Promise<ClientSocket
       reconnection: false,
       transports: ['websocket'],
     });
-    socket.on('connect', () => resolve(socket));
-    socket.on('connect_error', (err) => reject(err));
+    const cleanup = () => {
+      socket.off('connect', onConnect);
+      socket.off('connect_error', onConnectError);
+    };
+    const onConnect = () => {
+      cleanup();
+      resolve(socket);
+    };
+    const onConnectError = (err: Error) => {
+      cleanup();
+      socket.close();
+      reject(err);
+    };
+    socket.on('connect', onConnect);
+    socket.on('connect_error', onConnectError);
   });
 };
 

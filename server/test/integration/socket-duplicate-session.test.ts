@@ -18,10 +18,21 @@ describe('Socket Duplicate Session Integration', () => {
     port = testSetup.port;
   });
 
-  afterAll(() => {
-    io.close();
-    httpServer.close();
-    vi.restoreAllMocks();
+  afterAll(async () => {
+    try {
+      io.close();
+      await new Promise<void>((resolve, reject) => {
+        httpServer.close((error) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+          resolve();
+        });
+      });
+    } finally {
+      vi.restoreAllMocks();
+    }
   });
 
   it('should forcefully disconnect older session when a duplicate session joins', async () => {
