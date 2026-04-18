@@ -20,9 +20,17 @@ describe('Socket.IO Authentication Integration', () => {
     port = testServerParams.port;
   });
 
-  afterAll(() => {
+  afterAll(async () => {
     io.close();
-    httpServer.close();
+    await new Promise<void>((resolve, reject) => {
+      httpServer.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
   });
 
   it('should reject connection when no token is provided', () => {

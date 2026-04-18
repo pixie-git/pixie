@@ -18,10 +18,21 @@ describe('Socket Broadcasting Integration', () => {
     port = testSetup.port;
   });
 
-  afterAll(() => {
-    io.close();
-    httpServer.close();
-    vi.restoreAllMocks();
+  afterAll(async () => {
+    try {
+      io.close();
+      await new Promise<void>((resolve, reject) => {
+        httpServer.close((error) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+          resolve();
+        });
+      });
+    } finally {
+      vi.restoreAllMocks();
+    }
   });
 
   it('should broadcast DRAW event from Client A as PIXEL_UPDATE to Client B', async () => {
