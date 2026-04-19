@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, vi, beforeEach } from 'vites
 import { Server as HTTPServer } from 'http';
 import { Server } from 'socket.io';
 import { CONFIG } from '../../src/config.js';
-import { createAndJoinClient, mockLobbyId, tokenA, teardownTestServer, bootstrapTestServer, setupTestLobby } from './utils/socket-test-utils.js';
+import { createAndJoinClient, mockLobbyId, tokenA, tokenB, teardownTestServer, bootstrapTestServer, setupTestLobby } from './utils/socket-test-utils.js';
 import { CanvasService } from '../../src/services/canvas.service.js';
 import { canvasStore } from '../../src/store/canvas.store.js';
 
@@ -73,7 +73,7 @@ describe('Memory Unloading & Cleanup Integration', () => {
 
   it('should NOT unload lobby if other clients are still connected', async () => {
     const clientA = await createAndJoinClient(port, tokenA);
-    const clientB = await createAndJoinClient(port, 'token-b'); // Use tokenB for second user
+    const clientB = await createAndJoinClient(port, tokenB); // Use tokenB constant for second user
 
     // Disconnect Client A, but B is still there
     clientA.disconnect();
