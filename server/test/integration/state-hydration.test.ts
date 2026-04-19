@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi, beforeEach } from 'vitest';
 import { Server as HTTPServer } from 'http';
 import { Server } from 'socket.io';
 import { CONFIG } from '../../src/config.js';
@@ -14,20 +14,23 @@ describe('Initial State Hydration Integration', () => {
   const canvasWidth = 64;
   const canvasHeight = 64;
   const palette = ['#000000', '#FFFFFF'];
+beforeAll(async () => {
+  // bootstrapTestServer calls setupTestMocks()
+  const testSetup = await bootstrapTestServer();
+  io = testSetup.io;
+  httpServer = testSetup.httpServer;
+  port = testSetup.port;
 
-  beforeAll(async () => {
-    const testSetup = await bootstrapTestServer();
-    io = testSetup.io;
-    httpServer = testSetup.httpServer;
-    port = testSetup.port;
+  // Override CanvasService.saveToDB to avoid DB errors (KISS)
+  vi.spyOn(CanvasService, 'saveToDB').mockResolvedValue(undefined);
+});
 
-    // Override CanvasService.saveToDB to avoid DB errors (KISS)
-    vi.spyOn(CanvasService, 'saveToDB').mockResolvedValue(undefined);
+beforeEach(() => {
+  // Pre-load the lobby into memory with specific dimensions for this test
+  const initialData = new Uint8Array(canvasWidth * canvasHeight).fill(0);
+  canvasStore.loadLobbyToMemory(mockLobbyId, canvasWidth, canvasHeight, palette, initialData);
+});
 
-    // Pre-load the lobby into memory with specific dimensions for this test
-    const initialData = new Uint8Array(canvasWidth * canvasHeight).fill(0);
-    canvasStore.loadLobbyToMemory(mockLobbyId, canvasWidth, canvasHeight, palette, initialData);
-  });
 
   afterAll(async () => {
     await teardownTestServer(io, httpServer);
