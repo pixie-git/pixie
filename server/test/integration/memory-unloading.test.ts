@@ -10,6 +10,8 @@ describe('Memory Unloading & Cleanup Integration', () => {
   let io: Server;
   let httpServer: HTTPServer;
   let port: number;
+  let unloadSpy: any;
+  let saveSpy: any;
 
   beforeAll(async () => {
     // bootstrapTestServer already sets up some mocks (JWT, LobbyService, CanvasService)
@@ -22,9 +24,14 @@ describe('Memory Unloading & Cleanup Integration', () => {
   beforeEach(() => {
     setupTestLobby();
     // Ensure saveToDB is mocked to avoid real DB calls
-    vi.spyOn(CanvasService, 'saveToDB').mockResolvedValue(undefined as any);
+    saveSpy = vi.spyOn(CanvasService, 'saveToDB').mockResolvedValue(undefined as any);
     // Restore real implementation for draw to exercise scheduleSave/timers
     vi.spyOn(CanvasService, 'draw').mockRestore();
+    // Spy on unloadLobby to verify it was called
+    unloadSpy = vi.spyOn(CanvasService, 'unloadLobby');
+
+    saveSpy.mockClear();
+    unloadSpy.mockClear();
   });
 
   afterAll(async () => {
@@ -44,11 +51,6 @@ describe('Memory Unloading & Cleanup Integration', () => {
     // Give a small amount of time for the draw event to be processed on server
     await new Promise(resolve => setTimeout(resolve, 50));
 
-    // Setup spies
-    // We want to verify these are called during disconnection
-    const unloadSpy = vi.spyOn(CanvasService, 'unloadLobby');
-    const saveSpy = vi.spyOn(CanvasService, 'saveToDB').mockResolvedValue(undefined as any);
-
     // Disconnect Client A
     // This should trigger the 'disconnecting' handler which calls unloadLobby if room is empty
     clientA.disconnect();
@@ -67,17 +69,11 @@ describe('Memory Unloading & Cleanup Integration', () => {
     
     // 3. Lobby was removed from RAM
     expect(canvasStore.isLobbyInMemory(mockLobbyId)).toBe(false);
-    
-    unloadSpy.mockRestore();
-    saveSpy.mockRestore();
   });
 
   it('should NOT unload lobby if other clients are still connected', async () => {
     const clientA = await createAndJoinClient(port, tokenA);
     const clientB = await createAndJoinClient(port, 'token-b'); // Use tokenB for second user
-
-    // Setup spies
-    const unloadSpy = vi.spyOn(CanvasService, 'unloadLobby');
 
     // Disconnect Client A, but B is still there
     clientA.disconnect();
@@ -96,7 +92,5 @@ describe('Memory Unloading & Cleanup Integration', () => {
     // Now it should be unloaded
     expect(unloadSpy).toHaveBeenCalledWith(mockLobbyId);
     expect(canvasStore.isLobbyInMemory(mockLobbyId)).toBe(false);
-
-    unloadSpy.mockRestore();
   });
 });
