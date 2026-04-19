@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi, beforeEach } from 'vitest';
 import { Server as HTTPServer } from 'http';
 import { Server } from 'socket.io';
 import { CONFIG } from '../../src/config.js';
-import { createAndJoinClient, mockLobbyId, tokenA, tokenB, teardownTestServer, bootstrapTestServer } from './utils/socket-test-utils.js';
+import { createAndJoinClient, mockLobbyId, tokenA, tokenB, teardownTestServer, bootstrapTestServer, setupTestLobby } from './utils/socket-test-utils.js';
 
 describe('Socket Broadcasting Integration', () => {
   let io: Server;
@@ -14,6 +14,10 @@ describe('Socket Broadcasting Integration', () => {
     io = testSetup.io;
     httpServer = testSetup.httpServer;
     port = testSetup.port;
+  });
+
+  beforeEach(() => {
+    setupTestLobby();
   });
 
   afterAll(async () => {
