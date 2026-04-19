@@ -7,12 +7,17 @@ import { setupSocket } from '../../../src/sockets/index.js';
 import { CONFIG } from '../../../src/config.js';
 import { LobbyService } from '../../../src/services/lobby.service.js';
 import { CanvasService } from '../../../src/services/canvas.service.js';
+import { canvasStore } from '../../../src/store/canvas.store.js';
 
 export const mockLobbyId = 'test-lobby-id';
 export const userA = { id: 'user-a', username: 'Alice' };
 export const userB = { id: 'user-b', username: 'Bob' };
 export const tokenA = 'token-a';
 export const tokenB = 'token-b';
+
+export const setupTestLobby = (lobbyId = mockLobbyId, width = 100, height = 100) => {
+  canvasStore.loadLobbyToMemory(lobbyId, width, height, ['#000000', '#ffffff', '#ff0000', '#00ff00', '#0000ff'], new Uint8Array(width * height).fill(0));
+};
 
 export const setupTestMocks = () => {
   // Mock JWT verification
@@ -32,9 +37,20 @@ export const setupTestMocks = () => {
   vi.spyOn(LobbyService, 'validateCapacity').mockImplementation(() => { });
 
   // Mock CanvasService
-  vi.spyOn(CanvasService, 'getState').mockResolvedValue({ width: 100, height: 100, palette: [], data: new Uint8Array() });
-  vi.spyOn(CanvasService, 'draw').mockReturnValue(true);
-  vi.spyOn(CanvasService, 'drawBatch').mockImplementation((lobbyId, pixels) => pixels);
+  vi.spyOn(CanvasService, 'getState').mockImplementation(async (lobbyId) => {
+    if (!canvasStore.isLobbyInMemory(lobbyId)) {
+      setupTestLobby(lobbyId);
+    }
+    const meta = canvasStore.getLobbyMetaData(lobbyId)!;
+    return { width: meta.width, height: meta.height, palette: meta.palette, data: meta.data };
+  });
+  vi.spyOn(CanvasService, 'saveToDB').mockResolvedValue(undefined as any);
+  vi.spyOn(CanvasService, 'draw').mockImplementation((lobbyId, x, y, color) => {
+    return canvasStore.modifyPixelColor(lobbyId, x, y, color);
+  });
+  vi.spyOn(CanvasService, 'drawBatch').mockImplementation((lobbyId, pixels) => {
+    return pixels.filter(p => canvasStore.modifyPixelColor(lobbyId, p.x, p.y, p.color));
+  });
 };
 
 export const createTestServer = (): Promise<{ io: Server; httpServer: HTTPServer; port: number }> => {
@@ -83,11 +99,11 @@ export const createClient = (port: number, token?: string): Promise<ClientSocket
   });
 };
 
-export const createAndJoinClient = async (port: number, token: string): Promise<ClientSocket> => {
+export const createAndJoinClient = async (port: number, token: string, lobbyId = mockLobbyId): Promise<ClientSocket> => {
   const client = await createClient(port, token);
   return new Promise((resolve) => {
     client.on(CONFIG.EVENTS.SERVER.INIT_STATE, () => resolve(client));
-    client.emit(CONFIG.EVENTS.CLIENT.JOIN_LOBBY, mockLobbyId);
+    client.emit(CONFIG.EVENTS.CLIENT.JOIN_LOBBY, lobbyId);
   });
 };
 
@@ -102,5 +118,6 @@ export const teardownTestServer = async (io: Server, httpServer: HTTPServer) => 
       resolve();
     });
   });
+  canvasStore.removeLobby(mockLobbyId);
   vi.restoreAllMocks();
 };
