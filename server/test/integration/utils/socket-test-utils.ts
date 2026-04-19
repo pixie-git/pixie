@@ -53,6 +53,11 @@ export const createTestServer = (): Promise<{ io: Server; httpServer: HTTPServer
   });
 };
 
+export const bootstrapTestServer = async (withMocks = true) => {
+  if (withMocks) setupTestMocks();
+  return await createTestServer();
+};
+
 export const createClient = (port: number, token?: string): Promise<ClientSocket> => {
   return new Promise((resolve, reject) => {
     const socket = Client(`http://localhost:${port}`, {
