@@ -48,17 +48,17 @@ describe('Memory Unloading & Cleanup Integration', () => {
     const drawData = { lobbyId: mockLobbyId, x: 10, y: 10, color: 1 };
     clientA.emit(CONFIG.EVENTS.CLIENT.DRAW, drawData);
 
-    // Give a small amount of time for the draw event to be processed on server
-    await new Promise(resolve => setTimeout(resolve, 50));
-
     // Disconnect Client A
     // This should trigger the 'disconnecting' handler which calls unloadLobby if room is empty
     clientA.disconnect();
 
     // The disconnection handler is async on the server side
-    // We need to wait for it to finish its work.
-    // 500ms should be plenty for the async handler to await getUsersInLobby and unloadLobby.
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // We wait until the lobby is removed from RAM deterministically
+    await vi.waitFor(() => {
+      if (canvasStore.isLobbyInMemory(mockLobbyId)) {
+        throw new Error('Lobby still in memory');
+      }
+    }, { timeout: 2000, interval: 50 });
 
     // ASSERTIONS
     // 1. unloadLobby was triggered
@@ -66,9 +66,6 @@ describe('Memory Unloading & Cleanup Integration', () => {
     
     // 2. saveToDB was called as part of unloading
     expect(saveSpy).toHaveBeenCalledWith(mockLobbyId);
-    
-    // 3. Lobby was removed from RAM
-    expect(canvasStore.isLobbyInMemory(mockLobbyId)).toBe(false);
   });
 
   it('should NOT unload lobby if other clients are still connected', async () => {
@@ -78,7 +75,8 @@ describe('Memory Unloading & Cleanup Integration', () => {
     // Disconnect Client A, but B is still there
     clientA.disconnect();
 
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Wait a bit to ensure it doesn't flip incorrectly (we still need a small wait to confirm negative case, or check call count)
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     // ASSERTIONS
     // Lobby should NOT be unloaded because Client B is still connected
@@ -87,10 +85,14 @@ describe('Memory Unloading & Cleanup Integration', () => {
 
     // Now disconnect Client B
     clientB.disconnect();
-    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Now it should be unloaded deterministically
+    await vi.waitFor(() => {
+      if (canvasStore.isLobbyInMemory(mockLobbyId)) {
+        throw new Error('Lobby still in memory');
+      }
+    }, { timeout: 2000, interval: 50 });
 
-    // Now it should be unloaded
     expect(unloadSpy).toHaveBeenCalledWith(mockLobbyId);
-    expect(canvasStore.isLobbyInMemory(mockLobbyId)).toBe(false);
   });
 });
