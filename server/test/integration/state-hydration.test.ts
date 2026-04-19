@@ -4,7 +4,7 @@ import { Server } from 'socket.io';
 import { CONFIG } from '../../src/config.js';
 import { CanvasService } from '../../src/services/canvas.service.js';
 import { canvasStore } from '../../src/store/canvas.store.js';
-import { setupTestMocks, createTestServer, createClient, createAndJoinClient, mockLobbyId, tokenA, tokenB } from './utils/socket-test-utils.js';
+import { createClient, createAndJoinClient, mockLobbyId, tokenA, tokenB, teardownTestServer, bootstrapTestServer } from './utils/socket-test-utils.js';
 
 describe('Initial State Hydration Integration', () => {
   let io: Server;
@@ -16,7 +16,10 @@ describe('Initial State Hydration Integration', () => {
   const palette = ['#000000', '#FFFFFF'];
 
   beforeAll(async () => {
-    setupTestMocks();
+    const testSetup = await bootstrapTestServer();
+    io = testSetup.io;
+    httpServer = testSetup.httpServer;
+    port = testSetup.port;
 
     // Override CanvasService.saveToDB to avoid DB errors (KISS)
     vi.spyOn(CanvasService, 'saveToDB').mockResolvedValue(undefined);
@@ -24,11 +27,6 @@ describe('Initial State Hydration Integration', () => {
     // Pre-load the lobby into memory with specific dimensions for this test
     const initialData = new Uint8Array(canvasWidth * canvasHeight).fill(0);
     canvasStore.loadLobbyToMemory(mockLobbyId, canvasWidth, canvasHeight, palette, initialData);
-
-    const testSetup = await createTestServer();
-    io = testSetup.io;
-    httpServer = testSetup.httpServer;
-    port = testSetup.port;
   });
 
   afterAll(async () => {

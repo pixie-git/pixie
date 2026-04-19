@@ -3,7 +3,7 @@ import { Server } from 'socket.io';
 import { Server as HTTPServer } from 'http';
 import jwt from 'jsonwebtoken';
 import { CONFIG } from '../../src/config.js';
-import { createTestServer, createClient, teardownTestServer } from './utils/socket-test-utils.js';
+import { createClient, teardownTestServer, bootstrapTestServer } from './utils/socket-test-utils.js';
 
 describe('Socket.IO Authentication Integration', () => {
   let io: Server;
@@ -13,10 +13,10 @@ describe('Socket.IO Authentication Integration', () => {
   const validUser = { id: 'user-auth-123', username: 'TestUser' };
 
   beforeAll(async () => {
-    const testServerParams = await createTestServer();
-    io = testServerParams.io;
-    httpServer = testServerParams.httpServer;
-    port = testServerParams.port;
+    const testSetup = await bootstrapTestServer(false);
+    io = testSetup.io;
+    httpServer = testSetup.httpServer;
+    port = testSetup.port;
   });
 
   afterAll(async () => {
