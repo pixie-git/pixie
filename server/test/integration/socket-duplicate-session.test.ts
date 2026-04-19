@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { Server as HTTPServer } from 'http';
 import { Server } from 'socket.io';
 import { CONFIG } from '../../src/config.js';
-import { setupTestMocks, createTestServer, createAndJoinClient, mockLobbyId, tokenA } from './utils/socket-test-utils.js';
+import { setupTestMocks, createTestServer, createAndJoinClient, mockLobbyId, tokenA, teardownTestServer } from './utils/socket-test-utils.js';
 
 describe('Socket Duplicate Session Integration', () => {
   let io: Server;
@@ -19,20 +19,7 @@ describe('Socket Duplicate Session Integration', () => {
   });
 
   afterAll(async () => {
-    try {
-      io.close();
-      await new Promise<void>((resolve, reject) => {
-        httpServer.close((error) => {
-          if (error) {
-            reject(error);
-            return;
-          }
-          resolve();
-        });
-      });
-    } finally {
-      vi.restoreAllMocks();
-    }
+    await teardownTestServer(io, httpServer);
   });
 
   it('should forcefully disconnect older session when a duplicate session joins', async () => {

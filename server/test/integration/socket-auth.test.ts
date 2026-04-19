@@ -3,7 +3,7 @@ import { Server } from 'socket.io';
 import { Server as HTTPServer } from 'http';
 import jwt from 'jsonwebtoken';
 import { CONFIG } from '../../src/config.js';
-import { createTestServer, createClient } from './utils/socket-test-utils.js';
+import { createTestServer, createClient, teardownTestServer } from './utils/socket-test-utils.js';
 
 describe('Socket.IO Authentication Integration', () => {
   let io: Server;
@@ -20,8 +20,7 @@ describe('Socket.IO Authentication Integration', () => {
   });
 
   afterAll(async () => {
-    io.close();
-    await new Promise<void>((resolve) => httpServer.close(() => resolve()));
+    await teardownTestServer(io, httpServer);
   });
 
   it('should reject connection when no token is provided', async () => {

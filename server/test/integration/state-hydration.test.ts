@@ -32,10 +32,8 @@ describe('Initial State Hydration Integration', () => {
   });
 
   afterAll(async () => {
-    io.close();
-    await new Promise<void>((resolve) => httpServer.close(() => resolve()));
+    await teardownTestServer(io, httpServer);
     canvasStore.removeLobby(mockLobbyId);
-    vi.restoreAllMocks();
   });
 
   it('should hydrate a new client with pixels drawn by a previous client', async () => {
