@@ -21,7 +21,10 @@ describe('Memory Unloading & Cleanup Integration', () => {
 
   beforeEach(() => {
     setupTestLobby();
+    // Ensure saveToDB is mocked to avoid real DB calls
     vi.spyOn(CanvasService, 'saveToDB').mockResolvedValue(undefined as any);
+    // Restore real implementation for draw to exercise scheduleSave/timers
+    vi.spyOn(CanvasService, 'draw').mockRestore();
   });
 
   afterAll(async () => {
