@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { Server as HTTPServer } from 'http';
 import { Server } from 'socket.io';
 import { CONFIG } from '../../src/config.js';
-import { setupTestMocks, createTestServer, createAndJoinClient, mockLobbyId, tokenA, tokenB } from './utils/socket-test-utils.js';
+import { setupTestMocks, createTestServer, createAndJoinClient, mockLobbyId, tokenA, tokenB, teardownTestServer } from './utils/socket-test-utils.js';
 
 describe('Socket Broadcasting Integration', () => {
   let io: Server;
@@ -19,20 +19,7 @@ describe('Socket Broadcasting Integration', () => {
   });
 
   afterAll(async () => {
-    try {
-      io.close();
-      await new Promise<void>((resolve, reject) => {
-        httpServer.close((error) => {
-          if (error) {
-            reject(error);
-            return;
-          }
-          resolve();
-        });
-      });
-    } finally {
-      vi.restoreAllMocks();
-    }
+    await teardownTestServer(io, httpServer);
   });
 
   it('should broadcast DRAW event from Client A as PIXEL_UPDATE to Client B', async () => {

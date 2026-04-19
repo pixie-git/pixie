@@ -85,3 +85,17 @@ export const createAndJoinClient = async (port: number, token: string): Promise<
     client.emit(CONFIG.EVENTS.CLIENT.JOIN_LOBBY, mockLobbyId);
   });
 };
+
+export const teardownTestServer = async (io: Server, httpServer: HTTPServer) => {
+  io.close();
+  await new Promise<void>((resolve, reject) => {
+    httpServer.close((error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+  vi.restoreAllMocks();
+};
