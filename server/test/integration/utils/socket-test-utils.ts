@@ -10,8 +10,8 @@ import { CanvasService } from '../../../src/services/canvas.service.js';
 import { canvasStore } from '../../../src/store/canvas.store.js';
 
 export const mockLobbyId = '507f1f77bcf86cd799439011';
-export const userA = { id: 'user-a', username: 'Alice' };
-export const userB = { id: 'user-b', username: 'Bob' };
+export const userA = { id: '507f1f77bcf86cd799439012', username: 'Alice' };
+export const userB = { id: '507f1f77bcf86cd799439013', username: 'Bob' };
 export const tokenA = 'token-a';
 export const tokenB = 'token-b';
 
