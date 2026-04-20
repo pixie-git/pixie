@@ -12,8 +12,10 @@ import { canvasStore } from '../../../src/store/canvas.store.js';
 export const mockLobbyId = '507f1f77bcf86cd799439011';
 export const userA = { id: '507f1f77bcf86cd799439012', username: 'Alice' };
 export const userB = { id: '507f1f77bcf86cd799439013', username: 'Bob' };
+export const adminUser = { id: '507f1f77bcf86cd799439014', username: 'Admin', isAdmin: true };
 export const tokenA = 'token-a';
 export const tokenB = 'token-b';
+export const tokenAdmin = 'token-admin';
 
 export const setupTestLobby = (lobbyId = mockLobbyId, width = 100, height = 100) => {
   canvasStore.loadLobbyToMemory(lobbyId, width, height, ['#000000', '#ffffff', '#ff0000', '#00ff00', '#0000ff'], new Uint8Array(width * height).fill(0));
@@ -28,6 +30,7 @@ export const setupTestMocks = () => {
   ) => {
     if (token === tokenA) callback(null, userA);
     else if (token === tokenB) callback(null, userB);
+    else if (token === tokenAdmin) callback(null, adminUser);
     else callback(new JsonWebTokenError('Invalid token'), undefined);
   }) as typeof jwt.verify);
 
