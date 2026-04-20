@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { Server as HTTPServer } from 'http';
 import { Server } from 'socket.io';
-import express from 'express';
 import { createServer } from 'http';
 import { CONFIG } from '../../src/config.js';
 import { LobbyController } from '../../src/controllers/lobby.controller.js';
@@ -15,9 +14,9 @@ import {
   userA,
   teardownTestServer,
   setupTestMocks,
-  setupTestLobby
+  setupTestLobby,
+  createExpressTestServer
 } from './utils/socket-test-utils.js';
-import { setupSocket } from '../../src/sockets/index.js';
 
 describe('Kick User Flow Integration', () => {
   let io: Server;
@@ -27,32 +26,13 @@ describe('Kick User Flow Integration', () => {
   beforeAll(async () => {
     setupTestMocks();
 
-    const app = express();
-    app.use(express.json());
-
-    httpServer = createServer(app);
-    io = new Server(httpServer);
-    setupSocket(io);
-
-    // Attach IO and mock owner auth so that we bypass requireLobbyOwner and authenticateToken issues
-    app.use((req, res, next) => {
-      (req as any).io = io;
-      (req as any).user = userA; // owner
-      next();
-    });
+    const setup = await createExpressTestServer(userA); // owner
+    io = setup.io;
+    httpServer = setup.httpServer;
+    port = setup.port;
+    const app = setup.app;
 
     app.post('/api/lobbies/:id/kick', LobbyController.kickUser);
-
-    await new Promise<void>((resolve, reject) => {
-      httpServer.listen(() => {
-        const address = httpServer.address();
-        if (!address || typeof address === 'string') {
-          return reject(new Error('Failed to gracefully acquire a port number for the test server.'));
-        }
-        port = address.port;
-        resolve();
-      });
-    });
   });
 
   beforeEach(() => {

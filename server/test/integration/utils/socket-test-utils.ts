@@ -1,3 +1,4 @@
+import express from 'express';
 import { createServer, Server as HTTPServer } from 'http';
 import { Server } from 'socket.io';
 import { io as Client, Socket as ClientSocket } from 'socket.io-client';
@@ -68,6 +69,31 @@ export const createTestServer = (): Promise<{ io: Server; httpServer: HTTPServer
         return reject(new Error('Failed to gracefully acquire a port number for the test server.'));
       }
       resolve({ io, httpServer, port: address.port });
+    });
+  });
+};
+
+export const createExpressTestServer = (mockUser: any): Promise<{ io: Server; httpServer: HTTPServer; port: number; app: express.Express }> => {
+  const app = express();
+  app.use(express.json());
+
+  const httpServer = createServer(app);
+  const io = new Server(httpServer);
+  setupSocket(io);
+
+  app.use((req, res, next) => {
+    (req as any).io = io;
+    (req as any).user = mockUser;
+    next();
+  });
+
+  return new Promise((resolve, reject) => {
+    httpServer.listen(() => {
+      const address = httpServer.address();
+      if (!address || typeof address === 'string') {
+        return reject(new Error('Failed to gracefully acquire a port number for the test server.'));
+      }
+      resolve({ io, httpServer, port: address.port, app });
     });
   });
 };

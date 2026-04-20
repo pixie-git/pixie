@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import { Server as HTTPServer } from 'http';
 import { Server } from 'socket.io';
-import express from 'express';
 import { createServer } from 'http';
 import { CONFIG } from '../../src/config.js';
 import { LobbyController } from '../../src/controllers/lobby.controller.js';
@@ -16,9 +15,9 @@ import {
   adminUser,
   teardownTestServer,
   setupTestMocks,
-  setupTestLobby
+  setupTestLobby,
+  createExpressTestServer
 } from './utils/socket-test-utils.js';
-import { setupSocket } from '../../src/sockets/index.js';
 
 vi.mock('../../src/models/Lobby.js', () => ({
   Lobby: {
@@ -37,31 +36,13 @@ describe('Admin Override Authority Integration', () => {
   beforeAll(async () => {
     setupTestMocks();
 
-    const app = express();
-    app.use(express.json());
-
-    httpServer = createServer(app);
-    io = new Server(httpServer);
-    setupSocket(io);
-
-    app.use((req, res, next) => {
-      (req as any).io = io;
-      (req as any).user = adminUser;
-      next();
-    });
+    const setup = await createExpressTestServer(adminUser);
+    io = setup.io;
+    httpServer = setup.httpServer;
+    port = setup.port;
+    const app = setup.app;
 
     app.post('/api/lobbies/:id/kick', requireLobbyOwner, LobbyController.kickUser);
-
-    await new Promise<void>((resolve, reject) => {
-      httpServer.listen(() => {
-        const address = httpServer.address();
-        if (!address || typeof address === 'string') {
-          return reject(new Error('Failed to gracefully acquire a port number for the test server.'));
-        }
-        port = address.port;
-        resolve();
-      });
-    });
   });
 
   beforeEach(() => {
