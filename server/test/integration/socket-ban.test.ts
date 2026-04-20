@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import { Server as HTTPServer } from 'http';
 import { Server } from 'socket.io';
-import express from 'express';
 import { createServer } from 'http';
 import { CONFIG } from '../../src/config.js';
 import { LobbyController } from '../../src/controllers/lobby.controller.js';
@@ -17,9 +16,9 @@ import {
   userA,
   teardownTestServer,
   setupTestMocks,
-  setupTestLobby
+  setupTestLobby,
+  createExpressTestServer
 } from './utils/socket-test-utils.js';
-import { setupSocket } from '../../src/sockets/index.js';
 
 // 1. Mock the specific MongoDB call in User model using `vi.mock`
 vi.mock('../../src/models/User.js', () => ({
@@ -71,32 +70,13 @@ describe('Ban User Flow & Persistence Integration', () => {
       }
     });
 
-    const app = express();
-    app.use(express.json());
-
-    httpServer = createServer(app);
-    io = new Server(httpServer);
-    setupSocket(io);
-
-    // Attach IO and pretend we are UserA (Owner)
-    app.use((req, res, next) => {
-      (req as any).io = io;
-      (req as any).user = userA;
-      next();
-    });
+    const setup = await createExpressTestServer(userA);
+    io = setup.io;
+    httpServer = setup.httpServer;
+    port = setup.port;
+    const app = setup.app;
 
     app.post('/api/lobbies/:id/ban', LobbyController.banUser);
-
-    await new Promise<void>((resolve, reject) => {
-      httpServer.listen(() => {
-        const address = httpServer.address();
-        if (!address || typeof address === 'string') {
-          return reject(new Error('Failed to gracefully acquire a port number for the test server.'));
-        }
-        port = address.port;
-        resolve();
-      });
-    });
   });
 
   beforeEach(() => {
