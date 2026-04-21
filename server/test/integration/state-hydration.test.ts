@@ -4,7 +4,7 @@ import { Server } from 'socket.io';
 import { CONFIG } from '../../src/config.js';
 import { CanvasService } from '../../src/services/canvas.service.js';
 import { canvasStore } from '../../src/store/canvas.store.js';
-import { createClient, createAndJoinClient, mockLobbyId, tokenA, tokenB, teardownTestServer, bootstrapTestServer } from './utils/socket-test-utils.js';
+import { createClient, createAndJoinClient, mockLobbyId, tokenA, tokenB, teardownTestServer, bootstrapTestServer, userA } from './utils/socket-test-utils.js';
 
 describe('Initial State Hydration Integration', () => {
   let io: Server;
@@ -72,7 +72,7 @@ beforeEach(() => {
     // 5. Client A disconnects and Client B waits for USER_LEFT signal
     await new Promise<void>((resolve) => {
       clientB.once(CONFIG.EVENTS.SERVER.USER_LEFT, (user) => {
-        expect(user.id).toBe('user-a'); // from userA in utils
+        expect(user.id).toBe(userA.id); // from userA in utils
         resolve();
       });
       clientA.disconnect();

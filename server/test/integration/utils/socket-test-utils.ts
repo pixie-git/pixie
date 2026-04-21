@@ -1,3 +1,4 @@
+import express from 'express';
 import { createServer, Server as HTTPServer } from 'http';
 import { Server } from 'socket.io';
 import { io as Client, Socket as ClientSocket } from 'socket.io-client';
@@ -10,10 +11,12 @@ import { CanvasService } from '../../../src/services/canvas.service.js';
 import { canvasStore } from '../../../src/store/canvas.store.js';
 
 export const mockLobbyId = '507f1f77bcf86cd799439011';
-export const userA = { id: 'user-a', username: 'Alice' };
-export const userB = { id: 'user-b', username: 'Bob' };
+export const userA = { id: '507f1f77bcf86cd799439012', username: 'Alice' };
+export const userB = { id: '507f1f77bcf86cd799439013', username: 'Bob' };
+export const adminUser = { id: '507f1f77bcf86cd799439014', username: 'Admin', isAdmin: true };
 export const tokenA = 'token-a';
 export const tokenB = 'token-b';
+export const tokenAdmin = 'token-admin';
 
 export const setupTestLobby = (lobbyId = mockLobbyId, width = 100, height = 100) => {
   canvasStore.loadLobbyToMemory(lobbyId, width, height, ['#000000', '#ffffff', '#ff0000', '#00ff00', '#0000ff'], new Uint8Array(width * height).fill(0));
@@ -28,6 +31,7 @@ export const setupTestMocks = () => {
   ) => {
     if (token === tokenA) callback(null, userA);
     else if (token === tokenB) callback(null, userB);
+    else if (token === tokenAdmin) callback(null, adminUser);
     else callback(new JsonWebTokenError('Invalid token'), undefined);
   }) as typeof jwt.verify);
 
@@ -59,12 +63,39 @@ export const createTestServer = (): Promise<{ io: Server; httpServer: HTTPServer
   setupSocket(io);
 
   return new Promise((resolve, reject) => {
+    httpServer.once('error', reject);
     httpServer.listen(() => {
       const address = httpServer.address();
       if (!address || typeof address === 'string') {
         return reject(new Error('Failed to gracefully acquire a port number for the test server.'));
       }
       resolve({ io, httpServer, port: address.port });
+    });
+  });
+};
+
+export const createExpressTestServer = (mockUser: any): Promise<{ io: Server; httpServer: HTTPServer; port: number; app: express.Express }> => {
+  const app = express();
+  app.use(express.json());
+
+  const httpServer = createServer(app);
+  const io = new Server(httpServer);
+  setupSocket(io);
+
+  app.use((req, res, next) => {
+    (req as any).io = io;
+    (req as any).user = mockUser;
+    next();
+  });
+
+  return new Promise((resolve, reject) => {
+    httpServer.once('error', reject);
+    httpServer.listen(() => {
+      const address = httpServer.address();
+      if (!address || typeof address === 'string') {
+        return reject(new Error('Failed to gracefully acquire a port number for the test server.'));
+      }
+      resolve({ io, httpServer, port: address.port, app });
     });
   });
 };
