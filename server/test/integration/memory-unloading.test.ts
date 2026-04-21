@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, vi, beforeEach } from 'vites
 import { Server as HTTPServer } from 'http';
 import { Server } from 'socket.io';
 import { CONFIG } from '../../src/config.js';
-import { createAndJoinClient, mockLobbyId, tokenA, tokenB, teardownTestServer, bootstrapTestServer, setupTestLobby } from './utils/socket-test-utils.js';
+import { createAndJoinClient, mockLobbyId, tokenA, tokenB, userA, teardownTestServer, bootstrapTestServer, setupTestLobby } from './utils/socket-test-utils.js';
 import { CanvasService } from '../../src/services/canvas.service.js';
 import { canvasStore } from '../../src/store/canvas.store.js';
 
@@ -40,7 +40,7 @@ describe('Memory Unloading & Cleanup Integration', () => {
 
   it('should unload lobby from memory and save to DB when the last client disconnects', async () => {
     const clientA = await createAndJoinClient(port, tokenA);
-    
+
     // Verify lobby is in memory
     expect(canvasStore.isLobbyInMemory(mockLobbyId)).toBe(true);
 
@@ -63,7 +63,7 @@ describe('Memory Unloading & Cleanup Integration', () => {
     // ASSERTIONS
     // 1. unloadLobby was triggered
     expect(unloadSpy).toHaveBeenCalledWith(mockLobbyId);
-    
+
     // 2. saveToDB was called as part of unloading
     expect(saveSpy).toHaveBeenCalledWith(mockLobbyId);
   });
@@ -72,11 +72,16 @@ describe('Memory Unloading & Cleanup Integration', () => {
     const clientA = await createAndJoinClient(port, tokenA);
     const clientB = await createAndJoinClient(port, tokenB); // Use tokenB constant for second user
 
+    const userLeftPromise = new Promise<void>((resolve) => {
+      clientB.on(CONFIG.EVENTS.SERVER.USER_LEFT, (data) => {
+        if (data.id === userA.id) resolve();
+      });
+    });
+
     // Disconnect Client A, but B is still there
     clientA.disconnect();
 
-    // Wait a bit to ensure it doesn't flip incorrectly (we still need a small wait to confirm negative case, or check call count)
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await userLeftPromise;
 
     // ASSERTIONS
     // Lobby should NOT be unloaded because Client B is still connected
@@ -85,7 +90,7 @@ describe('Memory Unloading & Cleanup Integration', () => {
 
     // Now disconnect Client B
     clientB.disconnect();
-    
+
     // Now it should be unloaded deterministically
     await vi.waitFor(() => {
       if (canvasStore.isLobbyInMemory(mockLobbyId)) {

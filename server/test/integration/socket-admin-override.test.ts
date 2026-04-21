@@ -55,9 +55,16 @@ describe('Admin Override Authority Integration', () => {
 
   it('should allow admin to clear canvas and kick the original owner', async () => {
     const ownerClient = await createAndJoinClient(port, tokenA);
+
+    const userJoinedPromise = new Promise<void>((resolve) => {
+      ownerClient.on(CONFIG.EVENTS.SERVER.USER_JOINED, (data) => {
+        if (data.id === adminUser.id) resolve();
+      });
+    });
+
     const adminClient = await createAndJoinClient(port, tokenAdmin);
 
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await userJoinedPromise;
 
     const clearCanvasPromise = new Promise<void>((resolve) => {
       ownerClient.on(CONFIG.EVENTS.SERVER.CANVAS_CLEARED, () => {

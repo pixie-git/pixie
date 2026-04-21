@@ -63,6 +63,7 @@ export const createTestServer = (): Promise<{ io: Server; httpServer: HTTPServer
   setupSocket(io);
 
   return new Promise((resolve, reject) => {
+    httpServer.once('error', reject);
     httpServer.listen(() => {
       const address = httpServer.address();
       if (!address || typeof address === 'string') {
@@ -88,6 +89,7 @@ export const createExpressTestServer = (mockUser: any): Promise<{ io: Server; ht
   });
 
   return new Promise((resolve, reject) => {
+    httpServer.once('error', reject);
     httpServer.listen(() => {
       const address = httpServer.address();
       if (!address || typeof address === 'string') {

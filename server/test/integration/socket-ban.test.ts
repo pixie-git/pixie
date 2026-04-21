@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import { Server as HTTPServer } from 'http';
 import { Server } from 'socket.io';
-import { createServer } from 'http';
 import { CONFIG } from '../../src/config.js';
 import { LobbyController } from '../../src/controllers/lobby.controller.js';
 import { DISCONNECT_REASONS } from '../../src/constants/disconnect.constants.js';
@@ -91,9 +90,16 @@ describe('Ban User Flow & Persistence Integration', () => {
   it('should disconnect the target user, persist to DB, and reject subsequent reconnections', async () => {
 
     const ownerClient = await createAndJoinClient(port, tokenA);
+
+    const userJoinedPromise = new Promise<void>((resolve) => {
+      ownerClient.on(CONFIG.EVENTS.SERVER.USER_JOINED, (data) => {
+        if (data.id === userB.id) resolve();
+      });
+    });
+
     const targetClient = await createAndJoinClient(port, tokenB);
 
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await userJoinedPromise;
 
     const forceDisconnectPromise = new Promise<void>((resolve) => {
       targetClient.on(CONFIG.EVENTS.SERVER.FORCE_DISCONNECT, (data) => {
