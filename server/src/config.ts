@@ -10,10 +10,18 @@ export const CONFIG = {
   // Server settings
   PORT: process.env.PORT || 3000,
   MONGO_URI: process.env.MONGO_URI || "mongodb://localhost:27017/pixie",
+  REDIS_URL: process.env.REDIS_URL || "redis://localhost:6379",
   CLIENT_ORIGIN: parseOrigins(process.env.CLIENT_ORIGIN),
   JWT: {
     SECRET: process.env.JWT_SECRET || "dev-secret-key",
     EXPIRES_IN: "7d",
+  },
+
+  // Database Persistence
+  PERSISTENCE: {
+    FLUSH_INTERVAL_MS: 5000,
+    LOCK_TTL_MS: 10000,
+    LOCK_KEY: 'pixie:db_save_lock',
   },
 
   // Game Logic settings
