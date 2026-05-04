@@ -19,10 +19,10 @@ describe('LobbyStore - Data Isolation', () => {
       store.setPixel(idLobbyA, i, 99);
     }
 
-    const isLobbyAColorata = bufferA.every(pixel => pixel === 99);
-    expect(isLobbyAColorata).toBe(true);
+    const isLobbyAUpdated = bufferA.every(pixel => pixel === 99);
+    expect(isLobbyAUpdated).toBe(true);
 
-    const isLobbyBPulita = bufferB.every(pixel => pixel === 0);
-    expect(isLobbyBPulita).toBe(true);
+    const isLobbyBEmpty = bufferB.every(pixel => pixel === 0);
+    expect(isLobbyBEmpty).toBe(true);
   });
 });
