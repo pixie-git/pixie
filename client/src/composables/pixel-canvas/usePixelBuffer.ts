@@ -28,16 +28,22 @@ export function usePixelBuffer(
   // Cache for uint32Palette
   let cachedPalette: string[] | null = null;
   let uint32Palette = new Uint32Array(0);
+  let cachedImageData: ImageData | null = null;
+  let cachedData32: Uint32Array | null = null;
 
   function updateBuffer() {
     const { width, height, pixels, palette } = props.value;
     if (width === 0 || height === 0) return;
 
-    pixelBuffer.width = width;
-    pixelBuffer.height = height;
+    if (pixelBuffer.width !== width || pixelBuffer.height !== height) {
+      pixelBuffer.width = width;
+      pixelBuffer.height = height;
+      cachedImageData = pixelCtx.createImageData(width, height);
+      cachedData32 = new Uint32Array(cachedImageData.data.buffer);
+    }
 
-    const imageData = pixelCtx.createImageData(width, height);
-    const data32 = new Uint32Array(imageData.data.buffer);
+    const imageData = cachedImageData!;
+    const data32 = cachedData32!;
 
     if (palette !== cachedPalette) {
       uint32Palette = new Uint32Array(palette.length);

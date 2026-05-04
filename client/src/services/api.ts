@@ -31,7 +31,7 @@ import { useToastStore } from "../stores/toast.store";
 // Global Error Handling
 api.interceptors.response.use(
 	(response) => response,
-	(error) => {
+	async (error) => {
 		// Check if the request explicitly asked to skip global error handling
 		if (error.config && error.config.skipGlobalErrorHandler) {
 			return Promise.reject(error);
