@@ -67,6 +67,12 @@ export function usePixelBuffer(
 
     pixelCtx.fillStyle = palette[colorIndex] || '#000000';
     pixelCtx.fillRect(x, y, 1, 1);
+
+    if (cachedData32) {
+      const index = y * width + x;
+      cachedData32[index] = uint32Palette[colorIndex] || 0xFF000000;
+    }
+
     onBufferUpdate?.();
   }
 
