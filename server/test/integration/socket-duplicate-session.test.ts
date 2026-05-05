@@ -16,8 +16,8 @@ describe('Socket Duplicate Session Integration', () => {
     port = testSetup.port;
   });
 
-  beforeEach(() => {
-    setupTestLobby();
+  beforeEach(async () => {
+    await setupTestLobby();
   });
 
   afterAll(async () => {

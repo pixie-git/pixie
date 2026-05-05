@@ -16,8 +16,8 @@ describe('Socket Broadcasting Integration', () => {
     port = testSetup.port;
   });
 
-  beforeEach(() => {
-    setupTestLobby();
+  beforeEach(async () => {
+    await setupTestLobby();
   });
 
   afterAll(async () => {

@@ -13,18 +13,21 @@ describe('socketUtils - disconnectUserFromLobby', () => {
       data: { user: { id: userId, username: 'user1' } },
       emit: vi.fn(),
       leave: vi.fn(),
+      disconnect: vi.fn(),
     };
     const mockSocket2 = {
       id: 'socket-2',
       data: { user: { id: userId, username: 'user1' } },
       emit: vi.fn(),
       leave: vi.fn(),
+      disconnect: vi.fn(),
     };
     const mockSocket3 = {
       id: 'socket-3',
       data: { user: { id: 'user-2', username: 'user2' } },
       emit: vi.fn(),
       leave: vi.fn(),
+      disconnect: vi.fn(),
     };
 
     // Mock IO

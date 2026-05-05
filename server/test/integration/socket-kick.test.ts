@@ -34,8 +34,8 @@ describe('Kick User Flow Integration', () => {
     app.post('/api/lobbies/:id/kick', LobbyController.kickUser);
   });
 
-  beforeEach(() => {
-    setupTestLobby();
+  beforeEach(async () => {
+    await setupTestLobby();
   });
 
   afterAll(async () => {
