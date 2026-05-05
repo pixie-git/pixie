@@ -1,8 +1,11 @@
 import { Server, Socket } from 'socket.io';
 
 
-export const getLobbyUserCount = (io: Server, lobbyId: string): number => {
-  return io.sockets.adapter.rooms.get(lobbyId)?.size || 0;
+export const getLobbyUserCount = async (io: Server, lobbyId: string): Promise<number> => {
+  const { getRedisClient } = await import('../db/redis.js');
+  const redis = getRedisClient();
+  const count = await redis.get(`lobby:${lobbyId}:count`);
+  return count ? parseInt(count, 10) : 0;
 };
 
 
@@ -43,6 +46,11 @@ export const disconnectUserFromLobby = async (
   for (const socket of targetSockets) {
     socket.emit('FORCE_DISCONNECT', { lobbyId, reason });
     socket.leave(lobbyId);
+    
+    // Ensure capacity is decremented when we forcibly remove a user
+    const { LobbyService } = await import('../services/lobby.service.js');
+    LobbyService.decrementCapacity(lobbyId).catch(console.error);
+    
     socket.disconnect(true);
   }
 

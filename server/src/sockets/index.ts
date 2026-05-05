@@ -57,6 +57,7 @@ export const setupSocket = (io: Server) => {
         console.log(`[Socket] ${socket.id} joined ${lobbyId}`);
       } catch (error) {
         console.error(`[Socket] Join Error:`, error);
+        LobbyService.decrementCapacity(lobbyId).catch(console.error);
         socket.emit(CONFIG.EVENTS.SERVER.ERROR, { message: "Failed to join lobby" });
       }
     });
@@ -110,6 +111,7 @@ export const setupSocket = (io: Server) => {
       for (const room of socket.rooms) {
         if (room === socket.id) continue;
         broadcastToOthers(socket, room, CONFIG.EVENTS.SERVER.USER_LEFT, (socket as AuthenticatedSocket).user);
+        LobbyService.decrementCapacity(room).catch(console.error);
       }
     });
 
