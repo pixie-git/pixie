@@ -43,15 +43,13 @@ export const setupSocket = (io: Server) => {
         // Disconnect any existing session for this user in the same lobby (last connection wins)
         await disconnectUserFromLobby(io, lobbyId, user.id, 'duplicate_session');
 
-        socket.join(lobbyId); // Optimistic Join
-
-        const currentCount = getLobbyUserCount(io, lobbyId);
         try {
-          LobbyService.validateCapacity(lobby, currentCount - 1);
+          await LobbyService.incrementCapacity(lobby);
         } catch (e: any) {
-          socket.leave(lobbyId);
           return socket.emit(CONFIG.EVENTS.SERVER.ERROR, { message: "Lobby is full" });
         }
+
+        socket.join(lobbyId); // Optimistic Join - moved after capacity check
 
         broadcastToOthers(socket, lobbyId, CONFIG.EVENTS.SERVER.USER_JOINED, user);
         socket.emit(CONFIG.EVENTS.SERVER.LOBBY_USERS, await getUsersInLobby(io, lobbyId));
@@ -59,6 +57,7 @@ export const setupSocket = (io: Server) => {
         console.log(`[Socket] ${socket.id} joined ${lobbyId}`);
       } catch (error) {
         console.error(`[Socket] Join Error:`, error);
+        LobbyService.decrementCapacity(lobbyId).catch(console.error);
         socket.emit(CONFIG.EVENTS.SERVER.ERROR, { message: "Failed to join lobby" });
       }
     });
@@ -112,7 +111,8 @@ export const setupSocket = (io: Server) => {
       for (const room of socket.rooms) {
         if (room === socket.id) continue;
         broadcastToOthers(socket, room, CONFIG.EVENTS.SERVER.USER_LEFT, (socket as AuthenticatedSocket).user);
-        
+        LobbyService.decrementCapacity(room).catch(console.error);
+
         // If this is the last user leaving the lobby, unload it from Redis
         const users = await io.in(room).fetchSockets();
         if (users.length <= 1) { // 1 because the current socket is still in the room list
