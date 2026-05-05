@@ -2,6 +2,7 @@ import { Lobby, ILobby } from '../models/Lobby.js';
 import { Canvas } from '../models/Canvas.js';
 import { DISCONNECT_REASONS } from '../constants/disconnect.constants.js';
 import { getRedisClient } from '../db/redis.js';
+import { canvasStore } from '../store/canvas.store.js';
 
 /** DTO for banned user data - only expose necessary fields */
 export interface BannedUserDTO {
@@ -63,6 +64,8 @@ export class LobbyService {
     if (lobby.canvas) {
       await Canvas.findByIdAndDelete(lobby.canvas);
     }
+
+    await canvasStore.removeLobby(id);
 
     return await Lobby.findByIdAndDelete(id);
   }
