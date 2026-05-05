@@ -62,26 +62,15 @@ export class CanvasService {
   }
 
   static async drawBatch(lobbyId: string, pixels: { x: number, y: number, color: number }[]): Promise<{ x: number, y: number, color: number }[]> {
-    const successfulUpdates: { x: number, y: number, color: number }[] = [];
-    let anyChanged = false;
-
-    // Fetch meta once for the batch to avoid redundant Redis HGETALL calls in the loop
+    // Fetch meta once for the batch to avoid redundant Redis HGETALL calls
     const meta = await canvasStore.getLobbyMetaData(lobbyId);
     if (!meta) return [];
 
     const metaParams = { width: meta.width, height: meta.height, paletteLen: meta.paletteLen };
 
-    for (const p of pixels) {
-      if (!p || typeof p.x !== 'number' || typeof p.y !== 'number' || typeof p.color !== 'number') continue;
+    const successfulUpdates = await canvasStore.modifyPixelBatch(lobbyId, pixels, metaParams);
 
-      const changed = await canvasStore.modifyPixelColor(lobbyId, p.x, p.y, p.color, metaParams);
-      if (changed) {
-        successfulUpdates.push({ x: p.x, y: p.y, color: p.color });
-        anyChanged = true;
-      }
-    }
-
-    if (anyChanged) {
+    if (successfulUpdates.length > 0) {
       await canvasStore.markLobbyDirty(lobbyId);
     }
     return successfulUpdates;

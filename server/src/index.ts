@@ -12,6 +12,7 @@ import YAML from "yamljs";
 import { setupRedisDataClient, closeRedisDataClient } from "./db/redis.js";
 import { setupRedisAdapter, closeRedisAdapterClients } from "./sockets/redisAdapter.js";
 import { CoordinationService } from "./services/coordination.service.js";
+import { NotificationService } from "./services/notification.service.js";
 
 const PORT = CONFIG.PORT;
 
@@ -45,6 +46,9 @@ const startServer = async () => {
 
     const redisAdapter = await setupRedisAdapter();
     io.adapter(redisAdapter);
+    
+    // Initialize Notification Service (SSE Redis Subscriber)
+    NotificationService.init();
 
     // Initialize Socket Logic
     setupSocket(io);

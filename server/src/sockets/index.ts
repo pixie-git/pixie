@@ -112,6 +112,12 @@ export const setupSocket = (io: Server) => {
         if (room === socket.id) continue;
         broadcastToOthers(socket, room, CONFIG.EVENTS.SERVER.USER_LEFT, (socket as AuthenticatedSocket).user);
         LobbyService.decrementCapacity(room).catch(console.error);
+
+        // If this is the last user leaving the lobby, unload it from Redis
+        const users = await io.in(room).fetchSockets();
+        if (users.length <= 1) { // 1 because the current socket is still in the room list
+          await CanvasService.unloadLobby(room);
+        }
       }
     });
 
