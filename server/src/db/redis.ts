@@ -12,8 +12,6 @@ export const setupRedisDataClient = async (): Promise<RedisClientType> => {
 
   redisClient = createClient({
     url: CONFIG.REDIS_URL,
-    // Note: In redis v5, returnBuffers is often handled via .duplicate({ returnBuffers: true }) 
-    // or by passing command options, but we can also use types or specific commands.
   });
 
   redisClient.on('error', (err) => {
