@@ -31,6 +31,17 @@ export function usePixelBuffer(
   let cachedImageData: ImageData | null = null;
   let cachedData32: Uint32Array | null = null;
 
+  function ensurePalette(palette: string[]) {
+    if (palette !== cachedPalette) {
+      uint32Palette = new Uint32Array(palette.length);
+      for (let i = 0; i < palette.length; i++) {
+        uint32Palette[i] = hexToUint32(palette[i]);
+      }
+      cachedPalette = palette;
+    }
+    return uint32Palette;
+  }
+
   function updateBuffer() {
     const { width, height, pixels, palette } = props.value;
     if (width === 0 || height === 0) return;
@@ -45,17 +56,11 @@ export function usePixelBuffer(
     const imageData = cachedImageData!;
     const data32 = cachedData32!;
 
-    if (palette !== cachedPalette) {
-      uint32Palette = new Uint32Array(palette.length);
-      for (let i = 0; i < palette.length; i++) {
-        uint32Palette[i] = hexToUint32(palette[i]);
-      }
-      cachedPalette = palette;
-    }
+    const palette32 = ensurePalette(palette);
 
     const len = Math.min(pixels.length, data32.length);
     for (let i = 0; i < len; i++) {
-      data32[i] = uint32Palette[pixels[i]] ?? 0xFF000000;
+      data32[i] = palette32[pixels[i]] ?? 0xFF000000;
     }
 
     pixelCtx.putImageData(imageData, 0, 0);
@@ -66,18 +71,12 @@ export function usePixelBuffer(
     const { width, height, palette } = props.value;
     if (x < 0 || y < 0 || x >= width || y >= height) return;
 
-    if (palette !== cachedPalette) {
-      uint32Palette = new Uint32Array(palette.length);
-      for (let i = 0; i < palette.length; i++) {
-        uint32Palette[i] = hexToUint32(palette[i]);
-      }
-      cachedPalette = palette;
-    }
+    ensurePalette(palette);
 
     pixelCtx.fillStyle = palette[colorIndex] || '#000000';
     pixelCtx.fillRect(x, y, 1, 1);
 
-    if (cachedData32) {
+    if (cachedData32 && pixelBuffer.width === width && pixelBuffer.height === height) {
       const index = y * width + x;
       cachedData32[index] = uint32Palette[colorIndex] ?? 0xFF000000;
     }
