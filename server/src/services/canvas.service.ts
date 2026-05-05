@@ -9,13 +9,11 @@ export class CanvasService {
 
   static async getState(lobbyId: string): Promise<{ width: number; height: number; palette: string[]; data: Uint8Array }> {
     // Fast Path
-    if (await canvasStore.isLobbyInMemory(lobbyId)) {
-      const meta = await canvasStore.getLobbyMetaData(lobbyId);
-      if (meta) {
-        const data = await canvasStore.getLobbyPixelData(lobbyId);
-        if (data) {
-          return { width: meta.width, height: meta.height, palette: meta.palette, data };
-        }
+    const meta = await canvasStore.getLobbyMetaData(lobbyId);
+    if (meta) {
+      const data = await canvasStore.getLobbyPixelData(lobbyId);
+      if (data) {
+        return { width: meta.width, height: meta.height, palette: meta.palette, data };
       }
     }
 
