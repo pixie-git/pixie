@@ -16,16 +16,21 @@ describe('CanvasStore', () => {
     set: vi.fn(),
     hmGet: vi.fn(),
     setRange: vi.fn(),
+    getRange: vi.fn(),
     del: vi.fn(),
     sAdd: vi.fn(),
     sMembers: vi.fn(),
     sRem: vi.fn(),
     withCommandOptions: vi.fn().mockReturnThis(),
+    multi: vi.fn().mockReturnThis(),
+    exec: vi.fn(),
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
     (redisModule.getRedisClient as any).mockReturnValue(mockRedis);
+    mockRedis.withCommandOptions.mockReturnThis();
+    mockRedis.multi.mockReturnThis();
   });
 
   it('isLobbyInMemory should return true if meta key exists', async () => {
@@ -39,7 +44,8 @@ describe('CanvasStore', () => {
     mockRedis.hGetAll.mockResolvedValue({
       width: '100',
       height: '100',
-      palette: JSON.stringify(['#000', '#fff'])
+      palette: JSON.stringify(['#000', '#fff']),
+      paletteLen: '2'
     });
     const result = await canvasStore.getLobbyMetaData(LOBBY_ID);
     expect(result).toEqual({
@@ -51,14 +57,17 @@ describe('CanvasStore', () => {
   });
 
   it('modifyPixelColor should use setRange for O(1) update', async () => {
-    mockRedis.hmGet.mockResolvedValue(['10', '10', JSON.stringify(['#000', '#fff'])]);
+    mockRedis.hmGet.mockResolvedValue(['10', '10', '2']);
+    // Mock getRange to return a different color
+    mockRedis.getRange.mockResolvedValue(Buffer.from([0]));
     const success = await canvasStore.modifyPixelColor(LOBBY_ID, 5, 5, 1);
     expect(success).toBe(true);
+    expect(mockRedis.getRange).toHaveBeenCalled();
     expect(mockRedis.setRange).toHaveBeenCalledWith(`lobby:${LOBBY_ID}:canvas`, 55, expect.any(Buffer));
   });
 
   it('modifyPixelColor should return false for out of bounds', async () => {
-    mockRedis.hmGet.mockResolvedValue(['10', '10', JSON.stringify(['#000', '#fff'])]);
+    mockRedis.hmGet.mockResolvedValue(['10', '10', '2']);
     const success = await canvasStore.modifyPixelColor(LOBBY_ID, 15, 5, 1);
     expect(success).toBe(false);
   });
