@@ -22,6 +22,9 @@ describe('Canvas Single Pixel Write & Boundary Validation', () => {
       if (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT || color < 0 || color >= PALETTE.length) return false;
       return true;
     });
+    vi.spyOn(canvasStore, 'modifyPixelBatch').mockImplementation(async (id, pixels, meta) => {
+      return pixels.filter(p => p.x >= 0 && p.x < meta.width && p.y >= 0 && p.y < meta.height && p.color >= 0 && p.color < meta.paletteLen);
+    });
     vi.spyOn(canvasStore, 'markLobbyDirty').mockResolvedValue();
     vi.spyOn(canvasStore, 'isLobbyInMemory').mockResolvedValue(true);
   });
@@ -76,6 +79,9 @@ describe('Canvas Batch Processing & Conflict Resolution', () => {
       if (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT || color < 0 || color >= PALETTE.length) return false;
       return true;
     });
+    vi.spyOn(canvasStore, 'modifyPixelBatch').mockImplementation(async (id, pixels, meta) => {
+      return pixels.filter(p => p.x >= 0 && p.x < meta.width && p.y >= 0 && p.y < meta.height && p.color >= 0 && p.color < meta.paletteLen);
+    });
     vi.spyOn(canvasStore, 'markLobbyDirty').mockResolvedValue();
   });
 
@@ -124,7 +130,7 @@ describe('Canvas Batch Processing & Conflict Resolution', () => {
       { x: 1, y: 1, color: 2 }
     ]);
 
-    expect(canvasStore.modifyPixelColor).toHaveBeenCalledTimes(4); // All called, but some return false
+    expect(canvasStore.modifyPixelBatch).toHaveBeenCalled();
     expect(canvasStore.markLobbyDirty).toHaveBeenCalledWith(LOBBY_ID);
   });
 });

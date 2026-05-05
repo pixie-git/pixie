@@ -30,7 +30,7 @@ export class CanvasStore {
       width: parseInt(meta.width, 10),
       height: parseInt(meta.height, 10),
       palette,
-      paletteLen: palette.length,
+      paletteLen: meta.paletteLen ? parseInt(meta.paletteLen, 10) : palette.length,
     };
   }
 
@@ -59,6 +59,7 @@ export class CanvasStore {
         width: width.toString(),
         height: height.toString(),
         palette: JSON.stringify(palette),
+        paletteLen: palette.length.toString(),
       }),
       redis.set(canvasKey, Buffer.from(data)),
     ]);
@@ -86,28 +87,74 @@ export class CanvasStore {
       height = meta.height;
       paletteLen = meta.paletteLen;
     } else {
-      const metaArr = await redis.hmGet(this.getMetaKey(lobbyId), ['width', 'height', 'palette']);
+      const metaArr = await redis.hmGet(this.getMetaKey(lobbyId), ['width', 'height', 'paletteLen']);
       if (!metaArr[0] || !metaArr[1] || !metaArr[2]) return false;
       width = parseInt(metaArr[0], 10);
       height = parseInt(metaArr[1], 10);
-      paletteLen = (JSON.parse(metaArr[2]) as string[]).length;
+      paletteLen = parseInt(metaArr[2], 10);
     }
 
-    // Validate coordinates
-    if (x < 0 || x >= width || y < 0 || y >= height) {
-      return false;
-    }
-
-    // Validate color index
-    if (color < 0 || color >= paletteLen) {
+    if (x < 0 || x >= width || y < 0 || y >= height || color < 0 || color >= paletteLen) {
       return false;
     }
 
     const index = y * width + x;
+    const canvasKey = this.getCanvasKey(lobbyId);
 
-    // O(1) in-place modification in Redis
-    await redis.setRange(this.getCanvasKey(lobbyId), index, Buffer.from([color]));
+    // Optimization: Only update and mark dirty if the color actually changed
+    const current = await (redis as any).withCommandOptions({ returnBuffers: true }).getRange(canvasKey, index, index);
+    if (current && current.length > 0 && current[0] === color) {
+      return false;
+    }
+
+    await redis.setRange(canvasKey, index, Buffer.from([color]));
     return true;
+  }
+
+  public async modifyPixelBatch(
+    lobbyId: string,
+    pixels: { x: number; y: number; color: number }[],
+    meta: LobbyMeta
+  ): Promise<{ x: number; y: number; color: number }[]> {
+    const redis = getRedisClient();
+    const { width, height, paletteLen } = meta;
+    const canvasKey = this.getCanvasKey(lobbyId);
+    
+    const successfulUpdates: { x: number; y: number; color: number }[] = [];
+    
+    // First, fetch current colors to filter redundant writes
+    const pipeline = redis.multi();
+    const validPixels: { x: number; y: number; color: number; index: number }[] = [];
+
+    for (const p of pixels) {
+      if (p.x < 0 || p.x >= width || p.y < 0 || p.y >= height || p.color < 0 || p.color >= paletteLen) continue;
+      const index = p.y * width + p.x;
+      validPixels.push({ ...p, index });
+      (pipeline as any).withCommandOptions({ returnBuffers: true }).getRange(canvasKey, index, index);
+    }
+
+    if (validPixels.length === 0) return [];
+
+    const currentColors = await pipeline.exec() as Buffer[];
+    
+    // Second, batch updates for pixels that actually changed
+    const writePipeline = redis.multi();
+    const finalUpdates: typeof successfulUpdates = [];
+
+    for (let i = 0; i < validPixels.length; i++) {
+      const p = validPixels[i];
+      const current = currentColors[i];
+      if (current && current.length > 0 && current[0] === p.color) continue;
+
+      writePipeline.setRange(canvasKey, p.index, Buffer.from([p.color]));
+      finalUpdates.push({ x: p.x, y: p.y, color: p.color });
+    }
+
+    if (finalUpdates.length > 0) {
+      await writePipeline.exec();
+    }
+
+    return finalUpdates;
   }
 
   public async clearLobbyCanvas(lobbyId: string): Promise<boolean> {
