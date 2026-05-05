@@ -25,16 +25,15 @@ beforeAll(async () => {
   vi.spyOn(CanvasService, 'saveToDB').mockResolvedValue(undefined);
 });
 
-beforeEach(() => {
+beforeEach(async () => {
   // Pre-load the lobby into memory with specific dimensions for this test
   const initialData = new Uint8Array(canvasWidth * canvasHeight).fill(0);
-  canvasStore.loadLobbyToMemory(mockLobbyId, canvasWidth, canvasHeight, palette, initialData);
+  await canvasStore.loadLobbyToMemory(mockLobbyId, canvasWidth, canvasHeight, palette, initialData);
 });
 
 
   afterAll(async () => {
     await teardownTestServer(io, httpServer);
-    canvasStore.removeLobby(mockLobbyId);
   });
 
   it('should hydrate a new client with pixels drawn by a previous client', async () => {

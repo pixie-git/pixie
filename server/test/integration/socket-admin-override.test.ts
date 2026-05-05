@@ -45,8 +45,8 @@ describe('Admin Override Authority Integration', () => {
     app.post('/api/lobbies/:id/kick', requireLobbyOwner, LobbyController.kickUser);
   });
 
-  beforeEach(() => {
-    setupTestLobby();
+  beforeEach(async () => {
+    await setupTestLobby();
   });
 
   afterAll(async () => {

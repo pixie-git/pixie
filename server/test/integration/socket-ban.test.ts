@@ -78,9 +78,9 @@ describe('Ban User Flow & Persistence Integration', () => {
     app.post('/api/lobbies/:id/ban', LobbyController.banUser);
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
     localBannedUsers = []; // Reset persistence state
-    setupTestLobby();
+    await setupTestLobby();
   });
 
   afterAll(async () => {
