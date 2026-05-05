@@ -43,15 +43,13 @@ export const setupSocket = (io: Server) => {
         // Disconnect any existing session for this user in the same lobby (last connection wins)
         await disconnectUserFromLobby(io, lobbyId, user.id, 'duplicate_session');
 
-        socket.join(lobbyId); // Optimistic Join
-
-        const currentCount = getLobbyUserCount(io, lobbyId);
         try {
-          LobbyService.validateCapacity(lobby, currentCount - 1);
+          await LobbyService.incrementCapacity(lobby);
         } catch (e: any) {
-          socket.leave(lobbyId);
           return socket.emit(CONFIG.EVENTS.SERVER.ERROR, { message: "Lobby is full" });
         }
+
+        socket.join(lobbyId); // Optimistic Join - moved after capacity check
 
         broadcastToOthers(socket, lobbyId, CONFIG.EVENTS.SERVER.USER_JOINED, user);
         socket.emit(CONFIG.EVENTS.SERVER.LOBBY_USERS, await getUsersInLobby(io, lobbyId));

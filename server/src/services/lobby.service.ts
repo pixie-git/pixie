@@ -1,6 +1,7 @@
 import { Lobby, ILobby } from '../models/Lobby.js';
 import { Canvas } from '../models/Canvas.js';
 import { DISCONNECT_REASONS } from '../constants/disconnect.constants.js';
+import { getRedisClient } from '../db/redis.js';
 
 /** DTO for banned user data - only expose necessary fields */
 export interface BannedUserDTO {
@@ -73,9 +74,24 @@ export class LobbyService {
     }
   }
 
-  static validateCapacity(lobby: ILobby, currentCount: number): void {
-    if (currentCount >= lobby.maxCollaborators) {
+  static async incrementCapacity(lobby: ILobby): Promise<void> {
+    const redis = getRedisClient();
+    const countKey = `lobby:${lobby._id}:count`;
+    
+    const count = await redis.incr(countKey);
+    if (count > lobby.maxCollaborators) {
+      await redis.decr(countKey);
       throw new Error(`Lobby is full`);
+    }
+  }
+
+  static async decrementCapacity(lobbyId: string): Promise<void> {
+    const redis = getRedisClient();
+    const countKey = `lobby:${lobbyId}:count`;
+    
+    const count = await redis.decr(countKey);
+    if (count < 0) {
+      await redis.set(countKey, 0);
     }
   }
 
