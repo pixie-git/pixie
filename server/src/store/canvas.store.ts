@@ -29,11 +29,9 @@ export class CanvasStore {
 
   public async getLobbyPixelData(lobbyId: string): Promise<Uint8Array | undefined> {
     const redis = getRedisClient();
-    const data = await redis.get(
-      commandOptions({ returnBuffers: true }),
-      this.getCanvasKey(lobbyId)
-    );
-    return data ? new Uint8Array(data) : undefined;
+    const data = await redis.get(this.getCanvasKey(lobbyId));
+    if (!data) return undefined;
+    return new Uint8Array(Buffer.from(data, 'utf-8'));
   }
 
   // Load data from DB buffer to Redis
@@ -106,6 +104,21 @@ export class CanvasStore {
     const redis = getRedisClient();
     const deleted = await redis.del([this.getMetaKey(lobbyId), this.getCanvasKey(lobbyId)]);
     return deleted > 0;
+  }
+
+  public async markLobbyDirty(lobbyId: string): Promise<void> {
+    const redis = getRedisClient();
+    await redis.sAdd('lobbies:dirty', lobbyId);
+  }
+
+  public async getDirtyLobbies(): Promise<string[]> {
+    const redis = getRedisClient();
+    return await redis.sMembers('lobbies:dirty');
+  }
+
+  public async removeLobbyFromDirty(lobbyId: string): Promise<void> {
+    const redis = getRedisClient();
+    await redis.sRem('lobbies:dirty', lobbyId);
   }
 }
 
