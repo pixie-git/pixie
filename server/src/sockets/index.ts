@@ -63,16 +63,16 @@ export const setupSocket = (io: Server) => {
       }
     });
 
-    socket.on(CONFIG.EVENTS.CLIENT.DRAW, ({ lobbyId, x, y, color }: DrawPayload) => {
+    socket.on(CONFIG.EVENTS.CLIENT.DRAW, async ({ lobbyId, x, y, color }: DrawPayload) => {
       if (!lobbyId || !socket.rooms.has(lobbyId)) return;
-      if (CanvasService.draw(lobbyId, x, y, color)) {
+      if (await CanvasService.draw(lobbyId, x, y, color)) {
         broadcastToLobby(io, lobbyId, CONFIG.EVENTS.SERVER.PIXEL_UPDATE, { x, y, color });
       }
     });
 
-    socket.on(CONFIG.EVENTS.CLIENT.DRAW_BATCH, ({ lobbyId, pixels }: DrawBatchPayload) => {
+    socket.on(CONFIG.EVENTS.CLIENT.DRAW_BATCH, async ({ lobbyId, pixels }: DrawBatchPayload) => {
       if (!lobbyId || !socket.rooms.has(lobbyId) || !Array.isArray(pixels)) return;
-      const updates = CanvasService.drawBatch(lobbyId, pixels);
+      const updates = await CanvasService.drawBatch(lobbyId, pixels);
       if (updates.length) broadcastToLobby(io, lobbyId, CONFIG.EVENTS.SERVER.PIXEL_UPDATE_BATCH, { pixels: updates });
     });
 
@@ -97,7 +97,7 @@ export const setupSocket = (io: Server) => {
           return;
         }
 
-        if (CanvasService.clearCanvas(lobbyId)) {
+        if (await CanvasService.clearCanvas(lobbyId)) {
           // Broadcast to EVERYONE in lobby (including sender)
           broadcastToLobby(io, lobbyId, CONFIG.EVENTS.SERVER.CANVAS_CLEARED, {});
           console.log(`[Socket] Lobby '${lobbyId}' cleared by ${user.username}`);

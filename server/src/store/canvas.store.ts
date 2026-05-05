@@ -1,5 +1,4 @@
 import { getRedisClient } from '../db/redis.js';
-import { commandOptions } from 'redis';
 
 export class CanvasStore {
   private getMetaKey(lobbyId: string): string {

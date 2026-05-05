@@ -83,7 +83,7 @@ const handleShutdown = async (signal: string) => {
     httpServer.close();
 
     // Flush all memory buffers to DB
-    await CanvasService.saveAll();
+    // await CanvasService.saveAll(); // Handled by CoordinationService in phase 5
 
     // Close DB connection
     const mongoose = await import("mongoose");
