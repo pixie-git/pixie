@@ -67,11 +67,14 @@ export class CoordinationService {
       // 3. Process each dirty lobby
       for (const lobbyId of dirtyLobbies) {
         try {
-          await CanvasService.saveToDB(lobbyId);
+          // Remove from dirty set BEFORE saving.
+          // If a new change happens during the save, it will re-add the lobby to the dirty set.
           await canvasStore.removeLobbyFromDirty(lobbyId);
+          await CanvasService.saveToDB(lobbyId);
         } catch (error) {
           console.error(`[CoordinationService] Failed to save lobby '${lobbyId}':`, error);
-          // Do not remove from dirty queue if saving fails, let the next cycle retry
+          // Re-add to dirty set on failure so it can be retried
+          await canvasStore.markLobbyDirty(lobbyId);
         }
       }
     } catch (error) {

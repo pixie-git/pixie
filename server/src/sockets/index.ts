@@ -19,7 +19,7 @@ export const setupSocket = (io: Server) => {
   });
 
   io.on('connection', (socket: Socket) => {
-    console.log(`[Socket] New connection: ${socket.id}`);
+    console.log(`[Socket] [${process.env.SERVER_ID || 'single'}] New connection: ${socket.id}`);
 
     socket.on(CONFIG.EVENTS.CLIENT.JOIN_LOBBY, async (lobbyId: string) => {
       try {
@@ -112,11 +112,9 @@ export const setupSocket = (io: Server) => {
       for (const room of socket.rooms) {
         if (room === socket.id) continue;
         broadcastToOthers(socket, room, CONFIG.EVENTS.SERVER.USER_LEFT, (socket as AuthenticatedSocket).user);
-        const users = await getUsersInLobby(io, room);
-        if (users.length - 1 <= 0) await CanvasService.unloadLobby(room);
       }
     });
 
-    socket.on('disconnect', () => console.log(`[Socket] Disconnected: ${socket.id}`));
+    socket.on('disconnect', () => console.log(`[Socket] [${process.env.SERVER_ID || 'single'}] Disconnected: ${socket.id}`));
   });
 };

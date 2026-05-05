@@ -36,9 +36,9 @@ export class CanvasStore {
 
   public async getLobbyPixelData(lobbyId: string): Promise<Uint8Array | undefined> {
     const redis = getRedisClient();
-    const data = await redis.get(this.getCanvasKey(lobbyId));
+    const data = await (redis as any).withCommandOptions({ returnBuffers: true }).get(this.getCanvasKey(lobbyId));
     if (!data) return undefined;
-    return new Uint8Array(Buffer.from(data, 'latin1'));
+    return new Uint8Array(data as Buffer);
   }
 
   // Load data from DB buffer to Redis
