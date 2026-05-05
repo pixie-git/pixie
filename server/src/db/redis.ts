@@ -5,6 +5,7 @@ let redisClient: RedisClientType | null = null;
 
 /**
  * Initializes and connects the Redis data client.
+ * Configured to return Buffers by default to handle binary canvas data.
  */
 export const setupRedisDataClient = async (): Promise<RedisClientType> => {
   if (redisClient) return redisClient;
@@ -36,7 +37,6 @@ export const setupRedisDataClient = async (): Promise<RedisClientType> => {
 
 /**
  * Returns the connected Redis client.
- * Throws an error if the client has not been initialized.
  */
 export const getRedisClient = (): RedisClientType => {
   if (!redisClient) {
