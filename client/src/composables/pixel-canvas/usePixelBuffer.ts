@@ -53,8 +53,9 @@ export function usePixelBuffer(
       cachedPalette = palette;
     }
 
-    for (let i = 0; i < pixels.length; i++) {
-      data32[i] = uint32Palette[pixels[i]] || 0xFF000000;
+    const len = Math.min(pixels.length, data32.length);
+    for (let i = 0; i < len; i++) {
+      data32[i] = uint32Palette[pixels[i]] ?? 0xFF000000;
     }
 
     pixelCtx.putImageData(imageData, 0, 0);
@@ -65,12 +66,20 @@ export function usePixelBuffer(
     const { width, height, palette } = props.value;
     if (x < 0 || y < 0 || x >= width || y >= height) return;
 
+    if (palette !== cachedPalette) {
+      uint32Palette = new Uint32Array(palette.length);
+      for (let i = 0; i < palette.length; i++) {
+        uint32Palette[i] = hexToUint32(palette[i]);
+      }
+      cachedPalette = palette;
+    }
+
     pixelCtx.fillStyle = palette[colorIndex] || '#000000';
     pixelCtx.fillRect(x, y, 1, 1);
 
     if (cachedData32) {
       const index = y * width + x;
-      cachedData32[index] = uint32Palette[colorIndex] || 0xFF000000;
+      cachedData32[index] = uint32Palette[colorIndex] ?? 0xFF000000;
     }
 
     onBufferUpdate?.();

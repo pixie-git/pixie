@@ -149,6 +149,7 @@ export const teardownTestServer = async (io: Server, httpServer: HTTPServer) => 
       resolve();
     });
   });
-  canvasStore.removeLobby(mockLobbyId);
+  const lobbies = await canvasStore.getInMemoryLobbyIds();
+  await Promise.all(lobbies.map(id => canvasStore.removeLobby(id)));
   vi.restoreAllMocks();
 };
