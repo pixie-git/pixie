@@ -11,6 +11,7 @@ import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
 import { setupRedisDataClient, closeRedisDataClient } from "./db/redis.js";
 import { setupRedisAdapter, closeRedisAdapterClients } from "./sockets/redisAdapter.js";
+import { CoordinationService } from "./services/coordination.service.js";
 
 const PORT = CONFIG.PORT;
 
@@ -47,6 +48,9 @@ const startServer = async () => {
 
     // Initialize Socket Logic
     setupSocket(io);
+
+    // Start background flush worker
+    CoordinationService.startFlushWorker();
 
     // Attach IO to every request
     app.use((req, res, next) => {
@@ -87,6 +91,9 @@ const handleShutdown = async (signal: string) => {
 
   try {
     httpServer.close();
+
+    CoordinationService.stopFlushWorker();
+    await CoordinationService.flushDirtyLobbies();
 
     // Close Redis connections
     await closeRedisDataClient();
