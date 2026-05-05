@@ -1,5 +1,11 @@
 import { getRedisClient } from '../db/redis.js';
 
+export interface LobbyMeta {
+  width: number;
+  height: number;
+  paletteLen: number;
+}
+
 export class CanvasStore {
   private getMetaKey(lobbyId: string): string {
     return `lobby:${lobbyId}:meta`;
@@ -14,15 +20,17 @@ export class CanvasStore {
     return (await redis.exists(this.getMetaKey(lobbyId))) === 1;
   }
 
-  public async getLobbyMetaData(lobbyId: string) {
+  public async getLobbyMetaData(lobbyId: string): Promise<(LobbyMeta & { palette: string[] }) | undefined> {
     const redis = getRedisClient();
     const meta = await redis.hGetAll(this.getMetaKey(lobbyId));
     if (!meta || Object.keys(meta).length === 0) return undefined;
 
+    const palette = JSON.parse(meta.palette) as string[];
     return {
       width: parseInt(meta.width, 10),
       height: parseInt(meta.height, 10),
-      palette: JSON.parse(meta.palette) as string[],
+      palette,
+      paletteLen: palette.length,
     };
   }
 
@@ -30,7 +38,7 @@ export class CanvasStore {
     const redis = getRedisClient();
     const data = await redis.get(this.getCanvasKey(lobbyId));
     if (!data) return undefined;
-    return new Uint8Array(Buffer.from(data, 'utf-8'));
+    return new Uint8Array(Buffer.from(data, 'latin1'));
   }
 
   // Load data from DB buffer to Redis
@@ -58,22 +66,44 @@ export class CanvasStore {
     return new Uint8Array(data);
   }
 
-  public async modifyPixelColor(lobbyId: string, x: number, y: number, color: number): Promise<boolean> {
+  /**
+   * Modifies a single pixel. 
+   * @param meta Optional cached metadata to avoid redundant Redis roundtrips in batch operations.
+   */
+  public async modifyPixelColor(
+    lobbyId: string, 
+    x: number, 
+    y: number, 
+    color: number, 
+    meta?: LobbyMeta
+  ): Promise<boolean> {
     const redis = getRedisClient();
-    const meta = await this.getLobbyMetaData(lobbyId);
-    if (!meta) return false;
+    
+    let width: number, height: number, paletteLen: number;
 
-    // Validate coordinates against specific lobby dimensions
-    if (x < 0 || x >= meta.width || y < 0 || y >= meta.height) {
+    if (meta) {
+      width = meta.width;
+      height = meta.height;
+      paletteLen = meta.paletteLen;
+    } else {
+      const metaArr = await redis.hmGet(this.getMetaKey(lobbyId), ['width', 'height', 'palette']);
+      if (!metaArr[0] || !metaArr[1] || !metaArr[2]) return false;
+      width = parseInt(metaArr[0], 10);
+      height = parseInt(metaArr[1], 10);
+      paletteLen = (JSON.parse(metaArr[2]) as string[]).length;
+    }
+
+    // Validate coordinates
+    if (x < 0 || x >= width || y < 0 || y >= height) {
       return false;
     }
 
-    // Validate color index against lobby's palette
-    if (color < 0 || color >= meta.palette.length) {
+    // Validate color index
+    if (color < 0 || color >= paletteLen) {
       return false;
     }
 
-    const index = y * meta.width + x;
+    const index = y * width + x;
 
     // O(1) in-place modification in Redis
     await redis.setRange(this.getCanvasKey(lobbyId), index, Buffer.from([color]));
@@ -81,13 +111,16 @@ export class CanvasStore {
   }
 
   public async clearLobbyCanvas(lobbyId: string): Promise<boolean> {
-    const meta = await this.getLobbyMetaData(lobbyId);
-    if (!meta) return false;
+    const redis = getRedisClient();
+    
+    const metaArr = await redis.hmGet(this.getMetaKey(lobbyId), ['width', 'height']);
+    if (!metaArr[0] || !metaArr[1]) return false;
 
-    const size = meta.width * meta.height;
+    const width = parseInt(metaArr[0], 10);
+    const height = parseInt(metaArr[1], 10);
+    const size = width * height;
     const emptyData = Buffer.alloc(size, 0);
 
-    const redis = getRedisClient();
     await redis.set(this.getCanvasKey(lobbyId), emptyData);
     return true;
   }

@@ -43,6 +43,7 @@ export const disconnectUserFromLobby = async (
   for (const socket of targetSockets) {
     socket.emit('FORCE_DISCONNECT', { lobbyId, reason });
     socket.leave(lobbyId);
+    socket.disconnect(true);
   }
 
   return true;

@@ -67,12 +67,17 @@ export class CanvasService {
     const successfulUpdates: { x: number, y: number, color: number }[] = [];
     let anyChanged = false;
 
+    // Fetch meta once for the batch to avoid redundant Redis HGETALL calls in the loop
+    const meta = await canvasStore.getLobbyMetaData(lobbyId);
+    if (!meta) return [];
+
+    const metaParams = { width: meta.width, height: meta.height, paletteLen: meta.paletteLen };
+
     for (const p of pixels) {
       if (!p || typeof p.x !== 'number' || typeof p.y !== 'number' || typeof p.color !== 'number') continue;
 
-      const changed = await canvasStore.modifyPixelColor(lobbyId, p.x, p.y, p.color);
+      const changed = await canvasStore.modifyPixelColor(lobbyId, p.x, p.y, p.color, metaParams);
       if (changed) {
-        // Sanitize the object we return to avoid echoing unexpected client properties
         successfulUpdates.push({ x: p.x, y: p.y, color: p.color });
         anyChanged = true;
       }
