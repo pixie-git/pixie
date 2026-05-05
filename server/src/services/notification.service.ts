@@ -1,21 +1,58 @@
 import { Response } from 'express';
 import { Notification } from '../models/Notification.js';
+import { getPubClient, getSubClient } from '../sockets/redisAdapter.js';
 
 interface SSEClient {
     id: string;
     res: Response;
 }
 
+const localClients: SSEClient[] = [];
+
 export class NotificationService {
-    private static clients: SSEClient[] = [];
+
+    static init() {
+        try {
+            const subClient = getSubClient();
+            subClient.subscribe('notifications', (message) => {
+                try {
+                    const parsed = JSON.parse(message);
+                    const { action, event, userId } = parsed;
+                    
+                    const targets = action === 'sendToUser' && userId
+                        ? localClients.filter(client => client.id === userId)
+                        : localClients;
+
+                    if (targets.length > 0) {
+                        const data = JSON.stringify(event);
+                        targets.forEach(client => {
+                            try {
+                                client.res.write(`data: ${data}\n\n`);
+                            } catch (err) {
+                                console.error(`[Notification] Failed to send to client ${client.id}:`, err);
+                            }
+                        });
+                    }
+                } catch (err) {
+                    console.error('[Notification] Error parsing pub/sub message:', err);
+                }
+            });
+            console.log('[Notification] Subscribed to Redis notifications channel');
+        } catch (error) {
+            console.error('[Notification] Failed to initialize Redis subscriber:', error);
+        }
+    }
 
     static addClient(userId: string, res: Response) {
-        this.clients.push({ id: userId, res });
+        localClients.push({ id: userId, res });
         console.log(`[Notification] Client connected: ${userId}`);
     }
 
     static removeClient(userId: string, res: Response) {
-        this.clients = this.clients.filter(client => client.res !== res);
+        const index = localClients.findIndex(client => client.res === res);
+        if (index !== -1) {
+            localClients.splice(index, 1);
+        }
         console.log(`[Notification] Client disconnected: ${userId}`);
     }
 
@@ -29,39 +66,35 @@ export class NotificationService {
                 isRead: false
             });
 
-            // 2. Send via SSE if connected
-            const targets = this.clients.filter(client => client.id === userId);
-            console.log(`[Notification] Sending to user ${userId}, found ${targets.length} connections`);
-
-            if (targets.length > 0) {
-                // Send standard event structure
-                const event = {
-                    type: 'NOTIFICATION',
-                    payload: notification
-                };
-                const data = JSON.stringify(event);
-                targets.forEach(client => {
-                    client.res.write(`data: ${data}\n\n`);
-                });
-            }
+            // 2. Publish via Redis Pub/Sub
+            const pubClient = getPubClient();
+            const event = {
+                type: 'NOTIFICATION',
+                payload: notification
+            };
+            
+            await pubClient.publish('notifications', JSON.stringify({
+                action: 'sendToUser',
+                userId,
+                event
+            }));
+            console.log(`[Notification] Published sendToUser event for ${userId}`);
         } catch (error) {
-            console.error(`[Notification] Error saving/sending notification for ${userId}:`, error);
+            console.error(`[Notification] Error saving/publishing notification for ${userId}:`, error);
         }
     }
 
-    static broadcast(event: { type: string, payload?: any }) {
-        if (this.clients.length === 0) return;
-
-        const data = JSON.stringify(event);
-        console.log(`[Notification] Broadcasting event: ${event.type} to ${this.clients.length} clients`);
-
-        this.clients.forEach(client => {
-            try {
-                client.res.write(`data: ${data}\n\n`);
-            } catch (error) {
-                console.error(`[Notification] Failed to send broadcast to client ${client.id}:`, error);
-            }
-        });
+    static async broadcast(event: { type: string, payload?: any }) {
+        try {
+            const pubClient = getPubClient();
+            await pubClient.publish('notifications', JSON.stringify({
+                action: 'broadcast',
+                event
+            }));
+            console.log(`[Notification] Published broadcast event: ${event.type}`);
+        } catch (error) {
+            console.error(`[Notification] Failed to publish broadcast event:`, error);
+        }
     }
 
     static async getHistory(userId: string, limit: number = 50) {
