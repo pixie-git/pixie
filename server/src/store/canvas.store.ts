@@ -36,9 +36,9 @@ export class CanvasStore {
 
   public async getLobbyPixelData(lobbyId: string): Promise<Uint8Array | undefined> {
     const redis = getRedisClient();
-    const data = await (redis as any).withCommandOptions({ returnBuffers: true }).get(this.getCanvasKey(lobbyId));
+    const data = await redis.get(this.getCanvasKey(lobbyId));
     if (!data) return undefined;
-    return new Uint8Array(data as Buffer);
+    return new Uint8Array(Buffer.from(data, 'latin1'));
   }
 
   // Load data from DB buffer to Redis
@@ -72,14 +72,14 @@ export class CanvasStore {
    * @param meta Optional cached metadata to avoid redundant Redis roundtrips in batch operations.
    */
   public async modifyPixelColor(
-    lobbyId: string, 
-    x: number, 
-    y: number, 
-    color: number, 
+    lobbyId: string,
+    x: number,
+    y: number,
+    color: number,
     meta?: LobbyMeta
   ): Promise<boolean> {
     const redis = getRedisClient();
-    
+
     let width: number, height: number, paletteLen: number;
 
     if (meta) {
@@ -102,8 +102,8 @@ export class CanvasStore {
     const canvasKey = this.getCanvasKey(lobbyId);
 
     // Optimization: Only update and mark dirty if the color actually changed
-    const current = await (redis as any).withCommandOptions({ returnBuffers: true }).getRange(canvasKey, index, index);
-    if (current && current.length > 0 && current[0] === color) {
+    const current = await redis.getRange(canvasKey, index, index);
+    if (current && current.length > 0 && current.charCodeAt(0) === color) {
       return false;
     }
 
@@ -119,9 +119,9 @@ export class CanvasStore {
     const redis = getRedisClient();
     const { width, height, paletteLen } = meta;
     const canvasKey = this.getCanvasKey(lobbyId);
-    
+
     const successfulUpdates: { x: number; y: number; color: number }[] = [];
-    
+
     // First, fetch current colors to filter redundant writes
     const pipeline = redis.multi();
     const validPixels: { x: number; y: number; color: number; index: number }[] = [];
@@ -130,13 +130,13 @@ export class CanvasStore {
       if (p.x < 0 || p.x >= width || p.y < 0 || p.y >= height || p.color < 0 || p.color >= paletteLen) continue;
       const index = p.y * width + p.x;
       validPixels.push({ ...p, index });
-      (pipeline as any).withCommandOptions({ returnBuffers: true }).getRange(canvasKey, index, index);
+      pipeline.getRange(canvasKey, index, index);
     }
 
     if (validPixels.length === 0) return [];
 
-    const currentColors = await pipeline.exec() as Buffer[];
-    
+    const currentColors = await pipeline.exec() as unknown as string[];
+
     // Second, batch updates for pixels that actually changed
     const writePipeline = redis.multi();
     const finalUpdates: typeof successfulUpdates = [];
@@ -144,7 +144,7 @@ export class CanvasStore {
     for (let i = 0; i < validPixels.length; i++) {
       const p = validPixels[i];
       const current = currentColors[i];
-      if (current && current.length > 0 && current[0] === p.color) continue;
+      if (current && current.length > 0 && current.charCodeAt(0) === p.color) continue;
 
       writePipeline.setRange(canvasKey, p.index, Buffer.from([p.color]));
       finalUpdates.push({ x: p.x, y: p.y, color: p.color });
@@ -159,7 +159,7 @@ export class CanvasStore {
 
   public async clearLobbyCanvas(lobbyId: string): Promise<boolean> {
     const redis = getRedisClient();
-    
+
     const metaArr = await redis.hmGet(this.getMetaKey(lobbyId), ['width', 'height']);
     if (!metaArr[0] || !metaArr[1]) return false;
 
