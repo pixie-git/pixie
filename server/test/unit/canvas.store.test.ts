@@ -21,7 +21,6 @@ describe('CanvasStore', () => {
     sAdd: vi.fn(),
     sMembers: vi.fn(),
     sRem: vi.fn(),
-    withCommandOptions: vi.fn().mockReturnThis(),
     multi: vi.fn().mockReturnThis(),
     exec: vi.fn(),
   };
@@ -29,7 +28,6 @@ describe('CanvasStore', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (redisModule.getRedisClient as any).mockReturnValue(mockRedis);
-    mockRedis.withCommandOptions.mockReturnThis();
     mockRedis.multi.mockReturnThis();
   });
 
@@ -58,8 +56,8 @@ describe('CanvasStore', () => {
 
   it('modifyPixelColor should use setRange for O(1) update', async () => {
     mockRedis.hmGet.mockResolvedValue(['10', '10', '2']);
-    // Mock getRange to return a different color
-    mockRedis.getRange.mockResolvedValue(Buffer.from([0]));
+    // Mock getRange to return a string (redis v5 default behavior)
+    mockRedis.getRange.mockResolvedValue('\x00');
     const success = await canvasStore.modifyPixelColor(LOBBY_ID, 5, 5, 1);
     expect(success).toBe(true);
     expect(mockRedis.getRange).toHaveBeenCalled();

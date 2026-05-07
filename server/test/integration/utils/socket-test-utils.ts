@@ -87,7 +87,7 @@ export const setupTestMocks = () => {
   // Mock LobbyService to allow joining
   vi.spyOn(LobbyService, 'getById').mockResolvedValue({ _id: mockLobbyId, maxCollaborators: 10, bannedUsers: [] } as any);
   vi.spyOn(LobbyService, 'validateJoinAccess').mockImplementation(() => { });
-  vi.spyOn(LobbyService, 'validateCapacity').mockImplementation(() => { });
+  vi.spyOn(LobbyService, 'incrementCapacity').mockResolvedValue(undefined);
 
   // Mock CanvasService
   vi.spyOn(CanvasService, 'getState').mockImplementation(async (lobbyId) => {

@@ -103,7 +103,8 @@ export class CanvasStore {
 
     // Optimization: Only update and mark dirty if the color actually changed
     const current = await redis.getRange(canvasKey, index, index);
-    if (current && current.length > 0 && current.charCodeAt(0) === color) {
+    const currentColor = Buffer.isBuffer(current) ? current[0] : (current as string)?.charCodeAt(0);
+    if (current && current.length > 0 && currentColor === color) {
       return false;
     }
 
@@ -144,7 +145,9 @@ export class CanvasStore {
     for (let i = 0; i < validPixels.length; i++) {
       const p = validPixels[i];
       const current = currentColors[i];
-      if (current && current.length > 0 && current.charCodeAt(0) === p.color) continue;
+      const currentColor = Buffer.isBuffer(current) ? current[0] : (current as string)?.charCodeAt(0);
+      
+      if (current && current.length > 0 && currentColor === p.color) continue;
 
       writePipeline.setRange(canvasKey, p.index, Buffer.from([p.color]));
       finalUpdates.push({ x: p.x, y: p.y, color: p.color });
