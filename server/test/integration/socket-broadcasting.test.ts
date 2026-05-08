@@ -16,54 +16,63 @@ describe('Socket Broadcasting Integration', () => {
     port = testSetup.port;
   });
 
-  beforeEach(async () => {
-    await setupTestLobby();
-  });
-
   afterAll(async () => {
     await teardownTestServer(io, httpServer);
   });
 
   it('should broadcast DRAW event from Client A as PIXEL_UPDATE to Client B', async () => {
-    const clientA = await createAndJoinClient(port, tokenA);
-    const clientB = await createAndJoinClient(port, tokenB);
-
-    // Wait for B to receive PIXEL_UPDATE
-    const drawData = { lobbyId: mockLobbyId, x: 10, y: 20, color: 1 };
+    const lobbyId = 'broadcasting-lobby-1';
+    await setupTestLobby(lobbyId);
     
-    return new Promise<void>((resolve) => {
-      clientB.on(CONFIG.EVENTS.SERVER.PIXEL_UPDATE, (data) => {
-        expect(data).toEqual({ x: 10, y: 20, color: 1 });
-        clientA.close();
-        clientB.close();
-        resolve();
+    const clientA = await createAndJoinClient(port, tokenA, lobbyId);
+    const clientB = await createAndJoinClient(port, tokenB, lobbyId);
+
+    const drawData = { lobbyId, x: 10, y: 20, color: 1 };
+    
+    try {
+      const updatePromise = new Promise<void>((resolve) => {
+        clientB.on(CONFIG.EVENTS.SERVER.PIXEL_UPDATE, (data) => {
+          expect(data).toEqual({ x: 10, y: 20, color: 1 });
+          resolve();
+        });
       });
 
       clientA.emit(CONFIG.EVENTS.CLIENT.DRAW, drawData);
-    });
+      await updatePromise;
+    } finally {
+      clientA.close();
+      clientB.close();
+    }
   });
 
   it('should broadcast DRAW_BATCH event from Client A as PIXEL_UPDATE_BATCH to Client B', async () => {
-    const clientA = await createAndJoinClient(port, tokenA);
-    const clientB = await createAndJoinClient(port, tokenB);
+    const lobbyId = 'broadcasting-lobby-2';
+    await setupTestLobby(lobbyId);
+
+    const clientA = await createAndJoinClient(port, tokenA, lobbyId);
+    const clientB = await createAndJoinClient(port, tokenB, lobbyId);
 
     const batchData = {
-      lobbyId: mockLobbyId,
+      lobbyId,
       pixels: [
         { x: 1, y: 1, color: 2 },
         { x: 2, y: 2, color: 3 }
       ]
     };
 
-    return new Promise<void>((resolve) => {
-      clientB.on(CONFIG.EVENTS.SERVER.PIXEL_UPDATE_BATCH, (data) => {
-        expect(data.pixels).toEqual(batchData.pixels);
-        clientA.close();
-        clientB.close();
-        resolve();
+    try {
+      const updatePromise = new Promise<void>((resolve) => {
+        clientB.on(CONFIG.EVENTS.SERVER.PIXEL_UPDATE_BATCH, (data) => {
+          expect(data.pixels).toEqual(batchData.pixels);
+          resolve();
+        });
       });
 
       clientA.emit(CONFIG.EVENTS.CLIENT.DRAW_BATCH, batchData);
-    });
+      await updatePromise;
+    } finally {
+      clientA.close();
+      clientB.close();
+    }
   });
 });
