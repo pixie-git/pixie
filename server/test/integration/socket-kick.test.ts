@@ -21,22 +21,18 @@ describe('Kick User Flow Integration', () => {
   let io: Server;
   let httpServer: HTTPServer;
   let port: number;
-  const lobbyId = 'kick-lobby-unique';
 
   beforeAll(async () => {
     setupTestMocks();
-
-    const setup = await createExpressTestServer(userA); // owner
+    const setup = await createExpressTestServer(userA);
     io = setup.io;
     httpServer = setup.httpServer;
     port = setup.port;
-    const app = setup.app;
-
-    app.post('/api/lobbies/:id/kick', LobbyController.kickUser);
+    setup.app.post('/api/lobbies/:id/kick', LobbyController.kickUser);
   });
 
   beforeEach(async () => {
-    await setupTestLobby(lobbyId);
+    await setupTestLobby();
   });
 
   afterAll(async () => {
@@ -44,19 +40,8 @@ describe('Kick User Flow Integration', () => {
   });
 
   it('should disconnect the target user, notify others, and allow reconnection', async () => {
-    const ownerClient = await createAndJoinClient(port, tokenA, lobbyId);
-
-    // Setup listener for user join before joining the target client
-    const userJoinedPromise = new Promise<void>((resolve) => {
-      ownerClient.on(CONFIG.EVENTS.SERVER.USER_JOINED, (data) => {
-        if (data.id === userB.id) resolve();
-      });
-    });
-
-    const targetClient = await createAndJoinClient(port, tokenB, lobbyId);
-
-    // Wait for the owner to acknowledge the target user has joined
-    await userJoinedPromise;
+    const ownerClient = await createAndJoinClient(port, tokenA);
+    const targetClient = await createAndJoinClient(port, tokenB);
 
     const forceDisconnectPromise = new Promise<void>((resolve) => {
       targetClient.on(CONFIG.EVENTS.SERVER.FORCE_DISCONNECT, (data) => {
@@ -72,31 +57,22 @@ describe('Kick User Flow Integration', () => {
       });
     });
 
-    const response = await fetch(`http://localhost:${port}/api/lobbies/${lobbyId}/kick`, {
+    const response = await fetch(`http://localhost:${port}/api/lobbies/${mockLobbyId}/kick`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ targetUserId: userB.id })
     });
 
     expect(response.status).toBe(200);
-
     await Promise.all([forceDisconnectPromise, userLeftPromise]);
 
-    ownerClient.close();
     targetClient.close();
-
-    // After kick, the lobby might have been unloaded if both clients closed.
-    // If we want to reconnect, we might need to ensure it's still there or let auto-load happen.
-    // Auto-load requires real MongoDB findById to work if not in Redis.
-    // Since we mocked LobbyService.getById to return the lobby, auto-load in CanvasService.getState
-    // should trigger Canvas.findById which is also mocked in setupTestMocks (wait, is it?)
-    // Checking setupTestMocks in socket-test-utils.ts... it doesn't mock Canvas.findById.
     
-    // Let's re-setup the lobby in Redis to be safe before reconnection check
-    await setupTestLobby(lobbyId);
-
-    const reconnectedClient = await createAndJoinClient(port, tokenB, lobbyId);
+    // Test Reconnection
+    const reconnectedClient = await createAndJoinClient(port, tokenB);
     expect(reconnectedClient.connected).toBe(true);
+    
     reconnectedClient.close();
+    ownerClient.close();
   });
 });

@@ -4,29 +4,67 @@ import { Server } from 'socket.io';
 import { io as Client, Socket as ClientSocket } from 'socket.io-client';
 import { vi } from 'vitest';
 import jwt, { Secret, VerifyCallback, JsonWebTokenError } from 'jsonwebtoken';
+import mongoose from 'mongoose';
+import { MongoMemoryServer } from 'mongodb-memory-server';
 import { setupSocket } from '../../../src/sockets/index.js';
 import { CONFIG } from '../../../src/config.js';
-import { LobbyService } from '../../../src/services/lobby.service.js';
-import { CanvasService } from '../../../src/services/canvas.service.js';
 import { canvasStore } from '../../../src/store/canvas.store.js';
 import { Lobby } from '../../../src/models/Lobby.js';
 import { Canvas } from '../../../src/models/Canvas.js';
+import { User } from '../../../src/models/User.js';
 import { setupRedisDataClient, closeRedisDataClient } from '../../../src/db/redis.js';
 
-export const mockLobbyId = '507f1f77bcf86cd799439011';
-export const userA = { id: '507f1f77bcf86cd799439012', username: 'Alice' };
-export const userB = { id: '507f1f77bcf86cd799439013', username: 'Bob' };
-export const adminUser = { id: '507f1f77bcf86cd799439014', username: 'Admin', isAdmin: true };
+export const mockLobbyId = new mongoose.Types.ObjectId().toString();
+export const userA = { id: new mongoose.Types.ObjectId().toString(), username: 'Alice' };
+export const userB = { id: new mongoose.Types.ObjectId().toString(), username: 'Bob' };
+export const adminUser = { id: new mongoose.Types.ObjectId().toString(), username: 'Admin', isAdmin: true };
 export const tokenA = 'token-a';
 export const tokenB = 'token-b';
 export const tokenAdmin = 'token-admin';
 
+let mongoServer: MongoMemoryServer;
+
+/**
+ * Seeds real Lobby, Canvas, and Users in the in-memory MongoDB.
+ * Also hydrates Redis to simulate a warmed-up system.
+ */
 export const setupTestLobby = async (lobbyId = mockLobbyId, width = 100, height = 100) => {
-  await canvasStore.loadLobbyToMemory(lobbyId, width, height, ['#000000', '#ffffff', '#ff0000', '#00ff00', '#0000ff'], new Uint8Array(width * height).fill(0));
+  // 1. Seed DB (idempotent user creation)
+  await User.findOneAndUpdate({ _id: userA.id }, { username: 'Alice', isAdmin: false }, { upsert: true });
+  await User.findOneAndUpdate({ _id: userB.id }, { username: 'Bob', isAdmin: false }, { upsert: true });
+  await User.findOneAndUpdate({ _id: adminUser.id }, { username: 'Admin', isAdmin: true }, { upsert: true });
+
+  const canvasId = new mongoose.Types.ObjectId();
+  const palette = ['#000000', '#ffffff', '#ff0000', '#00ff00', '#0000ff'];
+  const data = Buffer.alloc(width * height, 0);
+
+  // Canvas requires lobby back-link for maintenance tasks
+  await Canvas.create({
+    _id: canvasId,
+    lobby: lobbyId,
+    width,
+    height,
+    palette,
+    data
+  });
+
+  await Lobby.create({
+    _id: lobbyId,
+    name: 'Test Lobby ' + lobbyId,
+    owner: userA.id,
+    canvas: canvasId,
+    maxCollaborators: 10,
+    bannedUsers: []
+  });
+
+  // 2. Load to Redis (Primary state for Socket.io logic)
+  await canvasStore.loadLobbyToMemory(lobbyId, width, height, palette, new Uint8Array(data));
 };
 
+/**
+ * Bypass JWT signing for tests that focus on behavior rather than auth protocols.
+ */
 export const setupTestMocks = () => {
-  // Mock JWT verification
   vi.spyOn(jwt, 'verify').mockImplementation(((
     token: string,
     secretOrPublicKey: Secret,
@@ -37,75 +75,43 @@ export const setupTestMocks = () => {
     else if (token === tokenAdmin) callback(null, adminUser);
     else callback(new JsonWebTokenError('Invalid token'), undefined);
   }) as typeof jwt.verify);
-
-  // Mock LobbyService to allow joining
-  vi.spyOn(LobbyService, 'getById').mockResolvedValue({ _id: mockLobbyId, maxCollaborators: 10, bannedUsers: [] } as any);
-  vi.spyOn(LobbyService, 'validateJoinAccess').mockImplementation(() => { });
-  vi.spyOn(LobbyService, 'incrementCapacity').mockResolvedValue(undefined);
-  vi.spyOn(LobbyService, 'decrementCapacity').mockResolvedValue(undefined);
-
-  // Mock Mongoose Models
-  const mockLobbyDoc = { 
-    _id: mockLobbyId, 
-    canvas: '507f1f77bcf86cd799439015', 
-    owner: userA.id,
-    maxCollaborators: 10,
-    bannedUsers: [],
-    name: 'Test Lobby'
-  };
-
-  const mockCanvasDoc = {
-    _id: '507f1f77bcf86cd799439015',
-    width: 100,
-    height: 100,
-    palette: ['#000000', '#ffffff', '#ff0000', '#00ff00', '#0000ff'],
-    data: Buffer.alloc(100 * 100, 0)
-  };
-
-  const mockQuery = (result: any) => {
-    const query = {
-      populate: vi.fn().mockReturnThis(),
-      select: vi.fn().mockReturnThis(),
-      sort: vi.fn().mockReturnThis(),
-      lean: vi.fn().mockReturnThis(),
-      exec: vi.fn().mockResolvedValue(result),
-      then: (onFullfilled: any) => Promise.resolve(result).then(onFullfilled),
-      catch: (onRejected: any) => Promise.resolve(result).catch(onRejected),
-    };
-    return query;
-  };
-
-  vi.spyOn(Lobby, 'findById').mockImplementation((id) => mockQuery(mockLobbyDoc) as any);
-  vi.spyOn(Canvas, 'findById').mockImplementation((id) => mockQuery(mockCanvasDoc) as any);
-  vi.spyOn(Canvas, 'findByIdAndUpdate').mockImplementation(() => mockQuery(mockCanvasDoc) as any);
-
-  // Partial mock for CanvasService to avoid real MongoDB calls
-  vi.spyOn(CanvasService, 'saveToDB').mockResolvedValue(undefined as any);
 };
 
+/**
+ * Bootstraps a real HTTP + Socket server connected to In-Memory DB and Redis.
+ */
 export const createTestServer = async (): Promise<{ io: Server; httpServer: HTTPServer; port: number }> => {
+  if (!mongoServer) {
+    mongoServer = await MongoMemoryServer.create();
+    await mongoose.connect(mongoServer.getUri());
+  }
   await setupRedisDataClient(CONFIG.REDIS_URL);
+  
   const httpServer = createServer();
   const io = new Server(httpServer);
   setupSocket(io);
 
   return new Promise((resolve, reject) => {
-    httpServer.once('error', reject);
     httpServer.listen(() => {
       const address = httpServer.address();
-      if (!address || typeof address === 'string') {
-        return reject(new Error('Failed to gracefully acquire a port number for the test server.'));
-      }
+      if (!address || typeof address === 'string') return reject(new Error('Failed to acquire port'));
       resolve({ io, httpServer, port: address.port });
     });
   });
 };
 
+/**
+ * Creates an Express test server with injected user context for Controller testing.
+ */
 export const createExpressTestServer = async (mockUser: any): Promise<{ io: Server; httpServer: HTTPServer; port: number; app: express.Express }> => {
+  if (!mongoServer) {
+    mongoServer = await MongoMemoryServer.create();
+    await mongoose.connect(mongoServer.getUri());
+  }
   await setupRedisDataClient(CONFIG.REDIS_URL);
+
   const app = express();
   app.use(express.json());
-
   const httpServer = createServer(app);
   const io = new Server(httpServer);
   setupSocket(io);
@@ -116,14 +122,10 @@ export const createExpressTestServer = async (mockUser: any): Promise<{ io: Serv
     next();
   });
 
-  return new Promise((resolve, reject) => {
-    httpServer.once('error', reject);
+  return new Promise((resolve) => {
     httpServer.listen(() => {
       const address = httpServer.address();
-      if (!address || typeof address === 'string') {
-        return reject(new Error('Failed to gracefully acquire a port number for the test server.'));
-      }
-      resolve({ io, httpServer, port: address.port, app });
+      resolve({ io, httpServer, port: (address as any).port, app });
     });
   });
 };
@@ -140,24 +142,14 @@ export const createClient = (port: number, token?: string): Promise<ClientSocket
       reconnection: false,
       transports: ['websocket'],
     });
-    const cleanup = () => {
-      socket.off('connect', onConnect);
-      socket.off('connect_error', onConnectError);
-    };
-    const onConnect = () => {
-      cleanup();
-      resolve(socket);
-    };
-    const onConnectError = (err: Error) => {
-      cleanup();
-      socket.close();
-      reject(err);
-    };
-    socket.on('connect', onConnect);
-    socket.on('connect_error', onConnectError);
+    socket.on('connect', () => resolve(socket));
+    socket.on('connect_error', (err) => { socket.close(); reject(err); });
   });
 };
 
+/**
+ * Helper to connect and wait for the initial canvas state.
+ */
 export const createAndJoinClient = async (port: number, token: string, lobbyId = mockLobbyId): Promise<ClientSocket> => {
   const client = await createClient(port, token);
   return new Promise((resolve) => {
@@ -166,18 +158,21 @@ export const createAndJoinClient = async (port: number, token: string, lobbyId =
   });
 };
 
+/**
+ * Graceful cleanup of all infrastructure resources.
+ */
 export const teardownTestServer = async (io: Server, httpServer: HTTPServer) => {
   io.close();
-  await new Promise<void>((resolve, reject) => {
-    httpServer.close((error) => {
-      if (error) {
-        reject(error);
-        return;
-      }
-      resolve();
-    });
-  });
+  await new Promise<void>((resolve) => httpServer.close(() => resolve()));
   await canvasStore.removeLobby(mockLobbyId);
   await closeRedisDataClient();
+  
+  if (mongoose.connection.readyState !== 0) {
+    await mongoose.disconnect();
+  }
+  if (mongoServer) {
+    await mongoServer.stop();
+    (mongoServer as any) = null;
+  }
   vi.restoreAllMocks();
 };

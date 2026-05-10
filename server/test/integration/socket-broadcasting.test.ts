@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeAll, afterAll, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import mongoose from 'mongoose';
 import { Server as HTTPServer } from 'http';
 import { Server } from 'socket.io';
 import { CONFIG } from '../../src/config.js';
-import { createAndJoinClient, mockLobbyId, tokenA, tokenB, teardownTestServer, bootstrapTestServer, setupTestLobby } from './utils/socket-test-utils.js';
+import { createAndJoinClient, tokenA, tokenB, teardownTestServer, bootstrapTestServer, setupTestLobby } from './utils/socket-test-utils.js';
 
 describe('Socket Broadcasting Integration', () => {
   let io: Server;
@@ -21,7 +22,7 @@ describe('Socket Broadcasting Integration', () => {
   });
 
   it('should broadcast DRAW event from Client A as PIXEL_UPDATE to Client B', async () => {
-    const lobbyId = 'broadcasting-lobby-1';
+    const lobbyId = new mongoose.Types.ObjectId().toString();
     await setupTestLobby(lobbyId);
     
     const clientA = await createAndJoinClient(port, tokenA, lobbyId);
@@ -46,7 +47,7 @@ describe('Socket Broadcasting Integration', () => {
   });
 
   it('should broadcast DRAW_BATCH event from Client A as PIXEL_UPDATE_BATCH to Client B', async () => {
-    const lobbyId = 'broadcasting-lobby-2';
+    const lobbyId = new mongoose.Types.ObjectId().toString();
     await setupTestLobby(lobbyId);
 
     const clientA = await createAndJoinClient(port, tokenA, lobbyId);

@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import { Server as HTTPServer } from 'http';
 import { Server } from 'socket.io';
-import { createServer } from 'http';
 import { CONFIG } from '../../src/config.js';
 import { LobbyController } from '../../src/controllers/lobby.controller.js';
 import { requireLobbyOwner } from '../../src/middlewares/permissionMiddleware.js';
@@ -19,15 +18,6 @@ import {
   createExpressTestServer
 } from './utils/socket-test-utils.js';
 
-vi.mock('../../src/models/Lobby.js', () => ({
-  Lobby: {
-    findById: vi.fn().mockImplementation(async (id) => {
-      if (id === mockLobbyId) return { _id: mockLobbyId, owner: userA.id };
-      return null;
-    })
-  }
-}));
-
 describe('Admin Override Authority Integration', () => {
   let io: Server;
   let httpServer: HTTPServer;
@@ -35,14 +25,11 @@ describe('Admin Override Authority Integration', () => {
 
   beforeAll(async () => {
     setupTestMocks();
-
     const setup = await createExpressTestServer(adminUser);
     io = setup.io;
     httpServer = setup.httpServer;
     port = setup.port;
-    const app = setup.app;
-
-    app.post('/api/lobbies/:id/kick', requireLobbyOwner, LobbyController.kickUser);
+    setup.app.post('/api/lobbies/:id/kick', requireLobbyOwner, LobbyController.kickUser);
   });
 
   beforeEach(async () => {
@@ -55,27 +42,14 @@ describe('Admin Override Authority Integration', () => {
 
   it('should allow admin to clear canvas and kick the original owner', async () => {
     const ownerClient = await createAndJoinClient(port, tokenA);
-
-    const userJoinedPromise = new Promise<void>((resolve) => {
-      ownerClient.on(CONFIG.EVENTS.SERVER.USER_JOINED, (data) => {
-        if (data.id === adminUser.id) resolve();
-      });
-    });
-
     const adminClient = await createAndJoinClient(port, tokenAdmin);
 
-    await userJoinedPromise;
-
     const clearCanvasPromise = new Promise<void>((resolve) => {
-      ownerClient.on(CONFIG.EVENTS.SERVER.CANVAS_CLEARED, () => {
-        resolve();
-      });
+      ownerClient.on(CONFIG.EVENTS.SERVER.CANVAS_CLEARED, () => resolve());
     });
 
     adminClient.emit(CONFIG.EVENTS.CLIENT.CLEAR_CANVAS, mockLobbyId);
-
     await clearCanvasPromise;
-
 
     const forceDisconnectPromise = new Promise<void>((resolve) => {
       ownerClient.on(CONFIG.EVENTS.SERVER.FORCE_DISCONNECT, (data) => {
@@ -91,7 +65,6 @@ describe('Admin Override Authority Integration', () => {
     });
 
     expect(response.status).toBe(200);
-
     await forceDisconnectPromise;
     ownerClient.close();
     adminClient.close();
