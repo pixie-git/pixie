@@ -162,16 +162,24 @@ export const createAndJoinClient = async (port: number, token: string, lobbyId =
  * Graceful cleanup of all infrastructure resources.
  */
 export const teardownTestServer = async (io: Server, httpServer: HTTPServer) => {
+  // 1. Stop accepting new events and close connections
   io.close();
   await new Promise<void>((resolve) => httpServer.close(() => resolve()));
-  await canvasStore.removeLobby(mockLobbyId);
-  await closeRedisDataClient();
+  
+  // 2. Small delay to let any in-flight async disconnect handlers finish
+  await new Promise(resolve => setTimeout(resolve, 100));
+
+  // 3. Defensive cleanup - we catch errors because "client closed" is expected during shutdown
+  try {
+    await canvasStore.removeLobby(mockLobbyId).catch(() => {});
+    await closeRedisDataClient().catch(() => {});
+  } catch (e) {}
   
   if (mongoose.connection.readyState !== 0) {
-    await mongoose.disconnect();
+    await mongoose.disconnect().catch(() => {});
   }
   if (mongoServer) {
-    await mongoServer.stop();
+    await mongoServer.stop().catch(() => {});
     (mongoServer as any) = null;
   }
   vi.restoreAllMocks();
