@@ -12,7 +12,7 @@ import { canvasStore } from '../../../src/store/canvas.store.js';
 import { Lobby } from '../../../src/models/Lobby.js';
 import { Canvas } from '../../../src/models/Canvas.js';
 import { User } from '../../../src/models/User.js';
-import { setupRedisDataClient, closeRedisDataClient } from '../../../src/db/redis.js';
+import { setupRedisDataClient, closeRedisDataClient, getRedisClient } from '../../../src/db/redis.js';
 
 export const mockLobbyId = new mongoose.Types.ObjectId().toString();
 export const userA = { id: new mongoose.Types.ObjectId().toString(), username: 'Alice' };
@@ -22,7 +22,7 @@ export const tokenA = 'token-a';
 export const tokenB = 'token-b';
 export const tokenAdmin = 'token-admin';
 
-let mongoServer: MongoMemoryServer;
+let mongoServer: MongoMemoryServer | null = null;
 const createdLobbyIds = new Set<string>();
 
 /**
@@ -38,25 +38,24 @@ export const setupTestLobby = async (lobbyId = mockLobbyId, width = 100, height 
   await User.findOneAndUpdate({ _id: userB.id }, { username: 'Bob', isAdmin: false }, { upsert: true });
   await User.findOneAndUpdate({ _id: adminUser.id }, { username: 'Admin', isAdmin: true }, { upsert: true });
 
-  const canvasId = new mongoose.Types.ObjectId();
   const palette = ['#000000', '#ffffff', '#ff0000', '#00ff00', '#0000ff'];
   const data = Buffer.alloc(width * height, 0);
 
   // Use findOneAndUpdate with upsert for idempotency
-  await Canvas.findOneAndUpdate(
+  const canvas = await Canvas.findOneAndUpdate(
     { lobby: lobbyId },
     { width, height, palette, data },
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
 
-  const canvas = await Canvas.findOne({ lobby: lobbyId });
+  if (!canvas) throw new Error('Failed to create/update canvas for test lobby');
 
   await Lobby.findOneAndUpdate(
     { _id: lobbyId },
     { 
       name: 'Test Lobby ' + lobbyId, 
       owner: userA.id, 
-      canvas: canvas?._id, 
+      canvas: canvas._id, 
       maxCollaborators: 10, 
       bannedUsers: [] 
     },
@@ -151,8 +150,22 @@ export const createClient = (port: number, token?: string): Promise<ClientSocket
       reconnection: false,
       transports: ['websocket'],
     });
-    socket.on('connect', () => resolve(socket));
-    socket.on('connect_error', (err) => { socket.close(); reject(err); });
+
+    const onConnect = () => {
+      socket.off('connect', onConnect);
+      socket.off('connect_error', onConnectError);
+      resolve(socket);
+    };
+
+    const onConnectError = (err: Error) => {
+      socket.off('connect', onConnect);
+      socket.off('connect_error', onConnectError);
+      socket.close();
+      reject(err);
+    };
+
+    socket.on('connect', onConnect);
+    socket.on('connect_error', onConnectError);
   });
 };
 
@@ -180,8 +193,10 @@ export const teardownTestServer = async (io: Server, httpServer: HTTPServer) => 
 
   // 3. Defensive cleanup of all lobbies created in this session
   try {
+    const redis = getRedisClient();
     for (const id of createdLobbyIds) {
       await canvasStore.removeLobby(id).catch(() => {});
+      await redis.del(`lobby:${id}:count`).catch(() => {});
     }
     createdLobbyIds.clear();
     await closeRedisDataClient().catch(() => {});
@@ -192,7 +207,7 @@ export const teardownTestServer = async (io: Server, httpServer: HTTPServer) => 
   }
   if (mongoServer) {
     await mongoServer.stop().catch(() => {});
-    (mongoServer as any) = null;
+    mongoServer = null;
   }
   vi.restoreAllMocks();
 };
