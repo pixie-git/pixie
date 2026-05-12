@@ -34,10 +34,10 @@ echo "✅ Redis is online!"
 
 # Function to run a test suite and determine if it REALLY failed
 run_suite() {
-    local dir=$1
+    local dir="$1"
     local log_file=$(mktemp)
     
-    cd "$dir"
+    pushd "$dir" > /dev/null
     echo "Running tests in $dir..."
     
     # We don't 'set -e' here because we want to handle the exit code
@@ -67,7 +67,7 @@ run_suite() {
     fi
     
     rm "$log_file"
-    cd ..
+    popd > /dev/null
     return $failed
 }
 

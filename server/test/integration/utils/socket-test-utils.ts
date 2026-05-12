@@ -23,13 +23,17 @@ export const tokenB = 'token-b';
 export const tokenAdmin = 'token-admin';
 
 let mongoServer: MongoMemoryServer;
+const createdLobbyIds = new Set<string>();
 
 /**
  * Seeds real Lobby, Canvas, and Users in the in-memory MongoDB.
  * Also hydrates Redis to simulate a warmed-up system.
  */
 export const setupTestLobby = async (lobbyId = mockLobbyId, width = 100, height = 100) => {
-  // 1. Seed DB (idempotent user creation)
+  // Track this lobby for cleanup
+  createdLobbyIds.add(lobbyId);
+
+  // 1. Seed DB (idempotent upserts)
   await User.findOneAndUpdate({ _id: userA.id }, { username: 'Alice', isAdmin: false }, { upsert: true });
   await User.findOneAndUpdate({ _id: userB.id }, { username: 'Bob', isAdmin: false }, { upsert: true });
   await User.findOneAndUpdate({ _id: adminUser.id }, { username: 'Admin', isAdmin: true }, { upsert: true });
@@ -38,24 +42,26 @@ export const setupTestLobby = async (lobbyId = mockLobbyId, width = 100, height 
   const palette = ['#000000', '#ffffff', '#ff0000', '#00ff00', '#0000ff'];
   const data = Buffer.alloc(width * height, 0);
 
-  // Canvas requires lobby back-link for maintenance tasks
-  await Canvas.create({
-    _id: canvasId,
-    lobby: lobbyId,
-    width,
-    height,
-    palette,
-    data
-  });
+  // Use findOneAndUpdate with upsert for idempotency
+  await Canvas.findOneAndUpdate(
+    { lobby: lobbyId },
+    { width, height, palette, data },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
 
-  await Lobby.create({
-    _id: lobbyId,
-    name: 'Test Lobby ' + lobbyId,
-    owner: userA.id,
-    canvas: canvasId,
-    maxCollaborators: 10,
-    bannedUsers: []
-  });
+  const canvas = await Canvas.findOne({ lobby: lobbyId });
+
+  await Lobby.findOneAndUpdate(
+    { _id: lobbyId },
+    { 
+      name: 'Test Lobby ' + lobbyId, 
+      owner: userA.id, 
+      canvas: canvas?._id, 
+      maxCollaborators: 10, 
+      bannedUsers: [] 
+    },
+    { upsert: true }
+  );
 
   // 2. Load to Redis (Primary state for Socket.io logic)
   await canvasStore.loadLobbyToMemory(lobbyId, width, height, palette, new Uint8Array(data));
@@ -85,13 +91,14 @@ export const createTestServer = async (): Promise<{ io: Server; httpServer: HTTP
     mongoServer = await MongoMemoryServer.create();
     await mongoose.connect(mongoServer.getUri());
   }
-  await setupRedisDataClient(CONFIG.REDIS_URL);
+  await setupRedisDataClient();
   
   const httpServer = createServer();
   const io = new Server(httpServer);
   setupSocket(io);
 
   return new Promise((resolve, reject) => {
+    httpServer.once('error', reject);
     httpServer.listen(() => {
       const address = httpServer.address();
       if (!address || typeof address === 'string') return reject(new Error('Failed to acquire port'));
@@ -108,7 +115,7 @@ export const createExpressTestServer = async (mockUser: any): Promise<{ io: Serv
     mongoServer = await MongoMemoryServer.create();
     await mongoose.connect(mongoServer.getUri());
   }
-  await setupRedisDataClient(CONFIG.REDIS_URL);
+  await setupRedisDataClient();
 
   const app = express();
   app.use(express.json());
@@ -122,10 +129,12 @@ export const createExpressTestServer = async (mockUser: any): Promise<{ io: Serv
     next();
   });
 
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
+    httpServer.once('error', reject);
     httpServer.listen(() => {
       const address = httpServer.address();
-      resolve({ io, httpServer, port: (address as any).port, app });
+      if (!address || typeof address === 'string') return reject(new Error('Failed to acquire port'));
+      resolve({ io, httpServer, port: address.port, app });
     });
   });
 };
@@ -169,9 +178,12 @@ export const teardownTestServer = async (io: Server, httpServer: HTTPServer) => 
   // 2. Small delay to let any in-flight async disconnect handlers finish
   await new Promise(resolve => setTimeout(resolve, 100));
 
-  // 3. Defensive cleanup - we catch errors because "client closed" is expected during shutdown
+  // 3. Defensive cleanup of all lobbies created in this session
   try {
-    await canvasStore.removeLobby(mockLobbyId).catch(() => {});
+    for (const id of createdLobbyIds) {
+      await canvasStore.removeLobby(id).catch(() => {});
+    }
+    createdLobbyIds.clear();
     await closeRedisDataClient().catch(() => {});
   } catch (e) {}
   
