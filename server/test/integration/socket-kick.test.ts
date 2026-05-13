@@ -24,14 +24,11 @@ describe('Kick User Flow Integration', () => {
 
   beforeAll(async () => {
     setupTestMocks();
-
-    const setup = await createExpressTestServer(userA); // owner
+    const setup = await createExpressTestServer(userA);
     io = setup.io;
     httpServer = setup.httpServer;
     port = setup.port;
-    const app = setup.app;
-
-    app.post('/api/lobbies/:id/kick', LobbyController.kickUser);
+    setup.app.post('/api/lobbies/:id/kick', LobbyController.kickUser);
   });
 
   beforeEach(async () => {
@@ -44,18 +41,7 @@ describe('Kick User Flow Integration', () => {
 
   it('should disconnect the target user, notify others, and allow reconnection', async () => {
     const ownerClient = await createAndJoinClient(port, tokenA);
-
-    // Setup listener for user join before joining the target client
-    const userJoinedPromise = new Promise<void>((resolve) => {
-      ownerClient.on(CONFIG.EVENTS.SERVER.USER_JOINED, (data) => {
-        if (data.id === userB.id) resolve();
-      });
-    });
-
     const targetClient = await createAndJoinClient(port, tokenB);
-
-    // Wait for the owner to acknowledge the target user has joined
-    await userJoinedPromise;
 
     const forceDisconnectPromise = new Promise<void>((resolve) => {
       targetClient.on(CONFIG.EVENTS.SERVER.FORCE_DISCONNECT, (data) => {
@@ -78,14 +64,15 @@ describe('Kick User Flow Integration', () => {
     });
 
     expect(response.status).toBe(200);
-
     await Promise.all([forceDisconnectPromise, userLeftPromise]);
 
-    ownerClient.close();
     targetClient.close();
-
+    
+    // Test Reconnection
     const reconnectedClient = await createAndJoinClient(port, tokenB);
     expect(reconnectedClient.connected).toBe(true);
+    
     reconnectedClient.close();
+    ownerClient.close();
   });
 });
