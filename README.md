@@ -28,13 +28,15 @@ Draw together on a shared canvas — like r/place, but for friends.
 ### Docker (Recommended)
 
 ```bash
-docker compose up
+docker compose up -d --scale server=3
 ```
 
 | Service | URL |
 |---------|-----|
 | App | http://localhost:5173 |
 | API Docs | http://localhost:3000/api-docs |
+
+> 💡 **Dynamic Scaling:** You can add more server instances at any time using `--scale server=N`. Nginx is configured with `least_conn` to balance active connections across all instances.
 
 ### Manual
 
