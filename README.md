@@ -36,7 +36,7 @@ docker compose up -d --scale server=3
 | App | http://localhost:5173 |
 | API Docs | http://localhost:3000/api-docs |
 
-> 💡 **Dynamic Scaling:** You can add more server instances at any time using `--scale server=N`. Traefik is configured with `least_conn` and sticky sessions to balance active connections across all instances.
+> 💡 **Dynamic Scaling:** You can add more server instances at any time using `--scale server=N`. Traefik is configured with `p2c` (power-of-two-choices) and sticky sessions to balance active connections across all instances.
 
 ### Manual
 
