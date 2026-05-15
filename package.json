@@ -1,0 +1,12 @@
+{
+  "name": "pixie",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Real-time collaborative pixel art editor",
+  "scripts": {
+    "test": "bash test.sh"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  }
+}

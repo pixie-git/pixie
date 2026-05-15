@@ -1,4 +1,5 @@
 import express, { Router } from "express"
+import os from "os"
 import { LoginController } from "../controllers/login.controller.js"
 import { UserController } from "../controllers/user.controller.js"
 import { authenticateToken } from "../middlewares/authMiddleware.js"
@@ -35,5 +36,9 @@ router.get("/lobbies/:id/image", authenticateToken, requireLobbyAccess, LobbyCon
 router.post("/lobbies/:id/ban", authenticateToken, requireLobbyOwner, LobbyController.banUser)
 router.get("/lobbies/:id/banned", authenticateToken, requireLobbyOwner, LobbyController.getBannedUsers)
 router.post("/lobbies/:id/unban", authenticateToken, requireLobbyOwner, LobbyController.unbanUser)
+
+router.get("/health", (req, res) => {
+  res.json({ serverId: os.hostname() });
+});
 
 export default router
