@@ -33,7 +33,6 @@ Traefik handles routing and sticky sessions for Socket.io.
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `JWT_SECRET` | **Yes** | - | Secret for JWT tokens |
-| `SERVER_REPLICAS` | No | `1` | Number of server instances to run |
 | `CLIENT_ORIGIN` | No | `*` | CORS origins (comma-separated for multiple) |
 | `CLIENT_PORT` | No | `3080` | Host port for frontend/entry point |
 | `REDIS_URL` | No | `redis://redis:6379` | Internal Redis URL |
