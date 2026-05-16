@@ -73,6 +73,7 @@ JWT_SECRET=your-secret docker compose -f docker-compose.prod.yml up -d --build
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `JWT_SECRET` | `dev-secret-key` | **Required in production** |
+| `SERVER_REPLICAS` | `1` | Number of server instances |
 | `MONGO_URI` | `mongodb://localhost:27017/pixie` | Database connection |
 | `REDIS_URL` | `redis://localhost:6379` | Redis connection for scaling |
 | `PORT` | `3000` | Server port |
