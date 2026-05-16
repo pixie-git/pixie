@@ -47,8 +47,6 @@ services:
       target: production-stage
     image: pixie-server:latest
     restart: unless-stopped
-    deploy:
-      replicas: ${SERVER_REPLICAS:-1}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.server.rule=PathPrefix(`/api`) || PathPrefix(`/socket.io`) || PathPrefix(`/api-docs`)"
