@@ -209,7 +209,10 @@ export class CanvasStore {
 
   public async getInMemoryLobbyIds(): Promise<string[]> {
     const redis = getRedisClient();
-    const keys = await redis.keys('lobby:*:meta');
+    const keys: string[] = [];
+    for await (const key of redis.scanIterator({ MATCH: 'lobby:*:meta' })) {
+      keys.push(key);
+    }
     return keys.map((key) => key.split(':')[1]);
   }
 
