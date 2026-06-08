@@ -215,7 +215,11 @@ export class CanvasStore {
   public async removeLobby(lobbyId: string): Promise<boolean> {
     console.log(`[CanvasStore] Removing lobby from Redis: ${lobbyId}`);
     const redis = getRedisClient();
-    const deleted = await redis.del([this.getMetaKey(lobbyId), this.getCanvasKey(lobbyId)]);
+    const deleted = await redis.del([
+      this.getMetaKey(lobbyId),
+      this.getCanvasKey(lobbyId),
+      `lobby:${lobbyId}:count`
+    ]);
     return deleted > 0;
   }
 
