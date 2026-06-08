@@ -47,13 +47,12 @@ api.interceptors.response.use(
 				toastStore.add(
 					"Your login session has expired. Please log in again to continue.",
 					'error',
-					0,
-					() => {
-						if (window.location.pathname !== '/') {
-							window.location.href = "/";
-						}
-					}
+					0
 				);
+				const { router } = await import("../router/index.js");
+				if (router.currentRoute.value.path !== '/') {
+					router.push("/");
+				}
 				return Promise.reject(error);
 			}
 
