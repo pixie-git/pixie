@@ -23,6 +23,7 @@ describe('CanvasStore', () => {
     sRem: vi.fn(),
     multi: vi.fn().mockReturnThis(),
     exec: vi.fn(),
+    withTypeMapping: vi.fn().mockReturnThis(),
   };
 
   beforeEach(() => {
@@ -56,8 +57,8 @@ describe('CanvasStore', () => {
 
   it('modifyPixelColor should use setRange for O(1) update', async () => {
     mockRedis.hmGet.mockResolvedValue(['10', '10', '2']);
-    // Mock getRange to return a string (redis v5 default behavior)
-    mockRedis.getRange.mockResolvedValue('\x00');
+    // Mock getRange to return a Buffer (redis v5 returnBuffers behavior)
+    mockRedis.getRange.mockResolvedValue(Buffer.from([0]));
     const success = await canvasStore.modifyPixelColor(LOBBY_ID, 5, 5, 1);
     expect(success).toBe(true);
     expect(mockRedis.getRange).toHaveBeenCalled();
