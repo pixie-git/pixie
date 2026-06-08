@@ -60,5 +60,12 @@ export const disconnectUserFromLobby = async (
     socket.disconnect(true);
   }
 
+  // Unload the lobby if no active connections remain
+  const remainingSockets = await io.in(lobbyId).fetchSockets();
+  if (remainingSockets.length === 0) {
+    const { CanvasService } = await import('../services/canvas.service.js');
+    await CanvasService.unloadLobby(lobbyId);
+  }
+
   return true;
 };
