@@ -4,6 +4,7 @@ import { CONFIG } from '../config.js';
 
 let pubClient: RedisClientType | null = null;
 let subClient: RedisClientType | null = null;
+let adapterPromise: Promise<any> | null = null;
 
 /**
  * Initializes Redis pub/sub clients and returns the Socket.io Redis adapter.
@@ -12,23 +13,32 @@ export const setupRedisAdapter = async () => {
   if (pubClient && subClient) {
     return createAdapter(pubClient, subClient);
   }
+  if (adapterPromise) return adapterPromise;
 
-  pubClient = createClient({ url: CONFIG.REDIS_URL });
-  subClient = pubClient.duplicate();
+  adapterPromise = (async () => {
+    const pClient = createClient({ url: CONFIG.REDIS_URL });
+    const sClient = pClient.duplicate();
 
-  pubClient.on('error', (err) => console.error('[ERROR] Redis Pub Client Error:', err));
-  subClient.on('error', (err) => console.error('[ERROR] Redis Sub Client Error:', err));
+    pClient.on('error', (err) => console.error('[ERROR] Redis Pub Client Error:', err));
+    sClient.on('error', (err) => console.error('[ERROR] Redis Sub Client Error:', err));
 
-  try {
-    await Promise.all([pubClient.connect(), subClient.connect()]);
-    console.log('[INFO] Redis Adapter pub/sub clients connected');
-    return createAdapter(pubClient, subClient);
-  } catch (err) {
-    console.error('[ERROR] Failed to connect Redis Adapter clients:', err);
-    pubClient = null;
-    subClient = null;
-    throw err;
-  }
+    try {
+      await Promise.all([pClient.connect(), sClient.connect()]);
+      console.log('[INFO] Redis Adapter pub/sub clients connected');
+      pubClient = pClient;
+      subClient = sClient;
+      return createAdapter(pubClient, subClient);
+    } catch (err) {
+      console.error('[ERROR] Failed to connect Redis Adapter clients:', err);
+      pubClient = null;
+      subClient = null;
+      throw err;
+    } finally {
+      adapterPromise = null;
+    }
+  })();
+
+  return adapterPromise;
 };
 
 /**
