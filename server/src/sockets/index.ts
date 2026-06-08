@@ -22,6 +22,7 @@ export const setupSocket = (io: Server) => {
     console.log(`[Socket] [${process.env.SERVER_ID || 'single'}] New connection: ${socket.id}`);
 
     socket.on(CONFIG.EVENTS.CLIENT.JOIN_LOBBY, async (lobbyId: string) => {
+      let isIncremented = false;
       try {
         const user = (socket as AuthenticatedSocket).user;
         if (!user?.id) {
@@ -45,6 +46,7 @@ export const setupSocket = (io: Server) => {
 
         try {
           await LobbyService.incrementCapacity(lobby);
+          isIncremented = true;
         } catch (e: any) {
           return socket.emit(CONFIG.EVENTS.SERVER.ERROR, { message: "Lobby is full" });
         }
@@ -57,7 +59,9 @@ export const setupSocket = (io: Server) => {
         console.log(`[Socket] ${socket.id} joined ${lobbyId}`);
       } catch (error) {
         console.error(`[Socket] Join Error:`, error);
-        LobbyService.decrementCapacity(lobbyId).catch(console.error);
+        if (isIncremented) {
+          LobbyService.decrementCapacity(lobbyId).catch(console.error);
+        }
         socket.emit(CONFIG.EVENTS.SERVER.ERROR, { message: "Failed to join lobby" });
       }
     });
