@@ -156,15 +156,11 @@ export class CanvasStore {
     if (validPixels.length === 0) return [];
 
     const bufferRedis = this.getBufferClient();
-    const currentColors = await Promise.all(
-      validPixels.map(p =>
-        bufferRedis.getRange(
-          canvasKey,
-          p.index,
-          p.index
-        )
-      )
-    );
+    const readPipeline = bufferRedis.multi();
+    for (const p of validPixels) {
+      readPipeline.getRange(canvasKey, p.index, p.index);
+    }
+    const currentColors = await readPipeline.exec();
 
     // Second, batch updates for pixels that actually changed
     const writePipeline = redis.multi();
