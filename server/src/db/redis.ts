@@ -2,6 +2,7 @@ import { createClient, RedisClientType } from 'redis';
 import { CONFIG } from '../config.js';
 
 let redisClient: RedisClientType | null = null;
+let connectionPromise: Promise<RedisClientType> | null = null;
 
 /**
  * Initializes and connects the Redis data client.
@@ -9,30 +10,38 @@ let redisClient: RedisClientType | null = null;
  */
 export const setupRedisDataClient = async (): Promise<RedisClientType> => {
   if (redisClient) return redisClient;
+  if (connectionPromise) return connectionPromise;
 
-  redisClient = createClient({
-    url: CONFIG.REDIS_URL,
-  });
+  connectionPromise = (async () => {
+    const client = createClient({
+      url: CONFIG.REDIS_URL,
+    });
 
-  redisClient.on('error', (err) => {
-    console.error('[ERROR] Redis Data Client Error:', err);
-  });
+    client.on('error', (err) => {
+      console.error('[ERROR] Redis Data Client Error:', err);
+    });
 
-  redisClient.on('connect', () => {
-    console.log('[INFO] Redis Data Client connecting...');
-  });
+    client.on('connect', () => {
+      console.log('[INFO] Redis Data Client connecting...');
+    });
 
-  redisClient.on('ready', () => {
-    console.log('[INFO] Redis Data Client ready');
-  });
+    client.on('ready', () => {
+      console.log('[INFO] Redis Data Client ready');
+    });
 
-  try {
-    await redisClient.connect();
-    return redisClient;
-  } catch (err) {
-    console.error('[ERROR] Failed to connect to Redis:', err);
-    throw err;
-  }
+    try {
+      await client.connect();
+      redisClient = client;
+      return client;
+    } catch (err) {
+      console.error('[ERROR] Failed to connect to Redis:', err);
+      throw err;
+    } finally {
+      connectionPromise = null;
+    }
+  })();
+
+  return connectionPromise;
 };
 
 /**
