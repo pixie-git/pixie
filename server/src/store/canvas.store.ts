@@ -45,7 +45,7 @@ export class CanvasStore {
     const redis = this.getBufferClient();
     const data = await redis.get(this.getCanvasKey(lobbyId));
     if (!data) return undefined;
-    return new Uint8Array(data);
+    return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
   }
 
   // Load data from DB buffer to Redis
@@ -71,7 +71,9 @@ export class CanvasStore {
       redis.set(canvasKey, Buffer.from(data)),
     ]);
 
-    return new Uint8Array(data);
+    return data instanceof Buffer
+      ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
+      : data;
   }
 
   /**
@@ -207,7 +209,10 @@ export class CanvasStore {
 
   public async getInMemoryLobbyIds(): Promise<string[]> {
     const redis = getRedisClient();
-    const keys = await redis.keys('lobby:*:meta');
+    const keys: string[] = [];
+    for await (const key of redis.scanIterator({ MATCH: 'lobby:*:meta' })) {
+      keys.push(key);
+    }
     return keys.map((key) => key.split(':')[1]);
   }
 

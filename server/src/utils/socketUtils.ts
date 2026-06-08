@@ -48,7 +48,7 @@ export const disconnectUserFromLobby = async (
   // Notify the users being disconnected
   for (const socket of targetSockets) {
     socket.emit('FORCE_DISCONNECT', { lobbyId, reason });
-    socket.leave(lobbyId);
+    await socket.leave(lobbyId);
     
     // Ensure capacity is decremented when we forcibly remove a user
     try {
