@@ -49,7 +49,11 @@ export const disconnectUserFromLobby = async (
     
     // Ensure capacity is decremented when we forcibly remove a user
     const { LobbyService } = await import('../services/lobby.service.js');
-    LobbyService.decrementCapacity(lobbyId).catch(console.error);
+    try {
+      await LobbyService.decrementCapacity(lobbyId);
+    } catch (err) {
+      console.error(err);
+    }
     
     socket.disconnect(true);
   }
