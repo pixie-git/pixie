@@ -101,6 +101,10 @@ export class CanvasStore {
       paletteLen = parseInt(metaArr[2], 10);
     }
 
+    if (!Number.isInteger(x) || !Number.isInteger(y) || !Number.isInteger(color)) {
+      return false;
+    }
+
     if (x < 0 || x >= width || y < 0 || y >= height || color < 0 || color >= paletteLen) {
       return false;
     }
@@ -129,6 +133,8 @@ export class CanvasStore {
     pixels: { x: number; y: number; color: number }[],
     meta: LobbyMeta
   ): Promise<{ x: number; y: number; color: number }[]> {
+    if (!Array.isArray(pixels)) return [];
+
     const redis = getRedisClient();
     const { width, height, paletteLen } = meta;
     const canvasKey = this.getCanvasKey(lobbyId);
@@ -139,6 +145,7 @@ export class CanvasStore {
     const validPixels: { x: number; y: number; color: number; index: number }[] = [];
 
     for (const p of pixels) {
+      if (!p || !Number.isInteger(p.x) || !Number.isInteger(p.y) || !Number.isInteger(p.color)) continue;
       if (p.x < 0 || p.x >= width || p.y < 0 || p.y >= height || p.color < 0 || p.color >= paletteLen) continue;
       const index = p.y * width + p.x;
       validPixels.push({ ...p, index });
