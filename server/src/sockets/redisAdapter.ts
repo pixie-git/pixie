@@ -25,6 +25,8 @@ export const setupRedisAdapter = async () => {
     return createAdapter(pubClient, subClient);
   } catch (err) {
     console.error('[ERROR] Failed to connect Redis Adapter clients:', err);
+    pubClient = null;
+    subClient = null;
     throw err;
   }
 };
