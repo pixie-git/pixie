@@ -81,6 +81,7 @@ describe('CanvasStore', () => {
   it('modifyPixelBatch should filter out invalid/null/undefined pixel objects', async () => {
     const meta = { width: 10, height: 10, paletteLen: 2 };
     mockRedis.getRange.mockResolvedValue(Buffer.from([0]));
+    mockRedis.exec.mockResolvedValue([Buffer.from([0])]);
     
     const pixels = [
       { x: 5, y: 5, color: 1 },

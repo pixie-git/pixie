@@ -156,15 +156,11 @@ export class CanvasStore {
     if (validPixels.length === 0) return [];
 
     const bufferRedis = this.getBufferClient();
-    const currentColors = await Promise.all(
-      validPixels.map(p =>
-        bufferRedis.getRange(
-          canvasKey,
-          p.index,
-          p.index
-        )
-      )
-    );
+    const readPipeline = bufferRedis.multi();
+    for (const p of validPixels) {
+      readPipeline.getRange(canvasKey, p.index, p.index);
+    }
+    const currentColors = await readPipeline.exec();
 
     // Second, batch updates for pixels that actually changed
     const writePipeline = redis.multi();
@@ -219,7 +215,11 @@ export class CanvasStore {
   public async removeLobby(lobbyId: string): Promise<boolean> {
     console.log(`[CanvasStore] Removing lobby from Redis: ${lobbyId}`);
     const redis = getRedisClient();
-    const deleted = await redis.del([this.getMetaKey(lobbyId), this.getCanvasKey(lobbyId)]);
+    const deleted = await redis.del([
+      this.getMetaKey(lobbyId),
+      this.getCanvasKey(lobbyId),
+      `lobby:${lobbyId}:count`
+    ]);
     return deleted > 0;
   }
 
