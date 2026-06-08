@@ -92,9 +92,11 @@ export class LobbyService {
     const redis = getRedisClient();
     const countKey = `lobby:${lobbyId}:count`;
     
-    const count = await redis.decr(countKey);
-    if (count < 0) {
-      await redis.set(countKey, 0);
+    if (await redis.exists(countKey)) {
+      const count = await redis.decr(countKey);
+      if (count <= 0) {
+        await redis.del(countKey);
+      }
     }
   }
 

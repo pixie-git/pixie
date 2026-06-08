@@ -42,13 +42,15 @@ export const disconnectUserFromLobby = async (
   // Notify everyone else in the lobby about the user leaving
   io.to(lobbyId).except(socketIds).emit('USER_LEFT', userData);
 
+  // Load LobbyService once before the loop
+  const { LobbyService } = await import('../services/lobby.service.js');
+
   // Notify the users being disconnected
   for (const socket of targetSockets) {
     socket.emit('FORCE_DISCONNECT', { lobbyId, reason });
     socket.leave(lobbyId);
     
     // Ensure capacity is decremented when we forcibly remove a user
-    const { LobbyService } = await import('../services/lobby.service.js');
     try {
       await LobbyService.decrementCapacity(lobbyId);
     } catch (err) {

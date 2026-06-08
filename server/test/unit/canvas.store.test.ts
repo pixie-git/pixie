@@ -71,6 +71,32 @@ describe('CanvasStore', () => {
     expect(success).toBe(false);
   });
 
+  it('modifyPixelColor should return false for invalid non-integer coordinates/color', async () => {
+    mockRedis.hmGet.mockResolvedValue(['10', '10', '2']);
+    expect(await canvasStore.modifyPixelColor(LOBBY_ID, 1.5, 5, 1)).toBe(false);
+    expect(await canvasStore.modifyPixelColor(LOBBY_ID, 5, undefined as any, 1)).toBe(false);
+    expect(await canvasStore.modifyPixelColor(LOBBY_ID, 5, 5, null as any)).toBe(false);
+  });
+
+  it('modifyPixelBatch should filter out invalid/null/undefined pixel objects', async () => {
+    const meta = { width: 10, height: 10, paletteLen: 2 };
+    mockRedis.getRange.mockResolvedValue(Buffer.from([0]));
+    
+    const pixels = [
+      { x: 5, y: 5, color: 1 },
+      null as any,
+      { x: 1.5, y: 5, color: 1 } as any,
+      { x: 5, y: undefined as any, color: 1 } as any,
+      { x: 12, y: 5, color: 1 }, // out of bounds
+    ];
+
+    const result = await canvasStore.modifyPixelBatch(LOBBY_ID, pixels, meta);
+    
+    // Only the first pixel {x: 5, y: 5, color: 1} should be valid and processed
+    expect(result).toEqual([{ x: 5, y: 5, color: 1 }]);
+    expect(mockRedis.multi).toHaveBeenCalled();
+  });
+
   it('markLobbyDirty should add lobbyId to dirty set', async () => {
     await canvasStore.markLobbyDirty(LOBBY_ID);
     expect(mockRedis.sAdd).toHaveBeenCalledWith('lobbies:dirty', LOBBY_ID);
