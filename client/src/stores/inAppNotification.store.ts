@@ -72,12 +72,6 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
     const toggleMute = () => {
         isMuted.value = !isMuted.value;
         localStorage.setItem('notification_muted', String(isMuted.value));
-
-        if (isMuted.value) {
-            disconnectSSE();
-        } else {
-            setupSSE();
-        }
     };
 
     const setupSSE = () => {
@@ -88,9 +82,6 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
 
         // Fetch history immediately, regardless of mute state
         fetchNotifications();
-
-        // If muted, do not establish SSE connection
-        if (isMuted.value) return;
 
         if (eventSource) {
             eventSource.close();
@@ -131,8 +122,11 @@ export const useInAppNotificationStore = defineStore('inAppNotification', () => 
                 // Support both old formatted direct notifications and new {type: 'NOTIFICATION', payload: ...}
                 const payload = eventData.type === 'NOTIFICATION' ? eventData.payload : eventData;
 
-                // If it looks like a notification
+                // Seleziona se sembra una notifica
                 if (payload._id && payload.title) {
+                    // Skip adding the notification if we are muted
+                    if (isMuted.value) return;
+
                     const newNotification: InAppNotification = {
                         id: payload._id,
                         title: payload.title,

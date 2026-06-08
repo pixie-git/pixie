@@ -2,7 +2,7 @@
 #
 # Usage: JWT_SECRET=your-secret docker compose -f docker-compose.prod.yml up -d --build
 #
-# Access: http://localhost:3080 (app + API + Swagger via nginx proxy)
+# Access: http://localhost:3080 (app + API + Swagger via Traefik proxy)
 #
 # For Portainer + NPM: proxy app.example.com -> pixie-client:3080 (enable WebSocket)
 #
@@ -34,21 +34,36 @@ services:
     networks:
       - pixie-net
 
+  redis:
+    image: redis:7-alpine
+    container_name: pixie-redis
+    restart: unless-stopped
+    networks:
+      - pixie-net
+
   server:
     build:
       context: ./server
       target: production-stage
     image: pixie-server:latest
-    container_name: pixie-server
     restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.server.rule=PathPrefix(`/api`) || PathPrefix(`/socket.io`) || PathPrefix(`/api-docs`)"
+      - "traefik.http.services.server.loadbalancer.server.port=3000"
+      - "traefik.http.services.server.loadbalancer.strategy=p2c"
+      - "traefik.http.services.server.loadbalancer.sticky.cookie=true"
+      - "traefik.http.services.server.loadbalancer.sticky.cookie.name=PIXIE_SESSION"
     environment:
       PORT: 3000
       MONGO_URI: mongodb://mongo:27017/pixie
+      REDIS_URL: redis://redis:6379
       CLIENT_ORIGIN: ${CLIENT_ORIGIN:-*}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
       NODE_ENV: production
     depends_on:
       - mongo
+      - redis
     networks:
       - pixie-net
 
@@ -59,10 +74,27 @@ services:
       args:
         VITE_API_URL: ${VITE_API_URL:-}
     image: pixie-client:latest
-    container_name: pixie-client
     restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.client.rule=PathPrefix(`/`)"
+      - "traefik.http.services.client.loadbalancer.server.port=80"
+    networks:
+      - pixie-net
+
+  traefik:
+    image: traefik:latest
+    container_name: pixie-traefik
+    restart: unless-stopped
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.endpoint=unix:///var/run/docker.sock"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
     ports:
       - "${CLIENT_PORT:-3080}:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - pixie-net
 

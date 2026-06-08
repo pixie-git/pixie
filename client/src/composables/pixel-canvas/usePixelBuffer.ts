@@ -7,6 +7,16 @@ export interface PixelBufferProps {
   palette: string[];
 }
 
+function hexToUint32(hex: string): number {
+  const fullHex = hex.length === 4
+    ? '#' + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3]
+    : hex;
+  const r = parseInt(fullHex.slice(1, 3), 16);
+  const g = parseInt(fullHex.slice(3, 5), 16);
+  const b = parseInt(fullHex.slice(5, 7), 16);
+  return (255 << 24) | (b << 16) | (g << 8) | r;
+}
+
 export function usePixelBuffer(
   props: Readonly<Ref<PixelBufferProps>>,
   onBufferUpdate?: () => void
@@ -15,20 +25,45 @@ export function usePixelBuffer(
   const pixelBuffer = document.createElement('canvas');
   const pixelCtx = pixelBuffer.getContext('2d')!;
 
+  // Cache for uint32Palette
+  let cachedPalette: string[] | null = null;
+  let uint32Palette = new Uint32Array(0);
+  let cachedImageData: ImageData | null = null;
+  let cachedData32: Uint32Array | null = null;
+
+  function ensurePalette(palette: string[]) {
+    if (palette !== cachedPalette) {
+      uint32Palette = new Uint32Array(palette.length);
+      for (let i = 0; i < palette.length; i++) {
+        uint32Palette[i] = hexToUint32(palette[i]);
+      }
+      cachedPalette = palette;
+    }
+    return uint32Palette;
+  }
+
   function updateBuffer() {
     const { width, height, pixels, palette } = props.value;
     if (width === 0 || height === 0) return;
 
-    pixelBuffer.width = width;
-    pixelBuffer.height = height;
-
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const colorIndex = pixels[y * width + x];
-        pixelCtx.fillStyle = palette[colorIndex] || '#000000';
-        pixelCtx.fillRect(x, y, 1, 1);
-      }
+    if (pixelBuffer.width !== width || pixelBuffer.height !== height) {
+      pixelBuffer.width = width;
+      pixelBuffer.height = height;
+      cachedImageData = pixelCtx.createImageData(width, height);
+      cachedData32 = new Uint32Array(cachedImageData.data.buffer);
     }
+
+    const imageData = cachedImageData!;
+    const data32 = cachedData32!;
+
+    const palette32 = ensurePalette(palette);
+
+    const len = Math.min(pixels.length, data32.length);
+    for (let i = 0; i < len; i++) {
+      data32[i] = palette32[pixels[i]] ?? 0xFF000000;
+    }
+
+    pixelCtx.putImageData(imageData, 0, 0);
     onBufferUpdate?.();
   }
 
@@ -36,8 +71,16 @@ export function usePixelBuffer(
     const { width, height, palette } = props.value;
     if (x < 0 || y < 0 || x >= width || y >= height) return;
 
+    ensurePalette(palette);
+
     pixelCtx.fillStyle = palette[colorIndex] || '#000000';
     pixelCtx.fillRect(x, y, 1, 1);
+
+    if (cachedData32 && pixelBuffer.width === width && pixelBuffer.height === height) {
+      const index = y * width + x;
+      cachedData32[index] = uint32Palette[colorIndex] ?? 0xFF000000;
+    }
+
     onBufferUpdate?.();
   }
 

@@ -17,7 +17,8 @@ class SocketService {
     const token = localStorage.getItem('authToken');
     const url = getApiOrigin();
     this.socket = io(url, {
-      auth: { token }
+      auth: { token },
+      transports: ['websocket']
     });
   }
 

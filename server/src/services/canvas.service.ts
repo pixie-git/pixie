@@ -1,21 +1,20 @@
 import { canvasStore } from '../store/canvas.store.js';
 import { Lobby } from '../models/Lobby.js';
 import { Canvas } from '../models/Canvas.js';
-import { CONFIG } from '../config.js';
 
 export class CanvasService {
 
   // Request Coalescing: Track pending loads to prevent duplicate DB fetches
   private static pendingLoads: Map<string, Promise<{ width: number; height: number; palette: string[]; data: Uint8Array }>> = new Map();
 
-  // Write-Behind: Track active save timers for each lobby
-  private static saveTimers: Map<string, NodeJS.Timeout> = new Map();
-
   static async getState(lobbyId: string): Promise<{ width: number; height: number; palette: string[]; data: Uint8Array }> {
     // Fast Path
-    if (canvasStore.isLobbyInMemory(lobbyId)) {
-      const meta = canvasStore.getLobbyMetaData(lobbyId)!;
-      return { width: meta.width, height: meta.height, palette: meta.palette, data: meta.data };
+    const meta = await canvasStore.getLobbyMetaData(lobbyId);
+    if (meta) {
+      const data = await canvasStore.getLobbyPixelData(lobbyId);
+      if (data) {
+        return { width: meta.width, height: meta.height, palette: meta.palette, data };
+      }
     }
 
     // Coalescing Path
@@ -33,7 +32,7 @@ export class CanvasService {
         if (!canvas) throw new Error(`Canvas data missing for lobby '${lobbyId}'`);
 
         const palette = canvas.palette;
-        const data = canvasStore.loadLobbyToMemory(lobbyId, canvas.width, canvas.height, palette, canvas.data);
+        const data = await canvasStore.loadLobbyToMemory(lobbyId, canvas.width, canvas.height, palette, canvas.data);
         return { width: canvas.width, height: canvas.height, palette, data };
       } finally {
         this.pendingLoads.delete(lobbyId);
@@ -44,60 +43,41 @@ export class CanvasService {
     return loadPromise;
   }
 
-
-  static draw(lobbyId: string, x: number, y: number, color: number) {
-    const changed = canvasStore.modifyPixelColor(lobbyId, x, y, color);
+  static async draw(lobbyId: string, x: number, y: number, color: number): Promise<boolean> {
+    const changed = await canvasStore.modifyPixelColor(lobbyId, x, y, color);
 
     if (changed) {
-      this.scheduleSave(lobbyId);
+      await canvasStore.markLobbyDirty(lobbyId);
     }
 
     return changed;
   }
 
-  static clearCanvas(lobbyId: string): boolean {
-    const success = canvasStore.clearLobbyCanvas(lobbyId);
+  static async clearCanvas(lobbyId: string): Promise<boolean> {
+    const success = await canvasStore.clearLobbyCanvas(lobbyId);
     if (success) {
-      this.scheduleSave(lobbyId);
+      await canvasStore.markLobbyDirty(lobbyId);
     }
     return success;
   }
 
-  static drawBatch(lobbyId: string, pixels: { x: number, y: number, color: number }[]): { x: number, y: number, color: number }[] {
-    const successfulUpdates: { x: number, y: number, color: number }[] = [];
-    let anyChanged = false;
+  static async drawBatch(lobbyId: string, pixels: { x: number, y: number, color: number }[]): Promise<{ x: number, y: number, color: number }[]> {
+    // Fetch meta once for the batch to avoid redundant Redis HGETALL calls
+    const meta = await canvasStore.getLobbyMetaData(lobbyId);
+    if (!meta) return [];
 
-    for (const p of pixels) {
-      if (!p || typeof p.x !== 'number' || typeof p.y !== 'number' || typeof p.color !== 'number') continue;
+    const metaParams = { width: meta.width, height: meta.height, paletteLen: meta.paletteLen };
 
-      const changed = canvasStore.modifyPixelColor(lobbyId, p.x, p.y, p.color);
-      if (changed) {
-        // Sanitize the object we return to avoid echoing unexpected client properties
-        successfulUpdates.push({ x: p.x, y: p.y, color: p.color });
-        anyChanged = true;
-      }
+    const successfulUpdates = await canvasStore.modifyPixelBatch(lobbyId, pixels, metaParams);
+
+    if (successfulUpdates.length > 0) {
+      await canvasStore.markLobbyDirty(lobbyId);
     }
-
-    if (anyChanged) this.scheduleSave(lobbyId);
     return successfulUpdates;
   }
 
-  private static scheduleSave(lobbyId: string) {
-    if (this.saveTimers.has(lobbyId)) {
-      return; // Timer already running, pending save will catch this change
-    }
-
-    const timer = setTimeout(() => {
-      this.saveToDB(lobbyId);
-    }, 2000);
-
-    this.saveTimers.set(lobbyId, timer);
-  }
-
-  static async saveToDB(lobbyId: string) {
-    this.saveTimers.delete(lobbyId);
-
-    const memoryBuffer = canvasStore.getLobbyPixelData(lobbyId);
+  static async saveToDB(lobbyId: string): Promise<void> {
+    const memoryBuffer = await canvasStore.getLobbyPixelData(lobbyId);
     if (!memoryBuffer) return;
 
     const lobby = await Lobby.findById(lobbyId);
@@ -111,18 +91,12 @@ export class CanvasService {
     console.log(`[CanvasService] Saved lobby '${lobbyId}' to DB`);
   }
 
-  static async unloadLobby(lobbyId: string) {
-    if (!canvasStore.isLobbyInMemory(lobbyId)) return;
+  static async unloadLobby(lobbyId: string): Promise<void> {
+    if (!(await canvasStore.isLobbyInMemory(lobbyId))) return;
 
     console.log(`[CanvasService] Unloading idle lobby: ${lobbyId}`);
 
-    if (this.saveTimers.has(lobbyId)) {
-      clearTimeout(this.saveTimers.get(lobbyId));
-      this.saveTimers.delete(lobbyId);
-    }
-
     await this.saveToDB(lobbyId);
-
-    canvasStore.removeLobby(lobbyId);
+    await canvasStore.removeLobby(lobbyId);
   }
 }

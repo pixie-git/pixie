@@ -20,13 +20,13 @@ Access:
 JWT_SECRET=your-secret-here docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-Access everything through the client port:
+Access everything through the entry point port:
 - **App**: http://localhost:3080
 - **API**: http://localhost:3080/api
 - **Swagger**: http://localhost:3080/api-docs
 - **Mongo Express**: http://localhost:8081
 
-The client's nginx proxies API/Socket requests internally.
+Traefik handles routing and sticky sessions for Socket.io.
 
 ### Environment Variables
 
@@ -34,32 +34,24 @@ The client's nginx proxies API/Socket requests internally.
 |----------|----------|---------|-------------|
 | `JWT_SECRET` | **Yes** | - | Secret for JWT tokens |
 | `CLIENT_ORIGIN` | No | `*` | CORS origins (comma-separated for multiple) |
-| `CLIENT_PORT` | No | `3080` | Host port for frontend |
+| `CLIENT_PORT` | No | `3080` | Host port for frontend/entry point |
+| `REDIS_URL` | No | `redis://redis:6379` | Internal Redis URL |
+| `CANVAS_WIDTH` | No | `64` | Default canvas width |
+| `CANVAS_HEIGHT` | No | `64` | Default canvas height |
 | `ME_PORT` | No | `8081` | Host port for Mongo Express |
 | `ME_USERNAME` | No | `admin` | Mongo Express username |
 | `ME_PASSWORD` | No | `changeme` | Mongo Express password |
-| `VITE_API_URL` | No | `` | API URL (only if exposing API on separate domain) |
+| `VITE_API_URL` | No | `` | API URL (used at build time for client) |
 
-### Portainer + Nginx Proxy Manager
+### Portainer + Reverse Proxy
 
-The client's nginx proxies API/Socket internally, so you only need to expose the app itself.
+Traefik handles internal routing, so you only need to expose the Traefik entry point.
 
 **Minimal setup (recommended):**
 
 | Domain | Forward To | Port | WebSocket |
 |--------|------------|------|-----------|
-| `app.example.com` | `pixie-client` | 3080 | **Yes** |
-
-That's it. API, Swagger, and Socket.io are all proxied through the client.
-
-**Optional: Expose additional services**
-
-If you want direct access to other services (NPM must be on the same Docker network, or add port mappings to compose):
-
-| Domain | Forward To | Port | WebSocket |
-|--------|------------|------|-----------|
-| `api.example.com` | `pixie-server` | 3000 | **Yes** |
-| `mongo.example.com` | `pixie-mongo-express` | 8081 | No |
+| `app.example.com` | `pixie-traefik` | 80 | **Yes** |
 
 **Steps:**
 
@@ -71,41 +63,21 @@ If you want direct access to other services (NPM must be on the same Docker netw
      CLIENT_ORIGIN=https://app.example.com
      ME_PASSWORD=secure-password
      ```
-   - If exposing API separately, add it to CORS: `CLIENT_ORIGIN=https://app.example.com,https://api.example.com`
 
-2. **Create NPM Proxy Host**
-   - Domain: `app.example.com`
-   - Forward: `pixie-client` port `3080`
-   - Enable **Websockets Support**
-   - Add SSL via Let's Encrypt
-
-3. **SSL**: Use NPM's built-in Let's Encrypt for HTTPS.
-
-### CORS Configuration
-
-`CLIENT_ORIGIN` supports:
-- Single origin: `https://app.example.com`
-- Multiple origins: `https://app.example.com,https://api.example.com`
-- Allow all: `*` (not recommended for production)
-
-Include both your app domain and API domain if Swagger needs to make requests.
+2. **Reverse Proxy (Nginx Proxy Manager / Caddy)**
+   - Point your domain to the Docker host.
+   - Forward traffic to the Docker host on port `3080` (or your configured `CLIENT_PORT`), or directly to the `pixie-traefik` container on port `80` if the proxy is on the same Docker network.
+   - Enable **Websockets Support**.
 
 ### Architecture
 
-**Standalone** (single entry point):
+**Standalone** (Traefik as entry point):
 ```
-localhost:3080 ──► pixie-client (nginx)
-                      ├── /           → static files
-                      ├── /api/       → proxy to pixie-server:3000
-                      ├── /api-docs   → proxy to pixie-server:3000
-                      └── /socket.io/ → proxy to pixie-server:3000 (WebSocket)
-```
-
-**With NPM** (separate domains):
-```
-app.example.com ──► NPM ──► pixie-client:3080
-api.example.com ──► NPM ──► pixie-server:3000 (enable WebSocket)
-mongo.example.com ──► NPM ──► pixie-mongo-express:8081
+localhost:3080 ──► pixie-traefik
+                      ├── /           → pixie-client:80
+                      ├── /api/       → pixie-server:3000
+                      ├── /api-docs   → pixie-server:3000
+                      └── /socket.io/ → pixie-server:3000 (WebSocket + Sticky Sessions)
 ```
 
-MongoDB is **not exposed** externally—only accessible within the Docker network.
+MongoDB and Redis are **not exposed** externally—only accessible within the Docker network.

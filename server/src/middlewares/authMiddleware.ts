@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { AppError } from "../utils/AppError.js";
-
-const JWT_SECRET = process.env.JWT_SECRET || "dev-key";
+import { CONFIG } from "../config.js";
 
 export interface AuthRequest extends Request {
     user?: any;
@@ -22,10 +21,10 @@ export const authenticateToken = (
         return next(new AppError("Access token required", 401));
     }
 
-    jwt.verify(token, JWT_SECRET, (err: any, user: any) => {
+    jwt.verify(token, CONFIG.JWT.SECRET, (err: any, user: any) => {
         if (err) {
             // console.log("[DEBUG] AuthMiddleware: Invalid token", err.message);
-            return next(new AppError("Invalid or expired token", 403));
+            return next(new AppError("Invalid or expired token", 401));
         }
         // console.log("[DEBUG] AuthMiddleware: Token valid for user", user?.username);
         req.user = user;

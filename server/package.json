@@ -8,14 +8,17 @@
 		"dev": "tsx watch src/index.ts",
 		"build": "tsc",
 		"start": "node dist/index.js",
-		"type-check": "tsc --noEmit"
+		"type-check": "tsc --noEmit",
+		"test": "vitest run"
 	},
 	"dependencies": {
+		"@socket.io/redis-adapter": "^8.3.0",
 		"cors": "^2.8.5",
 		"express": "^4.21.2",
 		"jsonwebtoken": "^9.0.3",
 		"mongoose": "^8.9.5",
 		"pngjs": "^7.0.0",
+		"redis": "^5.12.1",
 		"socket.io": "^4.8.1",
 		"swagger-ui-express": "^5.0.1",
 		"yamljs": "^0.3.0"
@@ -28,10 +31,13 @@
 		"@types/pngjs": "^6.0.5",
 		"@types/swagger-ui-express": "^4.1.8",
 		"@types/yamljs": "^0.2.34",
+		"mongodb-memory-server": "^11.1.0",
 		"nodemon": "^3.1.9",
+		"socket.io-client": "^4.8.3",
 		"ts-node": "^10.9.2",
 		"tsx": "^4.7.0",
-		"typescript": "^5.3.3"
+		"typescript": "^5.3.3",
+		"vitest": "^4.1.4"
 	},
 	"engines": {
 		"node": ">=24.0.0"
