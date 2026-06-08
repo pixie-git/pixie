@@ -20,9 +20,10 @@ describe('usePixelBuffer', () => {
       width: 0,
       height: 0,
     };
-    vi.spyOn(document, 'createElement').mockImplementation((tagName) => {
+    const originalCreateElement = document.createElement.bind(document);
+    vi.spyOn(document, 'createElement').mockImplementation((tagName, options) => {
       if (tagName === 'canvas') return mockCanvas as any;
-      return document.createElement(tagName);
+      return originalCreateElement(tagName, options);
     });
   });
 
