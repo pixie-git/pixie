@@ -1,3 +1,4 @@
+import { RESP_TYPES } from 'redis';
 import { getRedisClient } from '../db/redis.js';
 
 export interface LobbyMeta {
@@ -13,6 +14,12 @@ export class CanvasStore {
 
   private getCanvasKey(lobbyId: string): string {
     return `lobby:${lobbyId}:canvas`;
+  }
+
+  private getBufferClient() {
+    return getRedisClient().withTypeMapping({
+      [RESP_TYPES.BLOB_STRING]: Buffer
+    });
   }
 
   public async isLobbyInMemory(lobbyId: string): Promise<boolean> {
@@ -35,10 +42,10 @@ export class CanvasStore {
   }
 
   public async getLobbyPixelData(lobbyId: string): Promise<Uint8Array | undefined> {
-    const redis = getRedisClient();
+    const redis = this.getBufferClient();
     const data = await redis.get(this.getCanvasKey(lobbyId));
     if (!data) return undefined;
-    return new Uint8Array(Buffer.from(data, 'latin1'));
+    return new Uint8Array(data);
   }
 
   // Load data from DB buffer to Redis
@@ -102,8 +109,13 @@ export class CanvasStore {
     const canvasKey = this.getCanvasKey(lobbyId);
 
     // Optimization: Only update and mark dirty if the color actually changed
-    const current = await redis.getRange(canvasKey, index, index);
-    const currentColor = Buffer.isBuffer(current) ? current[0] : (current as string)?.charCodeAt(0);
+    const bufferRedis = this.getBufferClient();
+    const current = await bufferRedis.getRange(canvasKey, index, index);
+    const currentColor = Buffer.isBuffer(current)
+      ? current[0]
+      : typeof current === 'string' && current.length > 0
+      ? current.charCodeAt(0)
+      : undefined;
     if (current && current.length > 0 && currentColor === color) {
       return false;
     }
@@ -124,19 +136,26 @@ export class CanvasStore {
     const successfulUpdates: { x: number; y: number; color: number }[] = [];
 
     // First, fetch current colors to filter redundant writes
-    const pipeline = redis.multi();
     const validPixels: { x: number; y: number; color: number; index: number }[] = [];
 
     for (const p of pixels) {
       if (p.x < 0 || p.x >= width || p.y < 0 || p.y >= height || p.color < 0 || p.color >= paletteLen) continue;
       const index = p.y * width + p.x;
       validPixels.push({ ...p, index });
-      pipeline.getRange(canvasKey, index, index);
     }
 
     if (validPixels.length === 0) return [];
 
-    const currentColors = await pipeline.exec() as unknown as string[];
+    const bufferRedis = this.getBufferClient();
+    const currentColors = await Promise.all(
+      validPixels.map(p =>
+        bufferRedis.getRange(
+          canvasKey,
+          p.index,
+          p.index
+        )
+      )
+    );
 
     // Second, batch updates for pixels that actually changed
     const writePipeline = redis.multi();
@@ -145,7 +164,11 @@ export class CanvasStore {
     for (let i = 0; i < validPixels.length; i++) {
       const p = validPixels[i];
       const current = currentColors[i];
-      const currentColor = Buffer.isBuffer(current) ? current[0] : (current as string)?.charCodeAt(0);
+      const currentColor = Buffer.isBuffer(current)
+        ? current[0]
+        : typeof current === 'string' && current.length > 0
+        ? current.charCodeAt(0)
+        : undefined;
       
       if (current && current.length > 0 && currentColor === p.color) continue;
 
