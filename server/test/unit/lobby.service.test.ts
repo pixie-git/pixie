@@ -27,7 +27,9 @@ describe('LobbyService - Capacity & Resource Management', () => {
     mockRedis = {
       incr: vi.fn(),
       decr: vi.fn(),
-      set: vi.fn()
+      set: vi.fn(),
+      exists: vi.fn(),
+      del: vi.fn()
     };
     (redisModule.getRedisClient as any).mockReturnValue(mockRedis);
   });
@@ -48,19 +50,32 @@ describe('LobbyService - Capacity & Resource Management', () => {
     expect(mockRedis.decr).not.toHaveBeenCalled();
   });
 
-  it('should decrement capacity correctly', async () => {
+  it('should decrement capacity correctly and not delete if above 0', async () => {
+    mockRedis.exists.mockResolvedValue(1);
     mockRedis.decr.mockResolvedValue(5);
     
     await LobbyService.decrementCapacity(mockLobby._id.toString());
+    expect(mockRedis.exists).toHaveBeenCalledWith(`lobby:${mockLobby._id}:count`);
     expect(mockRedis.decr).toHaveBeenCalledWith(`lobby:${mockLobby._id}:count`);
-    expect(mockRedis.set).not.toHaveBeenCalled();
+    expect(mockRedis.del).not.toHaveBeenCalled();
   });
 
-  it('should reset capacity to 0 if it goes below 0', async () => {
-    mockRedis.decr.mockResolvedValue(-1);
+  it('should delete capacity key if it goes to 0 or below', async () => {
+    mockRedis.exists.mockResolvedValue(1);
+    mockRedis.decr.mockResolvedValue(0);
     
     await LobbyService.decrementCapacity(mockLobby._id.toString());
+    expect(mockRedis.exists).toHaveBeenCalledWith(`lobby:${mockLobby._id}:count`);
     expect(mockRedis.decr).toHaveBeenCalledWith(`lobby:${mockLobby._id}:count`);
-    expect(mockRedis.set).toHaveBeenCalledWith(`lobby:${mockLobby._id}:count`, 0);
+    expect(mockRedis.del).toHaveBeenCalledWith(`lobby:${mockLobby._id}:count`);
+  });
+
+  it('should do nothing if capacity key does not exist', async () => {
+    mockRedis.exists.mockResolvedValue(0);
+    
+    await LobbyService.decrementCapacity(mockLobby._id.toString());
+    expect(mockRedis.exists).toHaveBeenCalledWith(`lobby:${mockLobby._id}:count`);
+    expect(mockRedis.decr).not.toHaveBeenCalled();
+    expect(mockRedis.del).not.toHaveBeenCalled();
   });
 });
